@@ -1,0 +1,702 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+      "title": "FastAPI",
+      "version": "0.1.0"
+    },
+    "paths": {
+      "/api/v1/auth/login": {
+        "post": {
+          "tags": [
+            "auth"
+          ],
+          "summary": "Login",
+          "operationId": "login_api_v1_auth_login_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Body_login_api_v1_auth_login_post"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/signup": {
+        "post": {
+          "tags": [
+            "auth"
+          ],
+          "summary": "Start Signup",
+          "operationId": "start_signup_api_v1_auth_signup_post",
+          "parameters": [
+            {
+              "name": "email",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "email",
+                "title": "Email"
+              }
+            },
+            {
+              "name": "password",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Password"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/signup/email/verification-code": {
+        "post": {
+          "tags": [
+            "auth"
+          ],
+          "summary": "Complete Signup",
+          "operationId": "complete_signup_api_v1_auth_signup_email_verification_code_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Body_complete_signup_api_v1_auth_signup_email_verification_code_post"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/login/password-reset/email": {
+        "post": {
+          "tags": [
+            "auth"
+          ],
+          "summary": "Request Password Reset",
+          "operationId": "request_password_reset_api_v1_auth_login_password_reset_email_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "email",
+                  "title": "Email"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/login/password-reset/new-password": {
+        "post": {
+          "tags": [
+            "auth"
+          ],
+          "summary": "Ok",
+          "operationId": "ok_api_v1_auth_login_password_reset_new_password_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasswordResetConfirm"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/publication/": {
+        "post": {
+          "tags": [
+            "publication"
+          ],
+          "summary": "Create Publication",
+          "operationId": "create_publication_api_v1_publication__post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatePublicationRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PublicationWithCommentsResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "HTTPBearer": []
+            }
+          ]
+        }
+      },
+      "/api/v1/publication/user/{user_id}": {
+        "get": {
+          "tags": [
+            "publication"
+          ],
+          "summary": "Get Publications By User",
+          "operationId": "get_publications_by_user_api_v1_publication_user__user_id__get",
+          "security": [
+            {
+              "HTTPBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "user_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "User Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/PublicationWithCommentsResponse"
+                    },
+                    "title": "Response Get Publications By User Api V1 Publication User  User Id  Get"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/publication/latest": {
+        "get": {
+          "tags": [
+            "publication"
+          ],
+          "summary": "Get Latest Publications",
+          "operationId": "get_latest_publications_api_v1_publication_latest_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/components/schemas/PublicationWithCommentsResponse"
+                    },
+                    "type": "array",
+                    "title": "Response Get Latest Publications Api V1 Publication Latest Get"
+                  }
+                }
+              }
+            }
+          },
+          "security": [
+            {
+              "HTTPBearer": []
+            }
+          ]
+        }
+      },
+      "/api/v1/publication/{publication_id}": {
+        "get": {
+          "tags": [
+            "publication"
+          ],
+          "summary": "Get Publication By Id",
+          "operationId": "get_publication_by_id_api_v1_publication__publication_id__get",
+          "security": [
+            {
+              "HTTPBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "publication_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Publication Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/PublicationWithCommentsResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": [
+            "publication"
+          ],
+          "summary": "Delete Publication",
+          "operationId": "delete_publication_api_v1_publication__publication_id__delete",
+          "security": [
+            {
+              "HTTPBearer": []
+            }
+          ],
+          "parameters": [
+            {
+              "name": "publication_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Publication Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+  
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Body_complete_signup_api_v1_auth_signup_email_verification_code_post": {
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email",
+              "title": "Email"
+            },
+            "code": {
+              "type": "string",
+              "maxLength": 6,
+              "minLength": 6,
+              "title": "Code"
+            }
+          },
+          "type": "object",
+          "required": [
+            "email",
+            "code"
+          ],
+          "title": "Body_complete_signup_api_v1_auth_signup_email_verification_code_post"
+        },
+        "Body_login_api_v1_auth_login_post": {
+          "properties": {
+            "email": {
+              "type": "string",
+              "format": "email",
+              "title": "Email"
+            },
+            "password": {
+              "type": "string",
+              "title": "Password"
+            }
+          },
+          "type": "object",
+          "required": [
+            "email",
+            "password"
+          ],
+          "title": "Body_login_api_v1_auth_login_post"
+        },
+        "CommentResponse": {
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "Id"
+            },
+            "text": {
+              "type": "string",
+              "title": "Text"
+            },
+            "publication_id": {
+              "type": "string",
+              "title": "Publication Id"
+            },
+            "comment_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Comment Id"
+            },
+            "user_id": {
+              "type": "string",
+              "title": "User Id"
+            },
+            "commented_at": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Commented At"
+            }
+          },
+          "type": "object",
+          "required": [
+            "id",
+            "text",
+            "publication_id",
+            "comment_id",
+            "user_id",
+            "commented_at"
+          ],
+          "title": "CommentResponse"
+        },
+        "CreatePublicationRequest": {
+          "properties": {
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Description"
+            },
+            "image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Image Url"
+            },
+            "user_id": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          "type": "object",
+          "required": [
+            "description",
+            "user_id"
+          ],
+          "title": "CreatePublicationRequest"
+        },
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": {
+                "$ref": "#/components/schemas/ValidationError"
+              },
+              "type": "array",
+              "title": "Detail"
+            }
+          },
+          "type": "object",
+          "title": "HTTPValidationError"
+        },
+        "PasswordResetConfirm": {
+          "properties": {
+            "user_id": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            },
+            "reset_token": {
+              "type": "string",
+              "title": "Reset Token"
+            },
+            "new_password": {
+              "type": "string",
+              "title": "New Password"
+            }
+          },
+          "type": "object",
+          "required": [
+            "user_id",
+            "reset_token",
+            "new_password"
+          ],
+          "title": "PasswordResetConfirm"
+        },
+        "PublicationWithCommentsResponse": {
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "Id"
+            },
+            "user_id": {
+              "type": "string",
+              "title": "User Id"
+            },
+            "description": {
+              "type": "string",
+              "title": "Description"
+            },
+            "image_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Image Url"
+            },
+            "views_count": {
+              "type": "integer",
+              "title": "Views Count"
+            },
+            "published_at": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Published At"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Updated At"
+            },
+            "comments": {
+              "items": {
+                "$ref": "#/components/schemas/CommentResponse"
+              },
+              "type": "array",
+              "title": "Comments"
+            }
+          },
+          "type": "object",
+          "required": [
+            "id",
+            "user_id",
+            "description",
+            "image_url",
+            "views_count",
+            "published_at",
+            "updated_at",
+            "comments"
+          ],
+          "title": "PublicationWithCommentsResponse"
+        },
+        "ValidationError": {
+          "properties": {
+            "loc": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array",
+              "title": "Location"
+            },
+            "msg": {
+              "type": "string",
+              "title": "Message"
+            },
+            "type": {
+              "type": "string",
+              "title": "Error Type"
+            }
+          },
+          "type": "object",
+          "required": [
+            "loc",
+            "msg",
+            "type"
+          ],
+          "title": "ValidationError"
+        }
+      },
+      "securitySchemes": {
+        "HTTPBearer": {
+          "type": "http",
+          "scheme": "bearer"
+        }
+      }
+    }
+  }

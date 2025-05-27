@@ -1,0 +1,63 @@
+{
+  "common": {
+    "home": "Home",
+    "settings": "Settings",
+    "language": "Language",
+    "search": "Search",
+    "username": "Heilen",
+    "notifications": "Notifications",
+    "errorTitle": "Oops, something went wrong!",
+    "errorDescription": "We encountered an unexpected error. Please try again or return to the home page.",
+    "unknownError": "An unknown error occurred",
+    "tryAgain": "Try Again",
+    "backToHome": "Back to Home",
+    "clearError": "Clear error",
+    "notFoundTitle": "Page Not Found",
+    "notFoundDescription": "The page you're looking for doesn't exist or has been moved."
+  },
+  "home": {
+    "title": "Home page",
+    "welcome": "Welcome to our application"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "logout": "Logout",
+    "add": "Add",
+    "categories": "Categories",
+    "chats": "Chats",
+    "stats": "Statistics",
+    "rating": "Rating"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember me",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "or": "or",
+    "continueWith": "Continue with",
+    "resetPassword": "Reset Password",
+    "resetPasswordSuccess": "If an account exists with this email, you will receive password reset instructions.",
+    "passwordMismatch": "Passwords do not match",
+    "minPasswordLength": "Password must be at least 8 characters long",
+    "verifyEmail": "Verify Email",
+    "verifyEmailMessage": "Please check your email and click the link to verify your email address",
+    "verifyEmailSuccess": "Email successfully verified",
+    "verifyEmailError": "Error verifying email",
+    "verifyEmailResend": "Resend verification code",
+    "verifyEmailCode": "Verification code",
+    "verifyEmailCodeSent": "Verification code has been sent to your email",
+    "verifyEmailCodeError": "Invalid verification code",
+    "verifyEmailCodeExpired": "Verification code has expired",
+    "verifyEmailCodeResend": "Resend code in",
+    "verifyEmailCodeResendNow": "Resend code now",
+    "loading": "loading"
+  }
+}
