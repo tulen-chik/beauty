@@ -16,11 +16,25 @@ export interface PostProps {
   comments: number;
   shares: number;
   commentsList?: CommentProps[];
+  image?: string;
 }
 
-export default function Post({ id, author, content, timestamp, likes, comments, shares, commentsList = [] }: PostProps) {
+export default function Post({ id, author, content, timestamp, likes, comments, shares, commentsList = [], image }: PostProps) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [collapsed, setCollapsed] = useState(true);
+  const maxLines = 4;
+  const getShortContent = () => {
+    // Обрезаем по строкам, если есть переносы, иначе по символам
+    const lines = content.split('\n');
+    if (lines.length > maxLines) {
+      return lines.slice(0, maxLines).join('\n') + '...';
+    }
+    if (content.length > 300) {
+      return content.slice(0, 300) + '...';
+    }
+    return content;
+  };
 
   return (
     <div className="bg-black-02 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
@@ -37,9 +51,29 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
           <div className="text-gray-400 text-xs">{timestamp}</div>
         </div>
       </div>
-      <div className="text-white text-sm sm:text-base leading-relaxed">
-        {content}
-      </div>
+        <>
+          <div className="text-white text-sm sm:text-base leading-relaxed whitespace-pre-line">
+            {collapsed ? getShortContent() : content}
+          </div>
+          {image && !collapsed && (
+            <div className="w-full mt-2 rounded-2xl overflow-hidden flex justify-center">
+              <Image
+                src={image}
+                alt="post image"
+                width={600}
+                height={300}
+                className="object-contain max-h-[320px] w-full bg-black-01"
+              />
+            </div>
+          )}
+        </>
+
+        <button
+          className="self-end text-xs text-gray-400 hover:text-accent transition mb-1"
+          onClick={() => setCollapsed((v) => !v)}
+        >
+          {collapsed ? 'Показать полностью' : 'Свернуть'}
+        </button>
       <div className="flex items-center gap-4 sm:gap-6 text-gray-400 text-xs sm:text-sm mt-2">
         <button className="flex items-center gap-1 hover:text-accent transition">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>

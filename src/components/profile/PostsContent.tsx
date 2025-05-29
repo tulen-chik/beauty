@@ -6,7 +6,7 @@ import { posts } from "@/data/posts";
 
 export default function PostsContent() {
   return (
-    <div className="bg-black-02 rounded-xl p-2 sm:p-4">
+    <div className="rounded-xl p-2 sm:p-4">
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {posts.map((post) => (
