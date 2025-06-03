@@ -1,6 +1,6 @@
 import { axiosInstance } from './axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://147.45.231.110';
+// const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://147.45.231.110';
 const TOKEN_COOKIE_NAME = 'access_token';
 
 interface FetchOptions {

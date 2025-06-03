@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 
 import { CommentProps } from "@/components/Comment";
 import Comment from "@/components/Comment";
@@ -20,6 +22,7 @@ export interface PostProps {
 }
 
 export default function Post({ id, author, content, timestamp, likes, comments, shares, commentsList = [], image }: PostProps) {
+  const t = useTranslations('publications');
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [collapsed, setCollapsed] = useState(true);
@@ -37,10 +40,15 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
   };
 
   return (
-    <div className="bg-black-02 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="bg-black-02 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 flex flex-col gap-3 sm:gap-4"
+    >
       <div className="flex items-center gap-2 sm:gap-3">
         <Image
-          src={author.avatar}
+          src={author.avatar || "/images/cat.jpg"}
           alt="avatar"
           width={32}
           height={32}
@@ -68,28 +76,30 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
           )}
         </>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.97 }}
           className="self-end text-xs text-gray-400 hover:text-accent transition mb-1"
           onClick={() => setCollapsed((v) => !v)}
         >
-          {collapsed ? 'Показать полностью' : 'Свернуть'}
-        </button>
+          {collapsed ? t('showFull') : t('collapse')}
+        </motion.button>
       <div className="flex items-center gap-4 sm:gap-6 text-gray-400 text-xs sm:text-sm mt-2">
-        <button className="flex items-center gap-1 hover:text-accent transition">
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-1 hover:text-accent transition">
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           {likes}
-        </button>
-        <button 
-          className={`flex items-center gap-1 hover:text-accent transition ${showComments ? 'text-accent' : ''}`} 
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
+          className={`flex items-center gap-1 hover:text-accent transition ${showComments ? 'text-accent' : ''}`}
           onClick={() => setShowComments(v => !v)}
         >
           <svg width="20" height="20" viewBox="0 0 22 40" fill="none"><path width="20" height="20" fill="currentcolor" d="M11 9C14.4168 9 16.125 9.00045 17.4727 9.55859C19.2695 10.3029 20.6971 11.7305 21.4414 13.5273C21.9996 14.875 22 16.5832 22 20C22 23.4168 21.9996 25.125 21.4414 26.4727C20.6971 28.2695 19.2695 29.6971 17.4727 30.4414C16.125 30.9996 14.4168 31 11 31H7.33301C3.87626 31 2.14813 30.9997 1.07422 29.9258C0.000310818 28.8519 1.06219e-09 27.1237 0 23.667V20C0 16.5832 0.000447559 14.875 0.558594 13.5273C1.30288 11.7305 2.73047 10.3029 4.52734 9.55859C5.87497 9.00045 7.58324 9 11 9ZM7.33301 21.2217C6.65799 21.2217 6.11035 21.7693 6.11035 22.4443C6.11062 23.1191 6.65816 23.667 7.33301 23.667L11 23.666L11.125 23.6592C11.7411 23.5964 12.2217 23.076 12.2217 22.4434C12.2214 21.8109 11.741 21.2903 11.125 21.2275L11 21.2207L7.33301 21.2217ZM7.33301 16.333C6.65816 16.333 6.11062 16.8799 6.11035 17.5547C6.11035 18.2297 6.65799 18.7783 7.33301 18.7783H14.666L14.791 18.7715C15.4073 18.709 15.8884 18.1884 15.8887 17.5557C15.8887 16.9228 15.4074 16.4023 14.791 16.3398L14.666 16.333H7.33301Z"/></svg>
           {comments}
-        </button>
-        <button className="flex items-center gap-1 hover:text-accent transition">
+        </motion.button>
+        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="flex items-center gap-1 hover:text-accent transition">
           <svg width="20" height="20" fill="none" viewBox="0 0 29 17"> <path fill="currentColor" d="M28.5179 6.45504L19.3703 0.197799C18.6297 -0.308813 17.6194 0.216388 17.6194 1.108V3.71532C9.33367 3.71532 2.33031 9.1363 0.0149204 16.5923C-0.0827743 16.9069 0.322671 17.1409 0.550967 16.9017C3.90874 13.3844 8.66255 11.189 13.935 11.189H17.6194V13.6225C17.6194 14.5141 18.6297 15.0393 19.3703 14.5327L28.5179 8.27545C29.1607 7.83572 29.1607 6.89475 28.5179 6.45504Z"/></svg>
           {shares}
-        </button>
+        </motion.button>
       </div>
 
       {showComments && (
@@ -97,7 +107,7 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
           <div className="flex flex-col items-start gap-3 mb-4 sm:mb-6">
             <input
               className="flex-1 bg-black-02 border border-black-03 rounded-xl text-white w-full text-sm sm:text-base outline-none focus:border-accent transition px-3 py-2"
-              placeholder="Введите комментарий"
+              placeholder={t('enterComment')}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
             />
@@ -122,11 +132,11 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
                 className="bg-gradient-to-r from-[#FF4400] to-[#FF883D] text-white font-semibold px-4 sm:px-6 py-2 rounded-xl w-full sm:w-[158px] hover:opacity-90 transition"
                 disabled={!commentText.trim()}
               >
-                Отправить
+                {t('send')}
               </button>
             </div>
           </div>
-          <div className="text-white text-base sm:text-[18px] font-semibold mb-2">Комментарии</div>
+          <div className="text-white text-base sm:text-[18px] font-semibold mb-2">{t('comments')}</div>
           <div className="flex flex-col gap-4 sm:gap-6">
             {commentsList.map((comment) => (
               <Comment key={comment.id} {...comment} />
@@ -134,6 +144,6 @@ export default function Post({ id, author, content, timestamp, likes, comments, 
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 } 

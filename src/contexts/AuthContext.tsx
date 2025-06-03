@@ -2,8 +2,9 @@
 
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import React, { createContext, useContext, useEffect,useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { ZodError } from 'zod';
+import { jwtDecode } from 'jwt-decode';
 
 import { authApi } from '@/lib/api/auth';
 import { 
@@ -23,7 +24,16 @@ import {
   VerificationCodeRequest} from '@/types/auth';
 
 const TOKEN_COOKIE_NAME = 'access_token';
+const REFRESH_TOKEN_COOKIE_NAME = 'refresh_token';
 const USER_COOKIE_NAME = 'user_data';
+
+interface DecodedToken {
+  sub: string;
+  is_banned: boolean;
+  role: string;
+  exp: number;
+  email: string;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -31,9 +41,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
 
   const clearError = () => setError(null);
+
+  const decodeToken = useCallback((token: string): User | null => {
+    try {
+      const decoded = jwtDecode<DecodedToken>(token);
+      return {
+        id: decoded.sub,
+        role: decoded.role,
+        is_banned: decoded.is_banned,
+        exp: decoded.exp,
+        email: decoded.email
+      };
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return null;
+    }
+  }, []);
 
   const handleValidationError = (zodError: ZodError): ValidationError[] => {
     return zodError.errors.map(err => ({
@@ -71,58 +98,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const storedToken = Cookies.get(TOKEN_COOKIE_NAME);
-        const storedUser = Cookies.get(USER_COOKIE_NAME);
-        
-        if (storedToken && storedUser) {
-          try {
-            setUser(JSON.parse(storedUser));
-          } catch (error) {
-            handleError(error, 'Error parsing user data from cookie');
-            // If there's an error parsing the cookie, clear it
+  const initializeAuth = useCallback(async () => {
+    try {
+      const storedToken = Cookies.get(TOKEN_COOKIE_NAME);
+      
+      if (storedToken) {
+        const decodedUser = decodeToken(storedToken);
+        if (decodedUser) {
+          const currentTime = Math.floor(Date.now() / 1000);
+          if (decodedUser.exp > currentTime) {
+            setUser(decodedUser);
+          } else {
+            // Token expired
             Cookies.remove(TOKEN_COOKIE_NAME);
+            Cookies.remove(REFRESH_TOKEN_COOKIE_NAME);
             Cookies.remove(USER_COOKIE_NAME);
+            setUser(null);
           }
+        } else {
+          // Invalid token
+          Cookies.remove(TOKEN_COOKIE_NAME);
+          Cookies.remove(REFRESH_TOKEN_COOKIE_NAME);
+          Cookies.remove(USER_COOKIE_NAME);
+          setUser(null);
         }
-      } catch (error) {
-        handleError(error, 'Error initializing authentication');
-      } finally {
-        setIsLoading(false);
+      } else {
+        setUser(null);
       }
-    };
+    } catch (error) {
+      handleError(error, 'Error initializing authentication');
+      setUser(null);
+    } finally {
+      console.log('user', user);
+      setIsLoading(false);
+      setIsInitialized(true);
+    }
+  }, [decodeToken]);
 
+  useEffect(() => {
     initializeAuth();
-  }, []);
+  }, [initializeAuth]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
       setIsLoading(true);
       clearError();
       
-      // Validate credentials
       loginSchema.parse(credentials);
       
       const response = await authApi.login(credentials);
-      const userData = { id: response.user_id, email: credentials.email };
+      const decodedUser = decodeToken(response.access_token);
       
-      // Set cookies with secure options
+      if (!decodedUser) {
+        throw new Error('Invalid token received');
+      }
+      
       Cookies.set(TOKEN_COOKIE_NAME, response.access_token, {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        expires: 7 // 7 days
+        expires: 7
       });
       
-      Cookies.set(USER_COOKIE_NAME, JSON.stringify(userData), {
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        expires: 7 // 7 days
-      });
+      if (response.refresh_token) {
+        Cookies.set(REFRESH_TOKEN_COOKIE_NAME, response.refresh_token.refresh_token, {
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          expires: 7
+        });
+      }
       
-      setUser(userData);
-      router.push('/'); // Redirect to home page after login
+      setUser(decodedUser);
+      router.push('/app');
     } catch (error) {
       handleError(error, 'Login failed');
       throw error;
@@ -136,12 +182,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       clearError();
       
-      // Validate credentials
       signupSchema.parse(credentials);
-      
       await authApi.signup(credentials);
-      // After signup, user needs to verify email
-      router.push('/verify-email');
+      router.push('/auth/verify-email?email=' + credentials.email);
     } catch (error) {
       handleError(error, 'Signup failed');
       throw error;
@@ -155,12 +198,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       clearError();
       
-      // Validate verification data
       verificationCodeSchema.parse(data);
-      
       await authApi.verifyEmail(data);
-      // After verification, redirect to login
-      router.push('/login');
+      router.push('/auth/login');
     } catch (error) {
       handleError(error, 'Email verification failed');
       throw error;
@@ -175,7 +215,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearError();
       
       await authApi.requestPasswordReset(email);
-      // After requesting password reset, redirect to reset confirmation page
       router.push('/reset-password-confirmation');
     } catch (error) {
       handleError(error, 'Password reset request failed');
@@ -190,12 +229,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       clearError();
       
-      // Validate reset password data
       passwordResetConfirmSchema.parse(data);
-      
       await authApi.resetPassword(data);
-      // After password reset, redirect to login
-      router.push('/login');
+      router.push('/auth/login');
     } catch (error) {
       handleError(error, 'Password reset failed');
       throw error;
@@ -207,11 +243,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     try {
       clearError();
-      // Remove cookies
       Cookies.remove(TOKEN_COOKIE_NAME);
+      Cookies.remove(REFRESH_TOKEN_COOKIE_NAME);
       Cookies.remove(USER_COOKIE_NAME);
       setUser(null);
-      router.push('/login');
+      router.push('/');
     } catch (error) {
       handleError(error, 'Logout failed');
     }
@@ -221,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isAuthenticated: !!user,
     isLoading,
+    isInitialized,
     error,
     login,
     signup,

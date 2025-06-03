@@ -4,6 +4,8 @@ import { useEffect,useState } from "react";
 
 import AppHeader from "@/components/AppHeader";
 import AppSidebar from "@/components/AppSidebar";
+import { useTranslations } from 'next-intl';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function AppLayout({
   children,
@@ -24,15 +26,17 @@ export default function AppLayout({
   }, []);
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-black-01 flex relative">
       <AppSidebar isMobile={isMobile} />
       <div className="flex-1 flex flex-col min-h-screen w-full">
         <AppHeader isMobile={isMobile} />
         <main className={`flex-1 flex flex-col transition-all duration-300
-          ${isMobile ? 'pt-[100px] px-4' : 'pt-[130px] lg:pl-[160px] lg:pr-8 pl-[120px] md:pr-4 pr-4'}`}>
+          ${isMobile ? 'pt-[100px]' : 'pt-[130px] lg:pl-[160px] lg:pr-8 pl-[120px] md:pr-4 pr-4'}`}>
           {children}
         </main>
       </div>
     </div>
+    </ProtectedRoute>
   );
 } 

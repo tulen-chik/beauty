@@ -2,16 +2,18 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePublication } from "@/contexts/PublicationContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 import Post from "@/components/Post";
 import ErrorDisplay from "@/components/ErrorDisplay";
+import EmptyState from "@/components/EmptyState";
 
 export default function AppHomePage() {
   const t = useTranslations();
   const [post, setPost] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
   const { 
     publications, 
@@ -24,6 +26,13 @@ export default function AppHomePage() {
   useEffect(() => {
     getLatestPublications();
   }, []);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = (textareaRef.current.scrollHeight + 5) + 'px';
+    }
+  }, [post]);
 
   const handleCreatePost = async () => {
     if (!post.trim() || !user) return;
@@ -42,24 +51,23 @@ export default function AppHomePage() {
   return (
     <div className="max-full px-4 sm:px-8 w-full mx-auto flex flex-col gap-4 sm:gap-8 py-4 sm:py-8">
       {/* Post Input */}
-      <h2 className="text-[32px] sm:text-[50px] font-bold text-white">Запостить</h2>
+      <h2 className="text-[32px] sm:text-[50px] font-bold text-white">{t('publications.createPost')}</h2>
       <div className="bg-black-02 rounded-2xl sm:rounded-3xl shadow-xl p-3 sm:p-4 flex flex-col gap-3 sm:gap-4">
         <div className="flex gap-2 sm:gap-3 flex-col items-start">
           <div className="flex-1 flex w-full">
             <Image
-              src="/avatar.jpg"
+              src="/images/cat.jpg"
               alt="avatar"
               width={32}
               height={32}
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
             />
             <textarea
-              className="rounded-xl text-white px-3 sm:px-4 py-2 text-sm sm:text-base outline-none bg-black-02 border border-black-02 transition resize-none min-h-[40px] w-full pl-2 sm:pl-3"
-              placeholder="Что у вас нового?"
+              ref={textareaRef}
+              className="rounded-xl text-white px-3 sm:px-4 py-2 text-sm sm:text-base outline-none bg-black-02 border border-black-02 transition resize-none min-h-[50px] w-full pl-2 sm:pl-3"
+              placeholder={t('publications.whatsNew')}
               value={post}
               onChange={e => setPost(e.target.value)}
-              maxLength={500}
-              style={{ height: post ? 'auto' : '40px' }}
             />
           </div>
 
@@ -89,8 +97,9 @@ export default function AppHomePage() {
             <button
               className="bg-gradient-to-r from-[#FF4400] to-[#FF883D] text-white font-semibold px-4 sm:px-6 py-2 rounded-xl w-full sm:w-[155px] hover:opacity-90 transition"
               disabled={!post.trim()}
+              onClick={handleCreatePost}
             >
-              Запостить
+              {t('publications.post')}
             </button>
           </div>
         </div>
@@ -100,17 +109,17 @@ export default function AppHomePage() {
       {/* Activity Feed */}
       <div className="flex flex-col gap-4 sm:gap-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <h2 className="text-[32px] sm:text-[50px] font-bold text-white">Лента активностей</h2>
+          <h2 className="text-[32px] sm:text-[50px] font-bold text-white">{t('publications.activityFeed')}</h2>
           <select className="bg-black-02 w-full sm:w-[50%] text-white h-[40px] sm:h-[50px] px-3 py-1 rounded-xl border border-black-03">
-            <option>Все</option>
-            <option>Мои</option>
+            <option>{t('publications.all')}</option>
+            <option>{t('publications.myPosts')}</option>
           </select>
         </div>
 
         {/* Loading State */}
         {isLoading && (
           <div className="text-white text-center py-4">
-            Загрузка публикаций...
+            {t('publications.loading')}
           </div>
         )}
 
@@ -127,7 +136,7 @@ export default function AppHomePage() {
               id={publication.id}
               author={{
                 name: "User", // TODO: Get user name from user data
-                avatar: "/avatar.jpg" // TODO: Get user avatar from user data
+                avatar: "/images/cat.jpg" // TODO: Get user avatar from user data
               }}
               content={publication.description}
               timestamp={new Date(publication.published_at).toLocaleString()}
@@ -140,9 +149,7 @@ export default function AppHomePage() {
 
         {/* Empty State */}
         {!isLoading && !error && publications.length === 0 && (
-          <div className="text-gray-400 text-center py-4">
-            Пока нет публикаций. Будьте первым, кто поделится чем-то интересным!
-          </div>
+          <EmptyState text={t('publications.noPosts')} />
         )}
       </div>
     </div>

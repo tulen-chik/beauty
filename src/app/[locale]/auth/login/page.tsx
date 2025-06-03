@@ -26,6 +26,11 @@ export default function LoginPage() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    clearError();
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
   return (
     <div className="bg-black-02 rounded-3xl shadow-xl p-10 w-full max-w-md flex flex-col gap-6 relative">
       <div className="flex flex-col gap-4">
@@ -52,23 +57,28 @@ export default function LoginPage() {
         <div className="flex flex-col gap-1">
           <label className="text-white font-semibold">{t('email')}</label>
           <input 
-            className="auth-input" 
+            className={`auth-input ${error?.field === 'email' ? 'border-red-500' : ''}`}
             placeholder={t('email')} 
             type="email" 
+            name="email"
             value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            onChange={handleInputChange}
             required
           />
+          {error?.field === 'email' && (
+            <p className="text-red-500 text-sm mt-1">{error.message}</p>
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-white font-semibold">{t('password')}</label>
           <div className="relative">
             <input
-              className="auth-input w-full"
+              className={`auth-input w-full ${error?.field === 'password' ? 'border-red-500' : ''}`}
               placeholder={t('password')}
               type={showPassword ? 'text' : 'password'}
+              name="password"
               value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+              onChange={handleInputChange}
               required
             />
             <button
@@ -90,24 +100,27 @@ export default function LoginPage() {
               )}
             </button>
           </div>
+          {error?.field === 'password' && (
+            <p className="text-red-500 text-sm mt-1">{error.message}</p>
+          )}
         </div>
         <Link href="/auth/forgot-password" className="flex justify-end text-gray text-base underline">
           {t('forgotPassword')}
         </Link>
-        {error && (
-          <>
-            <p>{error.message}</p>
+        {error && !error.field && (
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-500 text-sm">
+            {error.message}
             {error.validationErrors?.map((err, index) => (
-              <p key={index}>{err.field}: {err.message}</p>
+              <p key={index} className="mt-1">{err.message}</p>
             ))}
-          </>
+          </div>
         )}
         <button
           type="submit"
-          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition"
+          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
-          {isLoading ? 'Loading...' : t('signIn')}
+          {isLoading ? t('loading') : t('signIn')}
         </button>
       </form>
     </div>

@@ -1,4 +1,6 @@
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 
 export interface CommentProps {
   id: string;
@@ -13,10 +15,17 @@ export interface CommentProps {
 }
 
 export default function Comment({ author, content, timestamp, likes, dislikes }: CommentProps) {
+  const t = useTranslations('publications');
+  
   return (
-    <div className="flex gap-2 sm:gap-3">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="flex gap-2 sm:gap-3"
+    >
       <Image 
-        src={author.avatar} 
+        src={author.avatar || "/images/cat.jpg"} 
         alt="avatar" 
         width={28} 
         height={28} 
@@ -41,9 +50,11 @@ export default function Comment({ author, content, timestamp, likes, dislikes }:
             </svg>
             {dislikes}
           </button>
-          <button className="text-accent text-xs">Ответить</button>
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="text-accent text-xs">
+            {t('reply')}
+          </motion.button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

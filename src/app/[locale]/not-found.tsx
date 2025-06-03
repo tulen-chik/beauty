@@ -1,9 +1,9 @@
 'use client';
-
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function NotFound() {
+  const t = useTranslations('common');
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-black-01 p-4">
@@ -20,14 +20,16 @@ export default function NotFound() {
               </defs>
             </svg>
           </div>
+          <h1 className="text-2xl font-bold text-white text-center">{t('notFoundTitle')}</h1>
+          <p className="text-gray-400 text-center">{t('notFoundDescription')}</p>
         </div>
 
         <div className="flex flex-col gap-4 mt-4">
           <Link 
-            href="/"
+            href="/app"
             className="w-full py-3 rounded-xl text-lg text-center text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition"
           >
-            {"backToHome"}
+            {t('backToHome')}
           </Link>
         </div>
       </div>

@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect,useRef } from 'react';
+import { motion } from 'framer-motion';
 
 const SUGGESTIONS = ['Чаты', 'Чат'];
 
@@ -78,8 +79,13 @@ export default function SearchBox({ query, setQuery, onClose, isMobile }: Search
           </svg>
         </button>
       </div>
-      <div className={`absolute left-0 top-full w-full bg-black-02 rounded-b-2xl shadow-lg z-50 flex flex-col gap-0 animate-fade-in
-        ${isMobile ? 'max-h-[300px] overflow-y-auto' : ''}`}>
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        ref={boxRef}
+        className={`absolute left-0 top-full w-full bg-black-02 rounded-b-2xl shadow-lg z-50 flex flex-col gap-0 animate-fade-in ${isMobile ? 'max-h-[300px] overflow-y-auto' : ''}`}
+      >
         {filtered.length === 0 ? (
           <div className="text-[#8B8B99] px-4 py-3 text-sm sm:text-base">Нет результатов</div>
         ) : (
@@ -96,7 +102,7 @@ export default function SearchBox({ query, setQuery, onClose, isMobile }: Search
             </button>
           ))
         )}
-      </div>
+      </motion.div>
     </div>
   );
 } 

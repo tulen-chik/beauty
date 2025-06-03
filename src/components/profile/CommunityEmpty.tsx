@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 const SadSmile = () => (
   <svg width="80" height="81" viewBox="0 0 80 81" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,7 +16,12 @@ const SadSmile = () => (
 
 export default function CommunityEmpty() {
   return (
-    <div className="bg-black-02 rounded-xl p-0 overflow-hidden min-h-[240px] flex flex-col">
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="bg-black-02 rounded-xl p-0 overflow-hidden min-h-[240px] flex flex-col"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-black-01">
         <div className="flex items-center gap-3">
@@ -24,11 +30,12 @@ export default function CommunityEmpty() {
         </div>
         <div className="flex items-center gap-2">
           <Image
-            src="/avatar2.jpg"
-            alt="user"
+            src="/images/cat.jpg"
+            alt="empty state"
             width={32}
             height={32}
             className="rounded-full"
+            loading="lazy"
           />
           <div className="ml-2 text-right">
             <div className="text-white text-base font-semibold">1 участник</div>
@@ -41,6 +48,6 @@ export default function CommunityEmpty() {
         <SadSmile />
         <div className="text-white text-lg mt-4">Здесь пока нет сообщений!</div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

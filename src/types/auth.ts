@@ -15,13 +15,19 @@ export interface PasswordResetRequest {
 
 export interface AuthResponse {
   access_token: string;
+  refresh_token: {
+    refresh_token: string;
+  };
   token_type: string;
   user_id: string;
 }
 
 export interface User {
   id: string;
+  role: string;
   email: string;
+  is_banned: boolean;
+  exp: number;
 }
 
 export interface ValidationError {
@@ -40,6 +46,7 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitialized: boolean;
   error: AuthError | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;

@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 interface ModalSocialLinkProps {
   open: boolean;
@@ -56,7 +57,12 @@ export const ModalSocialLink: React.FC<ModalSocialLinkProps> = ({ open, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70">
-      <div className="bg-black-02 rounded-2xl p-6 w-full max-w-md relative shadow-xl border border-black-03">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="bg-black-02 rounded-2xl p-6 w-full max-w-md relative shadow-xl border border-black-03"
+      >
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">×</button>
         <div className="flex flex-col items-center gap-2 mb-4">
           <span className="text-3xl font-bold text-white">Привязка соцсетей</span>
@@ -92,7 +98,7 @@ export const ModalSocialLink: React.FC<ModalSocialLinkProps> = ({ open, onClose,
             Продолжить
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

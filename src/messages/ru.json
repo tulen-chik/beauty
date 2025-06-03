@@ -17,7 +17,47 @@
   },
   "home": {
     "title": "Главная страница",
-    "welcome": "Добро пожаловать в наше приложение"
+    "welcome": "Добро пожаловать в наше приложение",
+    "heroTitle": "Создавайте вирусные клипы из стримов",
+    "heroSubtitle": "Автоматизируйте создание контента с помощью ИИ для TikTok и Instagram",
+    "getStarted": "Начать",
+    "signIn": "Войти",
+    "featuresTitle": "Почему выбирают Rocket",
+    "feature1Title": "ИИ для нарезки",
+    "feature1Description": "Наш ИИ автоматически находит самые интересные моменты в ваших стримах и создает идеальные клипы",
+    "feature2Title": "Экспорт на все платформы",
+    "feature2Description": "Экспортируйте клипы напрямую в TikTok и Instagram с оптимизированными форматами и хештегами",
+    "feature3Title": "Умная аналитика",
+    "feature3Description": "Отслеживайте эффективность клипов и получайте рекомендации по улучшению контента",
+    "howItWorksTitle": "Как это работает",
+    "step1Title": "Подключите стрим",
+    "step1Description": "Подключите свой аккаунт Twitch, YouTube или другой стриминговой платформы",
+    "step2Title": "Анализ ИИ",
+    "step2Description": "Наш ИИ анализирует ваш стрим и находит вирусные моменты",
+    "step3Title": "Редактирование",
+    "step3Description": "Просмотрите и настройте предложенные клипы в удобном редакторе",
+    "step4Title": "Экспорт и публикация",
+    "step4Description": "Экспортируйте в TikTok и Instagram одним кликом",
+    "platformTitle": "Платформа для нарезки стримов",
+    "platformDescription": "Присоединяйтесь к сообществу контент-мейкеров и стримеров",
+    "platformFeature1Title": "Создавайте публикации",
+    "platformFeature1Description": "Делитесь своими работами, получайте обратную связь и общайтесь с другими создателями",
+    "platformFeature2Title": "Размещайте офферы",
+    "platformFeature2Description": "Предлагайте свои стримы для нарезки и зарабатывайте на своем контенте",
+    "platformFeature3Title": "Находите клипмейкеров",
+    "platformFeature3Description": "Связывайтесь с профессиональными клипмейкерами, которые помогут развить вашу аудиторию",
+    "blockchainTitle": "На базе блокчейна",
+    "blockchainDescription": "Безопасная, прозрачная и эффективная монетизация контента",
+    "blockchainFeature1Title": "Смарт-контракты",
+    "blockchainFeature1Description": "Автоматические платежи и распределение доходов между создателями и клипмейкерами",
+    "blockchainFeature2Title": "Права на контент",
+    "blockchainFeature2Description": "Доказывайте свое авторство и отслеживайте использование вашего контента",
+    "blockchainFeature3Title": "Прозрачные доходы",
+    "blockchainFeature3Description": "Отслеживание доходов и аналитика в реальном времени",
+    "ctaTitle": "Начните создавать вирусный контент сегодня",
+    "ctaDescription": "Присоединяйтесь к тысячам контент-мейкеров, которые уже используют Rocket для роста аудитории",
+    "startNow": "Начать сейчас",
+    "footerText": "© 2024 Rocket. Все права защищены."
   },
   "navigation": {
     "dashboard": "Панель управления",
@@ -57,6 +97,51 @@
     "verifyEmailCodeExpired": "Срок действия кода истек",
     "verifyEmailCodeResend": "Отправить код повторно через",
     "verifyEmailCodeResendNow": "Отправить код повторно",
-    "loading": "загрузка"
+    "loading": "загрузка",
+    "verificationCodeHint": "Введите 6-значный код, отправленный на вашу почту",
+    "resendCodeIn": "Отправить код повторно через 60 секунд",
+    "resendCode": "Отправить код повторно",
+    "verificationCode": "Код подтверждения"
+  },
+  "publications": {
+    "createPost": "Запостить",
+    "whatsNew": "Что у вас нового?",
+    "activityFeed": "Лента активностей",
+    "all": "Все",
+    "myPosts": "Мои",
+    "loading": "Загрузка публикаций...",
+    "noPosts": "Пока нет публикаций. Будьте первым, кто поделится чем-то интересным!",
+    "post": "Запостить",
+    "showFull": "Показать полностью",
+    "collapse": "Свернуть",
+    "enterComment": "Введите комментарий",
+    "send": "Отправить",
+    "comments": "Комментарии",
+    "reply": "Ответить"
+  },
+  "clips": {
+    "sortByNewest": "Сначала новые",
+    "yourClips": "Ваши клипы",
+    "showMore": "Показать больше",
+    "earnMoney": "Зарабатывайте деньги, вырезая для ROKY",
+    "paymentsFrom": "Выплаты с 20K просмотров",
+    "status": {
+      "checking": "Проверяется",
+      "accepted": "Принят"
+    }
+  },
+  "profile": {
+    "thisIsYou": "Это вы!",
+    "changePassword": "Сменить пароль",
+    "changeWallet": "Сменить кошелек",
+    "connectInstagram": "Привязать Instagram",
+    "connectTikTok": "Привязать TikTok",
+    "tabs": {
+      "community": "Коммьюнити",
+      "posts": "Публикации",
+      "clips": "Клипы",
+      "offers": "Предложения",
+      "reviews": "Отзывы"
+    }
   }
 }

@@ -1,7 +1,8 @@
 "use client"
 import { useTranslations } from 'next-intl';
-import React, { useState } from 'react';
-
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import SearchBox from './SearchBox';
 
 interface AppHeaderProps {
@@ -12,10 +13,25 @@ export default function AppHeader({ isMobile }: AppHeaderProps) {
   const t = useTranslations('common');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <header className={`w-full flex fixed items-center transition-all duration-300 z-30
-      ${isMobile ? 'px-4 py-3 pl-[80px] pt-[20px]' : 'px-8 py-4 pl-[140px] pt-[40px]'}`}>
+    <motion.header
+      initial={{ opacity: 0, y: -30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className={`w-full flex fixed items-center transition-all duration-300 z-30
+      ${isMobile ? 'px-4 py-3 pl-[80px] pt-[20px]' : 'px-8 py-4 pl-[140px] pt-[40px]'}
+      ${scrolled ? 'bg-black/70 backdrop-blur-md' : 'bg-transparent'}`}>
       <div className="flex items-center justify-end gap-2 sm:gap-4 w-full">
         {isSearchOpen ? (
           <SearchBox
@@ -33,7 +49,7 @@ export default function AppHeader({ isMobile }: AppHeaderProps) {
             onClick={() => setIsSearchOpen(true)}
             aria-label={t('search')}
           >
-            <svg className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg onClick={() => router.push('/app/notifications')} className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="11" cy="11" r="7" stroke="#8B8B99" strokeWidth="2" />
               <path d="M20 20L17 17" stroke="#8B8B99" strokeWidth="2" strokeLinecap="round" />
             </svg>
@@ -51,11 +67,11 @@ export default function AppHeader({ isMobile }: AppHeaderProps) {
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1 sm:gap-2">
             <span className={`text-white font-semibold ${isMobile ? 'hidden' : 'text-base'}`}>{t('username')}</span>
-            <img src="/avatar.jpg" alt="avatar" className={`rounded-full object-cover border-2 border-accent
+            <img src="/images/cat.jpg" alt="avatar" className={`rounded-full object-cover border-2 border-accent
               ${isMobile ? 'w-8 h-8' : 'w-10 h-10'}`} />
           </div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 } 

@@ -9,13 +9,12 @@ interface AppSidebarProps {
 }
 
 const menu = [
-  { href: '/app/add', icon: 'plus', label: 'Добавить' },
-  { href: '/app/', icon: 'home', label: 'Главная' },
-  { href: '/app/grid', icon: 'grid', label: 'Категории' },
-  { href: '/app/profile', icon: 'user', label: 'Профиль' },
-  { href: '/app/chat', icon: 'chat', label: 'Чаты' },
-  { href: '/app/stats', icon: 'stats', label: 'Статистика' },
-  { href: '/app/rating', icon: 'rating', label: 'Рейтинг' },
+    { href: '/app/', icon: 'home', label: 'Главная' },
+    { href: '/app/chat', icon: 'chat', label: 'Чаты' },
+    { href: '/app/offers', icon: 'user', label: 'Предложения' },
+    { href: '/app/stats', icon: 'stats', label: 'Статистика' },
+    { href: '/app/rating', icon: 'rating', label: 'Рейтинг' },
+    { href: '/app/profile', icon: 'grid', label: 'Профиль' },
 ];
 
 const icons: Record<string, React.ReactNode> = {
@@ -42,9 +41,9 @@ const icons: Record<string, React.ReactNode> = {
     </svg>
   ),
   user: (
-    <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M25.5664 14.0146C31.3783 14.3094 36 19.1148 36 25V30.5C36 32.2084 35.9998 33.0625 35.7207 33.7363C35.3486 34.6348 34.6348 35.3486 33.7363 35.7207C33.0625 35.9998 32.2084 36 30.5 36H25L24.4336 35.9854C18.8093 35.7001 14.2999 31.1907 14.0146 25.5664L14 25C14 18.9249 18.9249 14 25 14L25.5664 14.0146ZM25 27.4443C24.325 27.4443 23.7773 27.992 23.7773 28.667C23.7776 29.3418 24.3251 29.8896 25 29.8896H28.667L28.792 29.8828C29.408 29.8201 29.8884 29.2995 29.8887 28.667C29.8887 28.0343 29.4081 27.514 28.792 27.4512L28.667 27.4443H25ZM21.334 22.5557C20.659 22.5557 20.1113 23.1033 20.1113 23.7783C20.1116 24.4531 20.6591 25.001 21.334 25.001L28.667 25L28.792 24.9932C29.4084 24.9307 29.8896 24.4102 29.8896 23.7773C29.8894 23.1446 29.4083 22.624 28.792 22.5615L28.667 22.5547L21.334 22.5557Z" fill="#585A68" />
-    </svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="none" viewBox="0 0 16 16">
+  <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5z"/>
+</svg>
   ),
   chat: (
     <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -68,6 +67,8 @@ export default function AppSidebar({ isMobile }: AppSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 88 }); // Initial position
+  const [isDragging, setIsDragging] = useState(false);
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -94,6 +95,52 @@ export default function AppSidebar({ isMobile }: AppSidebarProps) {
       setIsCollapsed(false);
     }
   }, [touchStart, touchEnd, isCollapsed]);
+
+  // Drag handlers for burger button
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsDragging(true);
+    if ('touches' in e) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDrag = (e: MouseEvent | TouchEvent) => {
+    if (!isDragging) return;
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+    // Calculate new position
+    let newX = clientX - 28; // Half of button width
+    let newY = clientY - 28; // Half of button height
+
+    // Constrain to viewport bounds
+    newX = Math.max(0, Math.min(newX, window.innerWidth - 56));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - 56));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Add and remove event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleDrag);
+      window.addEventListener('touchmove', handleDrag);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchend', handleDragEnd);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('touchmove', handleDrag);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging]);
 
   // Close menu on click outside
   useEffect(() => {
@@ -137,7 +184,7 @@ export default function AppSidebar({ isMobile }: AppSidebarProps) {
         onTouchEnd={onTouchEnd}
       >
         <div className="mb-4 flex items-center justify-between w-full px-2 sm:px-0">
-          <svg className={`${isMobile ? 'w-12 h-12' : 'w-[60px] h-[61px]'}`} viewBox="0 0 60 61" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg className={`${isMobile ? 'w-12 h-12' : 'w-[60px] h-[61px]'} pb-4`} viewBox="0 0 60 61" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M30 0.5C46.5686 0.5 60 13.9315 60 30.5C60 47.0684 47.7325 60.4999 31.1641 60.5C18.4884 60.5 11.9001 46.2838 24.9932 38.5029L27.9277 41.5762L31.499 40.4912L37.0068 46.1201C38.5644 45.2962 41.4978 41.9749 40.7686 35.2822C40.3253 35.7259 38.9519 36.7723 37.0068 37.4111C40.8058 34.4069 47.7052 25.8125 44.9092 15.4688C40.4643 14.2138 29.8877 14.1378 23.1406 23.873C23.1913 23.1377 23.6652 21.2186 25.1543 19.4238C22.9002 19.0689 17.6022 19.3632 14.4414 23.3789L20.2158 29.1973L19.3037 32.5439L21.8848 35.2471C15.6669 48.8453 3.95871e-05 42.0224 0 30.5C0 13.9315 13.4315 0.500005 30 0.5ZM36.8174 20.5078C38.5587 20.5079 39.9707 21.9219 39.9707 23.665C39.9705 25.408 38.5586 26.8212 36.8174 26.8213C35.0761 26.8213 33.6643 25.4081 33.6641 23.665C33.6641 21.9218 35.076 20.5078 36.8174 20.5078Z" fill="url(#paint0_linear_4_835)" />
             <defs>
               <linearGradient id="paint0_linear_4_835" x1="9.07143" y1="31.25" x2="54.4922" y2="21.0434" gradientUnits="userSpaceOnUse">
@@ -202,8 +249,15 @@ export default function AppSidebar({ isMobile }: AppSidebarProps) {
       {/* Mobile Menu Button */}
       <button 
         id="burger-button"
-        className="fixed bottom-6 left-6 sm:hidden w-14 h-14 flex items-center justify-center rounded-full bg-accent shadow-lg z-20 transition-transform duration-300"
-        onClick={() => setIsCollapsed(false)}
+        className="fixed sm:hidden w-14 h-14 flex items-center justify-center rounded-full bg-accent shadow-lg z-20 transition-transform duration-300 cursor-move"
+        onClick={() => !isDragging && setIsCollapsed(false)}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          transform: isDragging ? 'scale(1.1)' : 'scale(1)',
+        }}
         aria-label="Open menu"
       >
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

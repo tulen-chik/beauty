@@ -17,7 +17,47 @@
   },
   "home": {
     "title": "Home page",
-    "welcome": "Welcome to our application"
+    "welcome": "Welcome to our application",
+    "heroTitle": "Create Viral Clips from Streams",
+    "heroSubtitle": "Automate your content creation with AI-powered stream clipping for TikTok and Instagram",
+    "getStarted": "Get Started",
+    "signIn": "Sign In",
+    "featuresTitle": "Why Choose Rocket",
+    "feature1Title": "AI-Powered Clipping",
+    "feature1Description": "Our AI automatically detects the most engaging moments in your streams and creates perfect clips",
+    "feature2Title": "Multi-Platform Export",
+    "feature2Description": "Export your clips directly to TikTok and Instagram with optimized formats and hashtags",
+    "feature3Title": "Smart Analytics",
+    "feature3Description": "Track your clip performance and get insights to improve your content strategy",
+    "howItWorksTitle": "How It Works",
+    "step1Title": "Connect Stream",
+    "step1Description": "Link your Twitch, YouTube, or other streaming platform account",
+    "step2Title": "AI Analysis",
+    "step2Description": "Our AI analyzes your stream and identifies viral moments",
+    "step3Title": "Edit & Customize",
+    "step3Description": "Review and customize the suggested clips with our easy editor",
+    "step4Title": "Export & Share",
+    "step4Description": "Export to TikTok and Instagram with one click",
+    "platformTitle": "Stream Clipping Platform",
+    "platformDescription": "Join our community of content creators and streamers",
+    "platformFeature1Title": "Create Publications",
+    "platformFeature1Description": "Share your work, get feedback, and connect with other creators",
+    "platformFeature2Title": "Post Stream Offers",
+    "platformFeature2Description": "Offer your streams for clipping and earn from your content",
+    "platformFeature3Title": "Find Clippers",
+    "platformFeature3Description": "Connect with professional clippers who can help grow your audience",
+    "blockchainTitle": "Powered by Blockchain",
+    "blockchainDescription": "Secure, transparent, and efficient content monetization",
+    "blockchainFeature1Title": "Smart Contracts",
+    "blockchainFeature1Description": "Automated payments and revenue sharing between creators and clippers",
+    "blockchainFeature2Title": "Content Ownership",
+    "blockchainFeature2Description": "Prove your ownership and track usage of your content",
+    "blockchainFeature3Title": "Transparent Earnings",
+    "blockchainFeature3Description": "Real-time tracking of your earnings and analytics",
+    "ctaTitle": "Start Creating Viral Content Today",
+    "ctaDescription": "Join thousands of content creators who are already using Rocket to grow their audience",
+    "startNow": "Start Now",
+    "footerText": "© 2024 Rocket. All rights reserved."
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -58,6 +98,51 @@
     "verifyEmailCodeExpired": "Verification code has expired",
     "verifyEmailCodeResend": "Resend code in",
     "verifyEmailCodeResendNow": "Resend code now",
-    "loading": "loading"
+    "loading": "loading",
+    "verificationCodeHint": "Enter the 6-digit code sent to your email",
+    "resendCodeIn": "Resend code in 60 seconds",
+    "resendCode": "Resend code",
+    "verificationCode": "Verification code"
+  },
+  "publications": {
+    "createPost": "Create Post",
+    "whatsNew": "What's new?",
+    "activityFeed": "Activity Feed",
+    "all": "All",
+    "myPosts": "My Posts",
+    "loading": "Loading publications...",
+    "noPosts": "No publications yet. Be the first to share something interesting!",
+    "post": "Post",
+    "showFull": "Show full",
+    "collapse": "Collapse",
+    "enterComment": "Enter comment",
+    "send": "Send",
+    "comments": "Comments",
+    "reply": "Reply"
+  },
+  "clips": {
+    "sortByNewest": "Newest first",
+    "yourClips": "Your clips",
+    "showMore": "Show more",
+    "earnMoney": "Earn money by clipping for ROKY",
+    "paymentsFrom": "Payments from 20K views",
+    "status": {
+      "checking": "Checking",
+      "accepted": "Accepted"
+    }
+  },
+  "profile": {
+    "thisIsYou": "This is you!",
+    "changePassword": "Change password",
+    "changeWallet": "Change wallet",
+    "connectInstagram": "Connect Instagram",
+    "connectTikTok": "Connect TikTok",
+    "tabs": {
+      "community": "Community",
+      "posts": "Posts",
+      "clips": "Clips",
+      "offers": "Offers",
+      "reviews": "Reviews"
+    }
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -9,8 +10,9 @@ import { SignupFormData } from '@/lib/validations/auth';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterPage() {
-  const { signup, isLoading, error } = useAuth();
+  const { signup, isLoading, error, clearError } = useAuth();
   const t = useTranslations('auth');
+  const router = useRouter();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<SignupFormData>({
@@ -22,9 +24,19 @@ export default function RegisterPage() {
     e.preventDefault();
     try {
       await signup(formData);
+      // After successful signup, redirect to verify-email with email parameter
+      router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error) {
       // Errors are handled in the context
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    clearError();
+    if (e.target.name === 'password') {
+      setPassword(e.target.value);
+    }
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   return (
@@ -53,23 +65,28 @@ export default function RegisterPage() {
         <div className="flex flex-col gap-1">
           <label className="text-white font-semibold">{t('email')}</label>
           <input 
-            className="auth-input" 
+            className={`auth-input ${error?.field === 'email' ? 'border-red-500' : ''}`}
             placeholder={t('email')} 
             type="email" 
+            name="email"
             value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            onChange={handleInputChange}
             required
           />
+          {error?.field === 'email' && (
+            <p className="text-red-500 text-sm mt-1">{error.message}</p>
+          )}
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-white font-semibold">{t('password')}</label>
           <div className="relative">
             <input
-              className="auth-input w-full"
+              className={`auth-input w-full ${error?.field === 'password' ? 'border-red-500' : ''}`}
               placeholder={t('password')}
               type={showPassword ? 'text' : 'password'}
+              name="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleInputChange}
               required
             />
             <button
@@ -91,31 +108,31 @@ export default function RegisterPage() {
               )}
             </button>
           </div>
+          {error?.field === 'password' && (
+            <p className="text-red-500 text-sm mt-1">{error.message}</p>
+          )}
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-white font-semibold">{t('confirmPassword')}</label>
-          <div className="relative">
-            <input
-              className="auth-input w-full"
-              placeholder={t('confirmPassword')}
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              required
-            />
+        {error && !error.field && (
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-500 text-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p>{error.message}</p>
+                {error.validationErrors?.map((err, index) => (
+                  <p key={index} className="mt-1">{err.message}</p>
+                ))}
+              </div>
+              <button 
+                onClick={clearError} 
+                className="text-red-500 hover:text-red-400 transition-colors"
+              >
+                ×
+              </button>
+            </div>
           </div>
-        </div>
-        {error && (
-          <>
-            <p>{error.message}</p>
-            {error.validationErrors?.map((err, index) => (
-              <p key={index}>{err.field}: {err.message}</p>
-            ))}
-          </>
         )}
         <button
           type="submit"
-          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition"
+          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
           {isLoading ? t('loading') : t('signUp')}

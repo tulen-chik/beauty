@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
+import { motion } from 'framer-motion';
 
 interface ErrorDisplayProps {
   error: {
@@ -19,7 +20,12 @@ export default function ErrorDisplay({ error, onClear, className = '' }: ErrorDi
   if (!error) return null;
 
   return (
-    <div className={`bg-black-02 rounded-xl p-4 border border-red-500/20 text-white ${className}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={`bg-black-02 rounded-xl p-4 border border-red-500/20 text-white ${className}`}
+    >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-5 h-5 mt-0.5">
           <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -57,6 +63,6 @@ export default function ErrorDisplay({ error, onClear, className = '' }: ErrorDi
           </button>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 } 

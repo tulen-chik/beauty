@@ -6,7 +6,6 @@ import {
   VerificationCodeRequest} from '@/types/auth';
 import { axiosInstance } from './axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://147.45.231.110';
 
 export const authApi = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {

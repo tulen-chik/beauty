@@ -2,13 +2,16 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { useState } from "react";
+import { motion } from "framer-motion";
 
 const clips = [
   {
     id: 1,
-    preview: "/clip1.jpg",
-    avatar: "/avatar1.jpg",
-    user: "Zhliuk",
+    preview: "/images/cat.jpg",
+    avatar: "/images/cat.jpg",
+    user: "Heilen",
     title: "Зарабатывайте деньги, вырезая для ROKY",
     deadline: "до 10.05.25",
     sent: "Отправлен 11.05.25",
@@ -23,9 +26,9 @@ const clips = [
   },
   {
     id: 2,
-    preview: "/clip2.jpg",
-    avatar: "/avatar2.jpg",
-    user: "Heilen",
+    preview: "/images/cat.jpg",
+    avatar: "/images/cat.jpg",
+    user: "Zhliuk",
     title: "Зарабатывайте деньги, вырезая для ROKY",
     deadline: "до 10.05.25",
     sent: "Отправлен 11.05.25",
@@ -38,13 +41,12 @@ const clips = [
     reward: "$43,8",
     socials: ["instagram", "tiktok"],
   },
-  // ...ещё клипы
 ];
 
 function SocialIcon({ type }: { type: string }) {
   if (type === "instagram")
     return (
-      <svg width="20" height="20" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="9" fill="url(#ig)"/><path d="M15.0041 18.0463C15.0041 16.3881 16.3476 15.0434 18.0054 15.0434C19.6632 15.0434 21.0074 16.3881 21.0074 18.0463C21.0074 19.7046 19.6632 21.0492 18.0054 21.0492C16.3476 21.0492 15.0041 19.7046 15.0041 18.0463ZM13.3812 18.0463C13.3812 20.601 15.4515 22.6718 18.0054 22.6718C20.5593 22.6718 22.6296 20.601 22.6296 18.0463C22.6296 15.4917 20.5593 13.4208 18.0054 13.4208C15.4515 13.4208 13.3812 15.4917 13.3812 18.0463ZM21.732 13.2374C21.7319 13.4512 21.7952 13.6602 21.9139 13.838C22.0325 14.0159 22.2013 14.1545 22.3987 14.2364C22.5961 14.3183 22.8134 14.3398 23.023 14.2981C23.2327 14.2565 23.4253 14.1536 23.5765 14.0025C23.7276 13.8514 23.8306 13.6588 23.8724 13.4492C23.9142 13.2395 23.8929 13.0221 23.8112 12.8246C23.7295 12.627 23.591 12.4582 23.4134 12.3393C23.2357 12.2205 23.0268 12.157 22.8131 12.1569H22.8126C22.5261 12.157 22.2514 12.2709 22.0488 12.4735C21.8462 12.6761 21.7322 12.9509 21.732 13.2374ZM14.3672 25.3786C13.4892 25.3386 13.012 25.1923 12.6949 25.0688C12.2744 24.905 11.9744 24.71 11.659 24.395C11.3436 24.0799 11.1484 23.7801 10.9854 23.3595C10.8618 23.0425 10.7156 22.565 10.6757 21.6867C10.632 20.7372 10.6233 20.452 10.6233 18.0464C10.6233 15.6408 10.6327 15.3564 10.6757 14.4061C10.7156 13.5278 10.863 13.0513 10.9854 12.7333C11.1491 12.3127 11.3441 12.0126 11.659 11.6971C11.974 11.3816 12.2737 11.1863 12.6949 11.0233C13.0119 10.8997 13.4892 10.7534 14.3672 10.7135C15.3165 10.6698 15.6016 10.6611 18.0054 10.6611C20.4092 10.6611 20.6946 10.6705 21.6447 10.7135C22.5227 10.7535 22.9991 10.9008 23.317 11.0233C23.7374 11.1863 24.0374 11.3821 24.3528 11.6971C24.6682 12.0122 24.8628 12.3127 25.0264 12.7333C25.1501 13.0503 25.2963 13.5278 25.3362 14.4061C25.3799 15.3564 25.3886 15.6408 25.3886 18.0464C25.3886 20.452 25.3799 20.7364 25.3362 21.6867C25.2962 22.565 25.1493 23.0423 25.0264 23.3595C24.8628 23.7801 24.6678 24.0802 24.3528 24.395C24.0379 24.7097 23.7374 24.905 23.317 25.0688C23 25.1924 22.5227 25.3387 21.6447 25.3786C20.6954 25.4223 20.4103 25.431 18.0054 25.431C15.6005 25.431 15.3162 25.4223 14.3672 25.3786ZM14.2927 9.09288C13.334 9.13655 12.6789 9.28861 12.1068 9.51129C11.5143 9.74124 11.0127 10.0497 10.5115 10.5503C10.0103 11.0509 9.70271 11.5534 9.47282 12.146C9.25021 12.7186 9.09819 13.3736 9.05454 14.3325C9.01016 15.293 9 15.6 9 18.0463C9 20.4926 9.01016 20.7997 9.05454 21.7601C9.09819 22.7192 9.25021 23.374 9.47282 23.9466C9.70271 24.5389 10.0104 25.042 10.5115 25.5424C11.0127 26.0427 11.5143 26.3508 12.1068 26.5814C12.68 26.8041 13.334 26.9561 14.2927 26.9998C15.2533 27.0434 15.5598 27.0543 18.0054 27.0543C20.451 27.0543 20.758 27.0442 21.7181 26.9998C22.6769 26.9561 23.3316 26.8041 23.904 26.5814C24.4961 26.3508 24.9981 26.0429 25.4993 25.5424C26.0005 25.0418 26.3074 24.5389 26.538 23.9466C26.7606 23.374 26.9133 22.7191 26.9563 21.7601C26.9999 20.799 27.0101 20.4926 27.0101 18.0463C27.0101 15.6 26.9999 15.293 26.9563 14.3325C26.9126 13.3735 26.7606 12.7183 26.538 12.146C26.3074 11.5537 25.9997 11.0517 25.4993 10.5503C24.9988 10.049 24.4961 9.74124 23.9047 9.51129C23.3316 9.28861 22.6768 9.13583 21.7189 9.09288C20.7587 9.04921 20.4517 9.03833 18.0061 9.03833C15.5605 9.03833 15.2533 9.04849 14.2927 9.09288Z" fill="white"/><defs><linearGradient id="ig" x1="35.3081" y1="36" x2="-0.691919" y2="0" gradientUnits="userSpaceOnUse"><stop stopColor="#FBE18A"/><stop offset="0.21" stopColor="#FCBB45"/><stop offset="0.38" stopColor="#F75274"/><stop offset="0.52" stopColor="#D53692"/><stop offset="0.74" stopColor="#8F39CE"/><stop offset="1" stopColor="#5B4FE9"/></linearGradient></defs></svg>
+      <svg width="20" height="20" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="9" fill="url(#ig)"/><path d="M15.0041 18.0463C15.0041 16.3881 16.3476 15.0434 18.0054 15.0434C19.6632 15.0434 21.0074 16.3881 21.0074 18.0463C21.0074 19.7046 19.6632 21.0492 18.0054 21.0492C16.3476 21.0492 15.0041 19.7046 15.0041 18.0463ZM13.3812 18.0463C13.3812 20.601 15.4515 22.6718 18.0054 22.6718C20.5593 22.6718 22.6296 20.601 22.6296 18.0463C22.6296 15.4917 20.5593 13.4208 18.0054 13.4208C15.4515 13.4208 13.3812 15.4917 13.3812 18.0463ZM21.732 13.2374C21.7319 13.4512 21.7952 13.6602 21.9139 13.838C22.0325 14.0159 22.2013 14.1545 22.3987 14.2364C22.5961 14.3183 22.8134 14.3398 23.023 14.2981C23.2327 14.2565 23.4253 14.1536 23.5765 14.0025C23.7276 13.8514 23.8306 13.6588 23.8724 13.4492C23.9142 13.2395 23.8929 13.0221 23.8112 12.8246C23.7295 12.627 23.591 12.4582 23.4134 12.3393C23.2357 12.2205 23.0268 12.157 22.8131 12.1569H22.8126C22.5261 12.157 22.2514 12.2709 22.0488 12.4735C21.8462 12.6761 21.7322 12.9509 21.732 13.2374Z" fill="white"/><defs><linearGradient id="ig" x1="35.3081" y1="36" x2="-0.691919" y2="0" gradientUnits="userSpaceOnUse"><stop stopColor="#FBE18A"/><stop offset="0.21" stopColor="#FCBB45"/><stop offset="0.38" stopColor="#F75274"/><stop offset="0.52" stopColor="#D53692"/><stop offset="0.74" stopColor="#8F39CE"/><stop offset="1" stopColor="#5B4FE9"/></linearGradient></defs></svg>
     );
   if (type === "tiktok")
     return (
@@ -53,70 +55,96 @@ function SocialIcon({ type }: { type: string }) {
   return null;
 }
 
-export default function ClipsContent() {
+function ClipCard({ clip }: { clip: typeof clips[0] }) {
+  const t = useTranslations('clips');
+  
   return (
-    <div className="bg-black-02 rounded-xl p-0 overflow-hidden flex flex-col">
-      {/* Сортировка */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black-01">
-        <div className="text-white text-base font-medium">Сначала новые</div>
-        <button className="text-gray-400">
-          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-        </button>
-      </div>
-      {/* Список клипов */}
-      <div className="flex flex-col gap-4 px-2 py-4 sm:px-4">
-        {clips.map((clip) => (
-          <div key={clip.id} className="bg-black-01 rounded-2xl flex flex-col sm:flex-row gap-3 sm:gap-5 p-3 sm:p-4 relative">
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="bg-black-02 rounded-2xl flex flex-col sm:flex-row gap-3 sm:gap-5 p-3 sm:p-4 relative"
+    >
             {/* Превью */}
-            <div className="relative w-full sm:w-[160px] h-[120px] flex-shrink-0 rounded-xl overflow-hidden bg-black-02 flex items-center justify-center">
-              <Image src={clip.preview} alt="preview" fill className="object-cover" />
+      <div className="relative flex-1 min-h-[120px] rounded-xl overflow-hidden bg-black-02 flex items-center justify-center">
+              <Image src={clip.preview} alt="preview" fill loading="lazy" className="object-cover" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <button className="bg-black/60 rounded-full p-2">
+          <button className="bg-black/60 rounded-full p-2 hover:scale-110 transition-transform">
                   <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#FF883D"/><polygon points="14,12 26,18 14,24" fill="white"/></svg>
                 </button>
               </div>
             </div>
             {/* Контент */}
-            <div className="flex-1 flex flex-col gap-2 min-w-0">
+      <div className="flex-[2] flex flex-col gap-2 min-w-0">
               <div className="flex items-center gap-2">
-                <Image src={clip.avatar} alt="avatar" width={32} height={32} className="rounded-full w-8 h-8" />
+                <Image src={clip.avatar} alt="avatar" width={32} height={32} loading="lazy" className="rounded-full w-8 h-8" />
                 <span className="text-white font-semibold text-base truncate">{clip.title}</span>
                 <span className="ml-auto text-gray-400 text-xs whitespace-nowrap">{clip.sent}</span>
                 {clip.socials.map((s) => <span key={s}><SocialIcon type={s} /></span>)}
               </div>
-              <div className="flex flex-wrap gap-2">
-                <div className="bg-black-02 rounded-lg px-3 py-1 text-orange-400 font-bold text-base">{clip.price}</div>
-                <div className="bg-black-02 rounded-lg px-3 py-1 text-gray-400 text-sm">{clip.minViews}</div>
+        {/* Две колонки: статистика и клипы */}
+        <div className="flex lg:flex-row md:flex-row flex-col gap-3 w-full">
+          {/* Левая колонка: цена и условия */}
+          <div className="flex flex-col gap-3 flex-1 min-w-[180px] max-w-[260px]">
+            <div className="bg-black-01 rounded-xl px-6 py-3 text-orange-400 font-bold text-[12px] text-left">{clip.price}</div>
+            <div className="bg-black-01 rounded-xl px-6 py-3 text-gray-400 text-[12px] font-semibold text-left">
+              {clip.minViews}
+            </div>
+          </div>
+          {/* Правая колонка: клипы, статус, просмотры, сумма */}
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="bg-black-01 rounded-xl px-4 py-3 flex flex-col gap-2">
+              <div className="text-gray-400 text-xs mb-1">{t('yourClips')}:</div>
+              <div className="flex items-center gap-2 mb-2">
+                <a href={clip.link} className="truncate text-white hover:underline transition-colors text-base max-w-[320px] inline-block" target="_blank" rel="noopener noreferrer">{clip.link}</a>
+                <span className={`rounded-lg px-3 py-1 text-xs font-semibold ${clip.statusColor}`}>{clip.status}</span>
               </div>
-              <div className="flex flex-wrap gap-2 items-center">
-                <div className="flex-1 min-w-0">
-                  <div className="text-gray-400 text-xs mb-1">Ваши клипы(4):</div>
-                  <div className="flex items-center gap-2">
-                    <a href={clip.link} className="truncate text-white bg-black-02 rounded-lg px-3 py-1 text-xs max-w-[180px] inline-block" target="_blank" rel="noopener noreferrer">{clip.link}</a>
-                    <span className={`rounded-lg px-3 py-1 text-xs font-semibold ${clip.statusColor}`}>{clip.status}</span>
-                  </div>
+              <div className="flex items-center gap-4 mt-1">
+                <div className="flex items-center gap-1 text-gray-400 text-xs">
+                  <svg width="16" height="16" fill="none" viewBox="0 0 20 20"><path d="M10 2C5 2 1.73 7.11 1.73 7.11a2 2 0 0 0 0 1.78S5 18 10 18s8.27-9.11 8.27-9.11a2 2 0 0 0 0-1.78S15 2 10 2zm0 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#FF883D"/></svg>
+                  {clip.views > 0 ? clip.views.toLocaleString() : null}
                 </div>
                 {clip.views > 0 && (
-                  <div className="flex flex-col items-end">
-                    <div className="text-gray-400 text-xs flex items-center gap-1">
-                      <svg width="16" height="16" fill="none" viewBox="0 0 20 20"><path d="M10 2C5 2 1.73 7.11 1.73 7.11a2 2 0 0 0 0 1.78S5 18 10 18s8.27-9.11 8.27-9.11a2 2 0 0 0 0-1.78S15 2 10 2zm0 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#FF883D"/></svg>
-                      {clip.views.toLocaleString()}
-                    </div>
-                    <div className="text-orange-400 font-bold text-base">~ {clip.reward}</div>
-                  </div>
+                  <span className="text-orange-400 font-bold text-base">~ {clip.reward}</span>
                 )}
+              </div>
+                  </div>
+          </div>
               </div>
             </div>
             {/* Дедлайн */}
             <div className="absolute top-2 left-2 bg-black-02 rounded-lg px-2 py-1 text-xs text-gray-400 font-semibold">{clip.deadline}</div>
+    </motion.div>
+  );
+}
+
+export default function ClipsContent() {
+  const t = useTranslations('clips');
+  
+  return (
+    <div className="rounded-xl p-0 overflow-hidden flex flex-col">
+      {/* Сортировка */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black-01">
+        <div className="text-white text-base font-medium">{t('sortByNewest')}</div>
+        <button className="text-gray-400">
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
           </div>
+      {/* Список клипов */}
+      <div className="flex flex-col gap-4 px-2 py-4 sm:px-4">
+        {clips.map((clip) => (
+          <ClipCard key={clip.id} clip={clip} />
         ))}
       </div>
       {/* Кнопка показать больше */}
       <div className="flex justify-end px-2 pb-4 sm:px-4">
-        <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl px-6 py-2 sm:px-8 sm:py-3 text-base sm:text-lg transition">
-          Показать больше
-        </button>
+        <motion.button
+          whileHover={{ scale: 1.07 }}
+          whileTap={{ scale: 0.97 }}
+          className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl px-6 py-2 sm:px-8 sm:py-3 text-base sm:text-lg transition"
+        >
+          {t('showMore')}
+        </motion.button>
       </div>
     </div>
   );

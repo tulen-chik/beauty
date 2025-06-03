@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChangeEvent, useEffect, useRef,useState } from 'react';
+import { ChangeEvent, useEffect, useRef, useState } from 'react';
 
 import { VerificationCodeFormData } from '@/lib/validations/auth';
 
@@ -14,7 +14,7 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const t = useTranslations('auth');
   const [code, setCode] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(26);
+  const [timer, setTimer] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const email = searchParams.get('email') || '';
@@ -26,6 +26,7 @@ export default function VerifyEmailPage() {
 
   // Фокусировка и ввод кода
   const handleChange = (e: ChangeEvent<HTMLInputElement>, idx: number) => {
+    clearError();
     const val = e.target.value.replace(/[^0-9]/g, '');
     if (!val) return;
     
@@ -50,6 +51,7 @@ export default function VerifyEmailPage() {
   // Обработка вставки
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
+    clearError();
     const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, 6);
     if (!pastedData) return;
 
@@ -78,7 +80,7 @@ export default function VerifyEmailPage() {
 
   const handleResendCode = () => {
     if (timer > 0) return;
-    setTimer(26);
+    setTimer(60);
     // TODO: Implement resend logic
     console.log('Resending verification code');
   };
@@ -126,12 +128,21 @@ export default function VerifyEmailPage() {
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {error && (
-          <div>
-            <p className="text-red-500 text-sm">{error.message}</p>
-            {error.validationErrors?.map((err, index) => (
-              <p key={index} className="text-red-500 text-sm">{err.field}: {err.message}</p>
-            ))}
-            <button onClick={clearError} className="text-red-500 text-sm">×</button>
+          <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 text-red-500 text-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <p>{error.message}</p>
+                {error.validationErrors?.map((err, index) => (
+                  <p key={index} className="mt-1">{err.message}</p>
+                ))}
+              </div>
+              <button 
+                onClick={clearError} 
+                className="text-red-500 hover:text-red-400 transition-colors"
+              >
+                ×
+              </button>
+            </div>
           </div>
         )}
         <div className="flex flex-col gap-1">
@@ -150,7 +161,9 @@ export default function VerifyEmailPage() {
                 value={digit}
                 onChange={(e) => handleChange(e, idx)}
                 onKeyDown={(e) => handleKeyDown(e, idx)}
-                className="w-12 h-12 text-center text-xl font-semibold bg-black-03 rounded-xl border border-gray-700 focus:border-accent focus:outline-none"
+                className={`w-12 h-12 text-center text-xl font-semibold bg-black-03 rounded-xl border ${
+                  error?.field === 'code' ? 'border-red-500' : 'border-gray-700'
+                } focus:border-accent focus:outline-none`}
               />
             ))}
           </div>
@@ -175,7 +188,7 @@ export default function VerifyEmailPage() {
 
         <button
           type="submit"
-          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition"
+          className="w-full mt-4 py-1 rounded-xl text-lg text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={isLoading}
         >
           {isLoading ? t('loading') : t('verifyEmail')}
