@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle } from "lucide-react"
+import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2 } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
 import { getAllSalons, getAllSalonServices, appointmentOperations, userOperations } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
@@ -119,6 +119,41 @@ export default function ProfilePage() {
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{t('title')}</h1>
           <div className="text-sm sm:text-base text-gray-600 mt-1">{currentUser.displayName} • {currentUser.email}</div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="bg-white border border-gray-200 rounded-2xl mb-4 sm:mb-6">
+          <div className="p-3 sm:p-4 border-b border-gray-200">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('quickActions.title')}</h2>
+          </div>
+          <div className="p-3 sm:p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Link 
+                href="/salons" 
+                className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <div className="p-2 bg-rose-100 rounded-lg group-hover:bg-rose-200 transition-colors">
+                  <Building2 className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900">{t('quickActions.mySalons')}</div>
+                  <div className="text-sm text-gray-600">{t('quickActions.mySalonsDesc')}</div>
+                </div>
+              </Link>
+              <Link 
+                href="/search" 
+                className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                  <Scissors className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900">{t('quickActions.findServices')}</div>
+                  <div className="text-sm text-gray-600">{t('quickActions.findServicesDesc')}</div>
+                </div>
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Account settings */}

@@ -11,6 +11,7 @@ import { useAppointment } from "@/contexts/AppointmentContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
+import { useTranslations } from "next-intl"
 
 type Service = {
   id: string
@@ -32,12 +33,14 @@ export default function BookServicePage() {
   const router = useRouter()
   const { serviceId } = params
   const { currentUser } = useUser()
+  const t = useTranslations('booking')
   
   // Contexts
   const { fetchSalon } = useSalon()
   const { isTimeSlotAvailable, createAppointment } = useAppointment()
   const { getSchedule } = useSalonSchedule()
   const { getService } = useSalonService()
+  const { getUserById } = useUser()
 
   // Debug: Log when context functions change
   useEffect(() => {
@@ -120,11 +123,18 @@ export default function BookServicePage() {
   const [customerPhone, setCustomerPhone] = useState("")
   const [notes, setNotes] = useState("")
 
+  // Auto-fill customer info when user is logged in
+  useEffect(() => {
+    if (currentUser) {
+      setCustomerName(currentUser.displayName || "")
+      // setCustomerPhone(currentUser..phoneNumber || "")
+    }
+  }, [currentUser])
+
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([])
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false)
-  const [timeInterval, setTimeInterval] = useState(30) // 30 minutes default
 
   // Debug: Log when selectedTime changes
   useEffect(() => {
@@ -190,10 +200,7 @@ export default function BookServicePage() {
     console.log(`📅 Current month changed to: ${currentMonth.toDateString()}`)
   }, [currentMonth])
 
-  // Debug: Log when timeInterval changes
-  useEffect(() => {
-    console.log(`⏰ Time interval changed:`, timeInterval)
-  }, [timeInterval])
+
 
   // Debug: Log when selectedDate changes
   useEffect(() => {
@@ -423,79 +430,75 @@ export default function BookServicePage() {
       console.log(`🕐 Day schedule times:`, daySchedule.times)
       const slots: TimeSlot[] = []
       
-      // Generate slots for each time range with 30-minute intervals
-      for (const timeRange of daySchedule.times) {
-        console.log(`🕐 Processing time range: ${timeRange.start} - ${timeRange.end}`)
-        
-        const [startHour, startMinute] = timeRange.start.split(':').map(Number)
-        const [endHour, endMinute] = timeRange.end.split(':').map(Number)
-        
-        console.log(`🕐 Start: ${startHour}:${startMinute}, End: ${endHour}:${endMinute}`)
-        
-        let currentHour = startHour
-        let currentMinute = startMinute
-        
-        while (currentHour < endHour || (currentHour === endHour && currentMinute < endMinute)) {
-          const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`
+              // Generate slots for each time range with hourly intervals only
+        for (const timeRange of daySchedule.times) {
+          console.log(`🕐 Processing time range: ${timeRange.start} - ${timeRange.end}`)
           
-          console.log(`🕐 Generating slot for: ${timeString}`)
+          const [startHour, startMinute] = timeRange.start.split(':').map(Number)
+          const [endHour, endMinute] = timeRange.end.split(':').map(Number)
           
-          // Check if this slot is available
-          const slotDate = new Date(selectedDate)
-          slotDate.setHours(currentHour, currentMinute, 0, 0)
+          console.log(`🕐 Start: ${startHour}:${startMinute}, End: ${endHour}:${endMinute}`)
           
-          // Check if slot is in the past
-          const now = new Date()
-          if (slotDate <= now) {
-            console.log(`🕐 Slot ${timeString} is in the past`)
-            slots.push({
-              time: timeString,
-              available: false,
-              reason: 'Время прошло'
-            })
-          } else {
-            console.log(`🕐 Checking availability for slot ${timeString} at ${slotDate.toISOString()}`)
-            // Check availability using appointment context
-            const availableCheck = await isTimeSlotAvailable(
-              service.salonId,
-              slotDate.toISOString(),
-              service.durationMinutes,
-              employeeId || undefined // Pass employeeId if selected
-            )
+          let currentHour = startHour
+          
+          // Only generate slots for full hours
+          while (currentHour < endHour) {
+            const timeString = `${currentHour.toString().padStart(2, '0')}:00`
             
-            console.log(`🕐 Slot ${timeString} availability check result:`, availableCheck)
+            console.log(`🕐 Generating slot for: ${timeString}`)
             
-            // Если слот недоступен, попробуем понять почему
-            if (!availableCheck) {
-              console.log(`🕐 Slot ${timeString} is not available, checking why...`)
-              try {
-                // Попробуем получить записи на этот день для отладки
-                // const dayAppointments = await appointmentOperations.listByDay(service.salonId, selectedDate)
-                // console.log(`🕐 Day appointments for debugging:`, dayAppointments)
-              } catch (e) {
-                console.log(`🕐 Could not fetch day appointments for debugging:`, e)
+            // Check if this slot is available
+            const slotDate = new Date(selectedDate)
+            slotDate.setHours(currentHour, 0, 0, 0)
+            
+            // Check if slot is in the past
+            const now = new Date()
+            if (slotDate <= now) {
+              console.log(`🕐 Slot ${timeString} is in the past`)
+              slots.push({
+                time: timeString,
+                available: false,
+                reason: 'Время прошло'
+              })
+            } else {
+              console.log(`🕐 Checking availability for slot ${timeString} at ${slotDate.toISOString()}`)
+              // Check availability using appointment context
+              const availableCheck = await isTimeSlotAvailable(
+                service.salonId,
+                slotDate.toISOString(),
+                service.durationMinutes,
+                employeeId || undefined // Pass employeeId if selected
+              )
+              
+              console.log(`🕐 Slot ${timeString} availability check result:`, availableCheck)
+              
+              // Если слот недоступен, попробуем понять почему
+              if (!availableCheck) {
+                console.log(`🕐 Slot ${timeString} is not available, checking why...`)
+                try {
+                  // Попробуем получить записи на этот день для отладки
+                  // const dayAppointments = await appointmentOperations.listByDay(service.salonId, selectedDate)
+                  // console.log(`🕐 Day appointments for debugging:`, dayAppointments)
+                } catch (e) {
+                  console.log(`🕐 Could not fetch day appointments for debugging:`, e)
+                }
               }
+              
+              const isAvailable = availableCheck
+              let reason = "Время занято"
+              if (!isAvailable) reason = "Занято"
+              
+              slots.push({
+                time: timeString,
+                available: isAvailable,
+                reason: reason
+              })
             }
             
-            const isAvailable = availableCheck
-            let reason = "Время занято"
-            if (!isAvailable) reason = "Занято"
-            
-            slots.push({
-              time: timeString,
-              available: isAvailable,
-              reason: reason
-            })
-          }
-          
-          // Move to next slot (30-minute intervals)
-          currentMinute += timeInterval
-          if (currentMinute >= 60) {
-            currentMinute = 0
+            // Move to next hour
             currentHour++
           }
         }
-      }
       
       console.log(`✅ Generated ${slots.length} time slots:`, slots)
       console.log(`✅ Available slots:`, slots.filter(s => s.available))
@@ -510,12 +513,39 @@ export default function BookServicePage() {
 
   useEffect(() => {
     generateTimeSlots()
-  }, [selectedDate, service, salonSchedule, employeeId, timeInterval, isTimeSlotAvailable])
+  }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable])
 
   const employees = useMemo(() => {
-    if (!salon) return [] as Array<{ userId: string; role: string }>
+    if (!salon) return [] as Array<{ userId: string; role: string; displayName?: string }>
     return (salon.members || []).filter((m: { role: string }) => ["owner", "manager", "employee"].includes(m.role))
   }, [salon])
+
+  // Load employee names
+  const [employeeNames, setEmployeeNames] = useState<Record<string, string>>({})
+  
+  useEffect(() => {
+    const loadEmployeeNames = async () => {
+      if (!employees.length) return
+      
+      const names: Record<string, string> = {}
+      for (const employee of employees) {
+        try {
+          const user = await getUserById(employee.userId)
+          if (user) {
+            names[employee.userId] = user.displayName || employee.userId
+          } else {
+            names[employee.userId] = employee.userId
+          }
+        } catch (err) {
+          console.warn(`Failed to load user ${employee.userId}:`, err)
+          names[employee.userId] = employee.userId
+        }
+      }
+      setEmployeeNames(names)
+    }
+    
+    loadEmployeeNames()
+  }, [employees, getUserById])
 
   const combineDateTimeToIso = (date: Date, time: string) => {
     const [hours, minutes] = time.split(":").map(Number)
@@ -525,7 +555,10 @@ export default function BookServicePage() {
   }
 
   const handleBook = async () => {
-    if (!service || !selectedDate || !selectedTime || !isTimeSlotAvailable || !createAppointment) return
+          if (!service || !selectedDate || !selectedTime || !customerName || !customerPhone || !isTimeSlotAvailable || !createAppointment) {
+        setError(t('requiredFields'))
+        return
+      }
     
     setSubmitting(true)
     setError(null)
@@ -681,7 +714,7 @@ export default function BookServicePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Calendar */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите дату</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('selectDate')}</h3>
                 
                 {/* Month Navigation */}
                 <div className="flex items-center justify-between mb-4">
@@ -766,40 +799,19 @@ export default function BookServicePage() {
 
               {/* Time Selection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Выберите время</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('selectTime')}</h3>
                 
-                {/* Time Interval Selector */}
+                {/* Time Interval Info */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Интервал времени</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setTimeInterval(30)}
-                      className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
-                        timeInterval === 30
-                          ? 'bg-rose-600 text-white border-rose-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-rose-300'
-                      }`}
-                    >
-                      30 мин
-                    </button>
-                    <button
-                      onClick={() => setTimeInterval(60)}
-                      className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
-                        timeInterval === 60
-                          ? 'bg-rose-600 text-white border-rose-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-rose-300'
-                      }`}
-                    >
-                      1 час
-                    </button>
-                    <button
-                      onClick={testTimeSlotAvailability}
-                      className="px-3 py-1 text-sm rounded-lg border border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      title="Тест доступности временного слота"
-                    >
-                      🧪 Тест
-                    </button>
-                  </div>
+                                     <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                     <div className="flex items-center gap-2">
+                       <Clock className="w-4 h-4 text-blue-600" />
+                       <span className="font-medium">{t('hourlySlots')}</span>
+                     </div>
+                     <p className="text-xs text-blue-700 mt-1">
+                       {t('hourlySlotsDesc')}
+                     </p>
+                   </div>
                 </div>
                 
                 {selectedDate && salonSchedule ? (
@@ -879,7 +891,7 @@ export default function BookServicePage() {
             {/* Other Form Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Специалист (по желанию)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('selectStaff')}</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <select
@@ -887,36 +899,52 @@ export default function BookServicePage() {
                     onChange={(e) => setEmployeeId(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
                   >
-                    <option value="">Любой</option>
+                    <option value="">{t('anySpecialist')}</option>
                     {employees.map((m: { userId: string }) => (
-                      <option key={m.userId} value={m.userId}>{m.userId}</option>
+                      <option key={m.userId} value={m.userId}>
+                        {employeeNames[m.userId] || m.userId}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  При выборе специалиста доступное время будет пересчитано
+                  {t('staffSelectionNote')}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ваше имя (по желанию)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerName')}</label>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
+                  placeholder={t('customerNamePlaceholder')}
+                  required
                 />
+                {currentUser && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Автоматически заполнено из профиля
+                  </p>
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Телефон (по желанию)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerPhone')}</label>
                 <input
                   type="tel"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
+                  placeholder={t('customerPhonePlaceholder')}
+                  required
                 />
+                {currentUser && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Автоматически заполнено из профиля
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
@@ -936,14 +964,14 @@ export default function BookServicePage() {
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
                 disabled={submitting}
               >
-                Отмена
+                {t('cancel')}
               </button>
               <button
                 onClick={handleBook}
-                disabled={submitting || !selectedDate || !selectedTime}
+                disabled={submitting || !selectedDate || !selectedTime || !customerName || !customerPhone}
                 className="px-5 py-2 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-50"
               >
-                {submitting ? "Создание..." : "Записаться"}
+                {submitting ? "Создание..." : t('bookNow')}
               </button>
             </div>
 

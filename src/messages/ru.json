@@ -157,6 +157,7 @@
   "search": {
     "title": "Поиск",
     "subtitle": "Найдите нужные услуги и салоны",
+    "details": "Подробности",
     "searchPlaceholder": "Поиск по услугам, салонам...",
     "filters": "Фильтры",
     "sortBy": "Сортировать по",
@@ -354,6 +355,16 @@
     "bookNow": "Забронировать",
     "cancel": "Отменить",
     "reschedule": "Перенести",
+    "hourlySlots": "Доступное время только по часам",
+    "hourlySlotsDesc": "Запись возможна в начале каждого часа (например: 10:00, 11:00, 12:00)",
+    "anySpecialist": "Любой специалист",
+    "customerName": "Ваше имя",
+    "customerNamePlaceholder": "Введите ваше имя",
+    "customerPhone": "Телефон",
+    "customerPhonePlaceholder": "+7 (999) 123-45-67",
+    "autoFilled": "✓ Автоматически заполнено из профиля",
+    "requiredFields": "Пожалуйста, заполните все обязательные поля",
+    "staffSelectionNote": "При выборе специалиста доступное время будет пересчитано",
     "status": {
       "pending": "Ожидает подтверждения",
       "confirmed": "Подтверждена",
@@ -1018,6 +1029,13 @@
   "profilePage": {
     "title": "Профиль",
     "loading": "Загрузка...",
+    "quickActions": {
+      "title": "Быстрые действия",
+      "mySalons": "Мои салоны",
+      "mySalonsDesc": "Управление салонами красоты",
+      "findServices": "Найти услуги",
+      "findServicesDesc": "Поиск салонов и услуг"
+    },
     "requireLogin": {
       "title": "Требуется авторизация",
       "desc": "Для просмотра профиля необходимо войти в систему",
@@ -1098,15 +1116,52 @@
   },
   "salonCrm": {
     "menu": {
+      "title": "Меню",
       "dashboard": "Панель управления",
       "appointments": "Записи",
-      "clients": "Клиенты",
       "services": "Услуги",
-      "staff": "Сотрудники",
       "schedule": "Расписание",
-      "settings": "Настройки",
-      "analytics": "Аналитика",
-      "reports": "Отчеты"
+      "staff": "Сотрудники",
+      "settings": "Настройки"
+    }
+  },
+  "salonAppointments": {
+    "title": "Записи на услуги",
+    "loading": "Загрузка записей...",
+    "error": "Ошибка загрузки данных",
+    "retry": "Попробовать снова",
+    "noAppointments": "Записи не найдены",
+    "totalAppointments": "Всего записей: {count}",
+    "showingAppointments": "Показано: {count}",
+    "searchPlaceholder": "Поиск по имени, телефону или услуге...",
+    "filters": {
+      "allStatuses": "Все статусы",
+      "allDates": "Все даты",
+      "allServices": "Все услуги",
+      "pending": "Ожидает",
+      "confirmed": "Подтверждена",
+      "completed": "Завершена",
+      "cancelled": "Отменена",
+      "today": "Сегодня",
+      "tomorrow": "Завтра",
+      "week": "На неделю",
+      "past": "Прошедшие"
+    },
+    "status": {
+      "pending": "Ожидает",
+      "confirmed": "Подтверждена",
+      "completed": "Завершена",
+      "cancelled": "Отменена",
+      "no_show": "Не явился"
+    },
+    "actions": {
+      "confirm": "Подтвердить",
+      "cancel": "Отменить",
+      "complete": "Завершить"
+    },
+    "pagination": {
+      "previous": "Назад",
+      "next": "Вперед"
     }
   },
   "forms": {

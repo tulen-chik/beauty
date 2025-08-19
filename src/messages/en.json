@@ -125,6 +125,13 @@
   "profilePage": {
     "title": "Profile",
     "loading": "Loading...",
+    "quickActions": {
+      "title": "Quick Actions",
+      "mySalons": "My Salons",
+      "mySalonsDesc": "Manage beauty salons",
+      "findServices": "Find Services",
+      "findServicesDesc": "Search for salons and services"
+    },
     "requireLogin": {
       "title": "Authentication Required",
       "desc": "You need to log in to view your profile",
@@ -205,15 +212,52 @@
   },
   "salonCrm": {
     "menu": {
+      "title": "Menu",
       "dashboard": "Dashboard",
       "appointments": "Appointments",
-      "clients": "Clients",
       "services": "Services",
-      "staff": "Staff",
       "schedule": "Schedule",
-      "settings": "Settings",
-      "analytics": "Analytics",
-      "reports": "Reports"
+      "staff": "Staff",
+      "settings": "Settings"
+    }
+  },
+  "salonAppointments": {
+    "title": "Service Appointments",
+    "loading": "Loading appointments...",
+    "error": "Error loading data",
+    "retry": "Try again",
+    "noAppointments": "No appointments found",
+    "totalAppointments": "Total appointments: {count}",
+    "showingAppointments": "Showing: {count}",
+    "searchPlaceholder": "Search by name, phone or service...",
+    "filters": {
+      "allStatuses": "All statuses",
+      "allDates": "All dates",
+      "allServices": "All services",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "week": "This week",
+      "past": "Past"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No Show"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "complete": "Complete"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
     }
   },
   "mapSelector": {
@@ -390,6 +434,16 @@
     "bookNow": "Book now",
     "cancel": "Cancel",
     "reschedule": "Reschedule",
+    "hourlySlots": "Available time only by hours",
+    "hourlySlotsDesc": "Booking is possible at the beginning of each hour (e.g., 10:00, 11:00, 12:00)",
+    "anySpecialist": "Any specialist",
+    "customerName": "Your name",
+    "customerNamePlaceholder": "Enter your name",
+    "customerPhone": "Phone",
+    "customerPhonePlaceholder": "+1 (555) 123-4567",
+    "autoFilled": "✓ Auto-filled from profile",
+    "requiredFields": "Please fill in all required fields",
+    "staffSelectionNote": "When selecting a specialist, available time will be recalculated",
     "status": {
       "pending": "Pending confirmation",
       "confirmed": "Confirmed",
@@ -414,6 +468,7 @@
   },
   "search": {
     "title": "Search",
+    "details": "Details",
     "subtitle": "Find the services and salons you need",
     "searchPlaceholder": "Search for services, salons...",
     "filters": "Filters",
