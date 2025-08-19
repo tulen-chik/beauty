@@ -1,322 +1,403 @@
-"use client";
+"use client"
 
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import AnimatedBackground from '@/components/AnimatedBackground';
+import { motion } from "framer-motion"
+import {
+  Scissors,
+  Star,
+  CalendarCheck,
+  User,
+  Users,
+  ShieldCheck,
+  Heart,
+  Sparkles,
+  CheckCircle,
+  MessageCircle,
+} from "lucide-react"
+import Link from "next/link"
+import { useTranslations } from "next-intl"
+import StructuredData from "@/components/StructuredData"
+import FAQ from "@/components/FAQ"
 
 export default function Home() {
-  const t = useTranslations('home');
+  const t = useTranslations("home")
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.5 }
-  };
+  // Преимущества для клиентов и мастеров
+  const clientBenefits = t.raw("clientBenefits")
+  const proBenefits = t.raw("proBenefits")
+  const steps = t.raw("steps")
 
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.1
-      }
+  // FAQ данные
+  const faqItems = [
+    {
+      question: "Как работает Beauty Platform?",
+      answer: "Beauty Platform соединяет клиентов с проверенными салонами красоты. Вы можете найти услуги, забронировать время и управлять своими записями онлайн."
+    },
+    {
+      question: "Безопасно ли бронировать онлайн?",
+      answer: "Да, все салоны на нашей платформе проверены и сертифицированы. Мы используем безопасные методы оплаты и защищаем ваши личные данные."
+    },
+    {
+      question: "Могу ли я отменить или перенести запись?",
+      answer: "Да, вы можете отменить или перенести запись до 24 часов до назначенного времени без дополнительных сборов."
+    },
+    {
+      question: "Какие услуги доступны на платформе?",
+      answer: "Мы предлагаем широкий спектр услуг: стрижки, окрашивание, маникюр, педикюр, макияж, массаж, косметологические процедуры и многое другое."
     }
-  };
+  ]
+
+  // Структурированные данные для SEO
+  const websiteData = {
+    name: "Beauty Platform",
+    description: "Find the best beauty salons near you. Book appointments online with verified beauty professionals.",
+    url: "https://beauty-platform.com"
+  }
+
+  const organizationData = {
+    name: "Beauty Platform",
+    url: "https://beauty-platform.com",
+    logo: "https://beauty-platform.com/logo.png"
+  }
+
+  // Анимации
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      },
+    },
+  }
+
+  const floatingVariants = {
+    animate: {
+      y: [-10, 10, -10],
+      rotate: [0, 5, -5, 0],
+      transition: {
+        duration: 6,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: "easeInOut",
+      },
+    },
+  }
+
+  // Иконки для преимуществ
+  const clientIcons = [Star, ShieldCheck, CalendarCheck, Heart]
+  const proIcons = [Users, CalendarCheck, Sparkles, ShieldCheck]
+  const stepIcons = [User, Scissors, CalendarCheck, CheckCircle, MessageCircle]
 
   return (
-    <div className="min-h-screen bg-black-01">
-      <AnimatedBackground />
+    <>
+      <StructuredData type="WebSite" data={websiteData} />
+      <StructuredData type="Organization" data={organizationData} />
       
+      <div className="min-h-screen bg-white text-gray-900">
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center px-4 overflow-hidden">
-        <motion.div 
-          className="relative z-10 text-center max-w-4xl mx-auto"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            {t('heroTitle')}
-          </h1>
-          <p className="text-xl md:text-2xl text-white mb-8">
-            {t('heroSubtitle')}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+      <section className="relative min-h-[85vh] flex items-center justify-center px-4 bg-white">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute top-20 left-10 w-32 h-32 bg-rose-100/60 rounded-full blur-3xl"
+            variants={floatingVariants}
+            animate="animate"
+          />
+          <motion.div
+            className="absolute top-40 right-20 w-24 h-24 bg-pink-100/60 rounded-full blur-2xl"
+            variants={floatingVariants}
+            animate="animate"
+            transition={{ delay: 1 }}
+          />
+          <motion.div
+            className="absolute bottom-32 left-1/4 w-20 h-20 bg-rose-100/40 rounded-full blur-xl"
+            variants={floatingVariants}
+            animate="animate"
+            transition={{ delay: 2 }}
+          />
+        </div>
+
+        <div className="container mx-auto max-w-6xl text-center relative z-10">
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-2 bg-rose-50 border border-rose-200 rounded-full mb-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <Sparkles className="w-4 h-4 text-rose-600" />
+            <span className="text-sm font-semibold text-rose-700 tracking-wide">Beauty Platform</span>
+          </motion.div>
+
+          <motion.h1
+            className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8 leading-tight text-gray-900"
+            initial={{ opacity: 0, y: -40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+          >
+            <span className="text-rose-600">{t("heroTitle")}</span>
+          </motion.h1>
+
+          <motion.p
+            className="text-xl md:text-2xl text-gray-700 mb-8 max-w-3xl mx-auto font-normal leading-relaxed"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+          >
+            {t("heroSubtitle")}
+          </motion.p>
+
+          <motion.p
+            className="text-lg text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.4 }}
+          >
+            {t("mission")}
+          </motion.p>
+
+          <motion.div
+            className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
+            <motion.div variants={itemVariants} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href="/app"
-                className="px-8 py-4 rounded-xl text-lg font-medium text-white bg-gradient-to-r from-[#FF4400] to-[#FF883D] hover:opacity-90 transition"
+                href="/register"
+                className="group inline-flex items-center justify-center px-12 py-4 text-lg font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {t('getStarted')}
+                <span className="mr-2">{t("getStartedClient")}</span>
+                <motion.div
+                  className="w-5 h-5"
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
+                >
+                  →
+                </motion.div>
               </Link>
             </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
+
+            <motion.div variants={itemVariants} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href="/auth/login"
-                className="px-8 py-4 rounded-xl text-lg font-medium text-white border-2 border-white hover:bg-white hover:text-black-01 transition"
+                href="/register?pro=1"
+                className="inline-flex items-center justify-center px-12 py-4 text-lg font-semibold text-rose-700 bg-white border-2 border-rose-600 hover:bg-rose-50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {t('signIn')}
+                {t("getStartedPro")}
               </Link>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Преимущества */}
+      <section className="py-24 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">{t("featuresTitle")}</h2>
+            <div className="w-24 h-1 bg-rose-600 mx-auto rounded-full"></div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* Для клиентов */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              variants={containerVariants}
+              className="group relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100"
+            >
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-3 bg-rose-600 rounded-2xl shadow-lg">
+                    <User className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">{t("clientBenefitsTitle")}</h3>
+                </div>
+                <ul className="space-y-6">
+                  {clientBenefits.map((b: string, i: number) => {
+                    const Icon = clientIcons[i] || Star
+                    return (
+                      <motion.li
+                        key={i}
+                        className="flex items-start gap-4 text-lg text-gray-700"
+                        variants={itemVariants}
+                      >
+                        <div className="p-2 bg-rose-100 rounded-xl mt-1 flex-shrink-0">
+                          <Icon className="w-5 h-5 text-rose-600" />
+                        </div>
+                        <span className="leading-relaxed font-medium">{b}</span>
+                      </motion.li>
+                    )
+                  })}
+                </ul>
+              </div>
+            </motion.div>
+
+            {/* Для мастеров */}
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              variants={containerVariants}
+              className="group relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100"
+            >
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-3 bg-pink-600 rounded-2xl shadow-lg">
+                    <Scissors className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">{t("proBenefitsTitle")}</h3>
+                </div>
+                <ul className="space-y-6">
+                  {proBenefits.map((b: string, i: number) => {
+                    const Icon = proIcons[i] || Users
+                    return (
+                      <motion.li
+                        key={i}
+                        className="flex items-start gap-4 text-lg text-gray-700"
+                        variants={itemVariants}
+                      >
+                        <div className="p-2 bg-pink-100 rounded-xl mt-1 flex-shrink-0">
+                          <Icon className="w-5 h-5 text-pink-600" />
+                        </div>
+                        <span className="leading-relaxed font-medium">{b}</span>
+                      </motion.li>
+                    )
+                  })}
+                </ul>
+              </div>
             </motion.div>
           </div>
-        </motion.div>
+        </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 relative">
-        <motion.div 
-          className="max-w-7xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">
-            {t('featuresTitle')}
-          </h2>
-          
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {[1, 2, 3].map((index) => (
-              <motion.div 
-                key={index} 
-                className="bg-black-01/50 backdrop-blur-sm rounded-2xl p-8 hover:transform hover:scale-105 transition"
-                variants={fadeInUp}
-                whileHover={{ y: -10 }}
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF4400] to-[#FF883D] rounded-xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {index === 1 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    )}
-                    {index === 2 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    )}
-                    {index === 3 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    )}
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-4">
-                  {t(`feature${index}Title`)}
-                </h3>
-                <p className="text-white">
-                  {t(`feature${index}Description`)}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Platform Section */}
-      <section className="py-20 px-4 relative">
-        <motion.div 
-          className="max-w-7xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">
-            {t('platformTitle')}
-          </h2>
-          <p className="text-xl text-white text-center mb-16 max-w-3xl mx-auto">
-            {t('platformDescription')}
-          </p>
-          
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {[1, 2, 3].map((index) => (
-              <motion.div 
-                key={index} 
-                className="bg-black-01/50 backdrop-blur-sm rounded-2xl p-8 hover:transform hover:scale-105 transition"
-                variants={fadeInUp}
-                whileHover={{ y: -10 }}
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF4400] to-[#FF883D] rounded-xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {index === 1 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    )}
-                    {index === 2 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    )}
-                    {index === 3 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    )}
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-4">
-                  {t(`platformFeature${index}Title`)}
-                </h3>
-                <p className="text-white">
-                  {t(`platformFeature${index}Description`)}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Blockchain Section */}
-      <section className="py-20 px-4 relative">
-        <motion.div 
-          className="max-w-7xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">
-            {t('blockchainTitle')}
-          </h2>
-          <p className="text-xl text-white text-center mb-16 max-w-3xl mx-auto">
-            {t('blockchainDescription')}
-          </p>
-          
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {[1, 2, 3].map((index) => (
-              <motion.div 
-                key={index} 
-                className="bg-black-01/50 backdrop-blur-sm rounded-2xl p-8 hover:transform hover:scale-105 transition"
-                variants={fadeInUp}
-                whileHover={{ y: -10 }}
-              >
-                <div className="w-16 h-16 bg-gradient-to-r from-[#FF4400] to-[#FF883D] rounded-xl flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {index === 1 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    )}
-                    {index === 2 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    )}
-                    {index === 3 && (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    )}
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-white mb-4">
-                  {t(`blockchainFeature${index}Title`)}
-                </h3>
-                <p className="text-white">
-                  {t(`blockchainFeature${index}Description`)}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 px-4 relative">
-        <motion.div 
-          className="max-w-7xl mx-auto"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">
-            {t('howItWorksTitle')}
-          </h2>
-          
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-4 gap-8"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-          >
-            {[1, 2, 3, 4].map((index) => (
-              <motion.div 
-                key={index} 
-                className="relative"
-                variants={fadeInUp}
-              >
-                <div className="bg-black-01/50 backdrop-blur-sm rounded-2xl p-6 text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-[#FF4400] to-[#FF883D] rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-white font-bold">{index}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">
-                    {t(`step${index}Title`)}
-                  </h3>
-                  <p className="text-white text-sm">
-                    {t(`step${index}Description`)}
-                  </p>
-                </div>
-                {index < 4 && (
-                  <div className="hidden md:block absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 18L15 12L9 6" stroke="#FF4400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-[#FF4400] to-[#FF883D] opacity-90" />
-        <motion.div 
-          className="max-w-4xl mx-auto text-center relative z-10"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
-            {t('ctaTitle')}
-          </h2>
-          <p className="text-xl text-white mb-12">
-            {t('ctaDescription')}
-          </p>
+      {/* Как это работает */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4">
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="text-center mb-16"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
           >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900">{t("howItWorksTitle")}</h2>
+            <div className="w-24 h-1 bg-rose-600 mx-auto rounded-full"></div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+            {steps.map((step: string, i: number) => {
+              const Icon = stepIcons[i] || CheckCircle
+              return (
+                <motion.div
+                  key={i}
+                  className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-500 border border-gray-100 text-center"
+                  initial="hidden"
+                  whileInView="visible"
+                  variants={containerVariants}
+                  whileHover={{ y: -8, scale: 1.02 }}
+                >
+                  <div className="relative z-10">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-rose-600 rounded-2xl shadow-lg mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <Icon className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="text-sm font-bold text-rose-600 mb-2 tracking-wide">ШАГ {i + 1}</div>
+                    <span className="text-base text-gray-800 font-semibold leading-relaxed">{step}</span>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-24 bg-rose-600 text-white text-center relative overflow-hidden">
+        <div className="absolute inset-0">
+          <motion.div
+            className="absolute inset-0"
+            animate={{
+              background: [
+                "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+                "radial-gradient(circle at 80% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+                "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+              ],
+            }}
+            transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+          />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.h2
+            className="text-4xl md:text-5xl font-bold mb-8 text-white"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
+          >
+            {t("ctaTitle")}
+          </motion.h2>
+
+          <motion.p
+            className="text-xl mb-12 max-w-3xl mx-auto leading-relaxed text-rose-100 font-medium"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+          >
+            {t("ctaDescription")}
+          </motion.p>
+
+          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }}>
             <Link
-              href="/auth/register"
-              className="inline-block px-8 py-4 rounded-xl text-lg font-medium text-[#FF4400] bg-white hover:opacity-90 transition"
+              href="/register"
+              className="inline-flex items-center justify-center px-12 py-4 text-lg font-semibold text-rose-700 bg-white rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:bg-gray-50"
             >
-              {t('startNow')}
+              <span className="mr-2">{t("startNow")}</span>
+              <motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}>
+                →
+              </motion.div>
             </Link>
           </motion.div>
-        </motion.div>
+        </div>
       </section>
 
+      {/* FAQ */}
+      <FAQ items={faqItems} title={t("faqTitle")} className="bg-gray-100" />
+
       {/* Footer */}
-      <footer className="py-12 px-4 relative">
-        <div className="max-w-7xl mx-auto text-center">
-          <p className="text-white">
-            {t('footerText')}
-          </p>
+      <footer className="py-16 bg-gray-900 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            className="flex flex-col items-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-rose-600 rounded-xl">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-white">Beauty Platform</span>
+            </div>
+            <p className="text-gray-400 text-lg leading-relaxed max-w-2xl font-medium">{t("footerText")}</p>
+            <div className="w-16 h-1 bg-rose-600 rounded-full mt-4"></div>
+          </motion.div>
         </div>
       </footer>
     </div>
-  );
-} 
+    </>
+  )
+}

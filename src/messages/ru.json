@@ -13,135 +13,1123 @@
     "backToHome": "Вернуться на главную",
     "clearError": "Очистить ошибку",
     "notFoundTitle": "Страница не найдена",
-    "notFoundDescription": "Страница, которую вы ищете, не существует или была перемещена."
-  },
-  "home": {
-    "title": "Главная страница",
-    "welcome": "Добро пожаловать в наше приложение",
-    "heroTitle": "Создавайте вирусные клипы из стримов",
-    "heroSubtitle": "Автоматизируйте создание контента с помощью ИИ для TikTok и Instagram",
-    "getStarted": "Начать",
-    "signIn": "Войти",
-    "featuresTitle": "Почему выбирают Rocket",
-    "feature1Title": "ИИ для нарезки",
-    "feature1Description": "Наш ИИ автоматически находит самые интересные моменты в ваших стримах и создает идеальные клипы",
-    "feature2Title": "Экспорт на все платформы",
-    "feature2Description": "Экспортируйте клипы напрямую в TikTok и Instagram с оптимизированными форматами и хештегами",
-    "feature3Title": "Умная аналитика",
-    "feature3Description": "Отслеживайте эффективность клипов и получайте рекомендации по улучшению контента",
-    "howItWorksTitle": "Как это работает",
-    "step1Title": "Подключите стрим",
-    "step1Description": "Подключите свой аккаунт Twitch, YouTube или другой стриминговой платформы",
-    "step2Title": "Анализ ИИ",
-    "step2Description": "Наш ИИ анализирует ваш стрим и находит вирусные моменты",
-    "step3Title": "Редактирование",
-    "step3Description": "Просмотрите и настройте предложенные клипы в удобном редакторе",
-    "step4Title": "Экспорт и публикация",
-    "step4Description": "Экспортируйте в TikTok и Instagram одним кликом",
-    "platformTitle": "Платформа для нарезки стримов",
-    "platformDescription": "Присоединяйтесь к сообществу контент-мейкеров и стримеров",
-    "platformFeature1Title": "Создавайте публикации",
-    "platformFeature1Description": "Делитесь своими работами, получайте обратную связь и общайтесь с другими создателями",
-    "platformFeature2Title": "Размещайте офферы",
-    "platformFeature2Description": "Предлагайте свои стримы для нарезки и зарабатывайте на своем контенте",
-    "platformFeature3Title": "Находите клипмейкеров",
-    "platformFeature3Description": "Связывайтесь с профессиональными клипмейкерами, которые помогут развить вашу аудиторию",
-    "blockchainTitle": "На базе блокчейна",
-    "blockchainDescription": "Безопасная, прозрачная и эффективная монетизация контента",
-    "blockchainFeature1Title": "Смарт-контракты",
-    "blockchainFeature1Description": "Автоматические платежи и распределение доходов между создателями и клипмейкерами",
-    "blockchainFeature2Title": "Права на контент",
-    "blockchainFeature2Description": "Доказывайте свое авторство и отслеживайте использование вашего контента",
-    "blockchainFeature3Title": "Прозрачные доходы",
-    "blockchainFeature3Description": "Отслеживание доходов и аналитика в реальном времени",
-    "ctaTitle": "Начните создавать вирусный контент сегодня",
-    "ctaDescription": "Присоединяйтесь к тысячам контент-мейкеров, которые уже используют Rocket для роста аудитории",
-    "startNow": "Начать сейчас",
-    "footerText": "© 2024 Rocket. Все права защищены."
-  },
-  "navigation": {
-    "dashboard": "Панель управления",
+    "notFoundDescription": "Страница, которую вы ищете, не существует или была перемещена.",
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "create": "Создать",
+    "filter": "Фильтр",
+    "sort": "Сортировка",
+    "more": "Еще",
+    "less": "Свернуть",
+    "all": "Все",
+    "none": "Нет",
+    "yes": "Да",
+    "no": "Нет",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "next": "Далее",
+    "previous": "Назад",
+    "submit": "Отправить",
+    "reset": "Сбросить",
+    "close": "Закрыть",
+    "open": "Открыть",
     "profile": "Профиль",
-    "logout": "Выйти"
-  },
-  "auth": {
+    "logout": "Выйти",
     "login": "Войти",
     "register": "Регистрация",
+    "forgotPassword": "Забыли пароль?",
+    "resetPassword": "Сбросить пароль",
     "email": "Email",
     "password": "Пароль",
-    "forgotPassword": "Забыли пароль?",
-    "rememberMe": "Запомнить меня",
+    "name": "Имя",
+    "description": "Описание",
+    "title": "Заголовок",
+    "content": "Содержание",
+    "date": "Дата",
+    "time": "Время",
+    "status": "Статус",
+    "type": "Тип",
+    "category": "Категория",
+    "tags": "Теги",
+    "author": "Автор",
+    "created": "Создано",
+    "updated": "Обновлено",
+    "actions": "Действия",
+    "details": "Подробности",
+    "preview": "Предпросмотр",
+    "download": "Скачать",
+    "upload": "Загрузить",
+    "share": "Поделиться",
+    "copy": "Копировать",
+    "paste": "Вставить",
+    "cut": "Вырезать",
+    "move": "Переместить",
+    "rename": "Переименовать",
+    "duplicate": "Дублировать",
+    "export": "Экспорт",
+    "import": "Импорт",
+    "print": "Печать",
+    "help": "Помощь",
+    "support": "Поддержка",
+    "feedback": "Обратная связь",
+    "about": "О нас",
+    "terms": "Условия",
+    "privacy": "Конфиденциальность",
+    "contact": "Контакты",
+    "faq": "FAQ",
+    "documentation": "Документация",
+    "api": "API",
+    "geolocation": {
+      "unavailable": "Геолокация недоступна",
+      "permissionDenied": "Разрешите доступ к геолокации",
+      "determiningCity": "Определяем город...",
+      "unknownCity": "Неизвестный город"
+    },
+    "navigation": {
+      "home": "Главная",
+      "search": "Поиск",
+      "blog": "Блог"
+    },
+    "brand": {
+      "name": "Beauty Platform"
+    }
+  },
+  "salonCreation": {
+    "title": "Создать салон",
+    "name": "Название",
+    "namePlaceholder": "Введите название салона",
+    "address": "Адрес",
+    "addressPlaceholder": "Введите адрес или выберите на карте",
+    "phone": "Телефон",
+    "phonePlaceholder": "+7 (999) 123-45-67",
+    "description": "Описание",
+    "descriptionPlaceholder": "Краткое описание салона...",
+    "map": "Карта",
+    "hideMap": "Скрыть карту",
+    "showMap": "Показать карту",
+    "mapInstructions": "Выберите местоположение на карте",
+    "mapHelp": "Кликните на карту или перетащите маркер для выбора местоположения",
+    "coordinates": "Координаты",
+    "createButton": "Создать салон",
+    "creating": "Создание...",
+    "success": "Салон успешно создан!",
+    "mapError": "Google Maps не загружен",
+    "mapErrorHelp": "Убедитесь, что у вас есть доступ к интернету и Google Maps API ключ настроен",
+    "error": "Ошибка загрузки карты",
+    "instructions": "Кликните на карту или перетащите маркер для выбора местоположения"
+  },
+  "mapSelector": {
+    "title": "Выберите местоположение на карте",
+    "instructions": "Кликните на карту или перетащите маркер для выбора местоположения",
+    "error": "Ошибка загрузки карты",
+    "errorHelp": "Убедитесь, что у вас есть доступ к интернету и Google Maps API ключ настроен"
+  },
+  "status": {
+    "active": "Активно",
+    "inactive": "Неактивно",
+    "pending": "В ожидании",
+    "completed": "Завершено",
+    "failed": "Ошибка",
+    "cancelled": "Отменено",
+    "draft": "Черновик",
+    "published": "Опубликовано",
+    "archived": "В архиве"
+  },
+  "blog": {
+    "title": "Блог",
+    "subtitle": "Полезные статьи и советы",
+    "readMore": "Читать далее",
+    "publishedAt": "Опубликовано",
+    "readTime": "мин чтения",
+    "author": "Автор",
+    "category": "Категория",
+    "tags": "Теги",
+    "relatedPosts": "Похожие статьи",
+    "search": "Поиск по блогу",
+    "searchPlaceholder": "Найти статью...",
+    "noResults": "Статьи не найдены",
+    "loading": "Загрузка статей..."
+  },
+  "search": {
+    "title": "Поиск",
+    "subtitle": "Найдите нужные услуги и салоны",
+    "searchPlaceholder": "Поиск по услугам, салонам...",
+    "filters": "Фильтры",
+    "sortBy": "Сортировать по",
+    "results": "Результаты поиска",
+    "noResults": "Ничего не найдено",
+    "tryDifferent": "Попробуйте изменить параметры поиска",
+    "loading": "Поиск...",
+    "servicesTitle": "Услуги",
+    "book": "Забронировать",
+    "unknownCity": "Неизвестный город",
+    "cityFilter": "Показываем услуги в городе: {city}",
+    "noServicesInCity": "Не найдено услуг в городе {city}",
+    "aboutSalon": "О салоне",
+    "servicesCount": "{count} услуг",
+    "servicesCountOne": "{count} услуга",
+    "servicesCountFew": "{count} услуги",
+    "servicesCountMany": "{count} услуг",
+    "showMap": "Показать карту",
+    "hideMap": "Скрыть карту",
+    "mapTitle": "Карта салонов",
+    "mapInstructions": "Кликните на маркер салона для просмотра его услуг",
+    "mapError": "Ошибка загрузки карты",
+    "mapErrorHelp": "Убедитесь, что у вас есть доступ к интернету и Google Maps API ключ настроен",
+    "selectedSalonFilter": "Показываем услуги салона: {salonName}",
+    "cityFilterMessage": "Показываем услуги в городе: {city}",
+    "noServicesInCityMessage": "Не найдено услуг в городе {city}",
+    "salonsCount": "{count} салонов",
+    "salonsCountOne": "{count} салон",
+    "salonsCountFew": "{count} салона",
+    "salonsCountMany": "{count} салонов",
+    "selectCity": "Выбрать город",
+    "popularCities": "Популярные города",
+    "customCity": "Другой город",
+    "enterCityName": "Введите название города",
+    "confirm": "Подтвердить",
+    "cancel": "Отмена",
+    "showingInCity": "Показываем услуги в городе: {city}",
+    "detectedCity": "Определен город: {city}",
+    "clearCitySelection": "Очистить выбор города",
+    "showingSalonServices": "Показываем услуги салона: {salonName}",
+    "clearSalonFilter": "Очистить фильтр салона",
+    "activeFilters": "Активные фильтры",
+    "searchQuery": "Поисковый запрос",
+    "city": "Город",
+    "salon": "Салон",
+    "clearAll": "Очистить все",
+    "loadingMap": "Загрузка карты...",
+    "noSalonsWithCoordinates": "Нет салонов с координатами для отображения на карте",
+    "categories": {
+      "all": "Все категории",
+      "hair": "Волосы",
+      "nails": "Ногти",
+      "face": "Лицо",
+      "body": "Тело",
+      "massage": "Массаж"
+    },
+    "sortOptions": {
+      "relevance": "По релевантности",
+      "rating": "По рейтингу",
+      "price": "По цене",
+      "distance": "По расстоянию"
+    }
+  },
+  "home": {
+    "title": "Beauty Platform",
+    "subtitle": "Найдите лучшие салоны красоты рядом с вами",
+    "heroTitle": "Красота начинается здесь",
+    "heroSubtitle": "Откройте для себя лучшие салоны красоты и спа-центры в вашем городе",
+    "mission": "Соединяем профессионалов красоты с клиентами",
+    "getStartedClient": "Найти услуги",
+    "getStartedPro": "Присоединиться как профессионал",
+    "featuresTitle": "Почему выбирают нас",
+    "clientBenefitsTitle": "Для клиентов",
+    "proBenefitsTitle": "Для профессионалов",
+    "howItWorksTitle": "Как это работает",
+    "clientBenefits": [
+      "Простое бронирование с проверенными салонами",
+      "Прозрачные цены и отзывы",
+      "Широкий спектр услуг красоты",
+      "Удобная система планирования"
+    ],
+    "proBenefits": [
+      "Эффективное управление записями",
+      "Расширение клиентской базы",
+      "Профессиональная платформа бронирования",
+      "Аналитика и аналитика"
+    ],
+    "steps": [
+      "Выберите услугу",
+      "Выберите удобное время",
+      "Забронируйте и подтвердите",
+      "Наслаждайтесь приемом"
+    ],
+    "hero": {
+      "title": "Красота начинается здесь",
+      "subtitle": "Откройте для себя лучшие салоны красоты и спа-центры в вашем городе",
+      "searchPlaceholder": "Поиск услуг или салонов...",
+      "searchButton": "Найти",
+      "popularServices": "Популярные услуги"
+    },
+    "features": {
+      "title": "Почему выбирают нас",
+      "easyBooking": "Простое бронирование",
+      "verifiedSalons": "Проверенные салоны",
+      "bestPrices": "Лучшие цены",
+      "customerSupport": "Поддержка клиентов"
+    },
+    "categories": {
+      "title": "Категории услуг",
+      "hair": "Волосы",
+      "nails": "Ногти",
+      "face": "Лицо",
+      "body": "Тело",
+      "massage": "Массаж"
+    },
+    "testimonials": {
+      "title": "Отзывы клиентов",
+      "subtitle": "Что говорят о нас"
+    },
+    "ctaTitle": "Готовы начать?",
+    "ctaDescription": "Присоединяйтесь к тысячам довольных клиентов, которые доверяют Beauty Platform свои потребности в красоте.",
+    "startNow": "Начать сейчас",
+    "footerText": "Соединяем профессионалов красоты с клиентами по всему миру. Ваше путешествие к красоте начинается здесь.",
+    "faqTitle": "Часто задаваемые вопросы"
+  },
+  "footer": {
+    "company": "Компания",
+    "about": "О нас",
+    "careers": "Карьера",
+    "press": "Пресса",
+    "support": "Поддержка",
+    "help": "Помощь",
+    "contact": "Контакты",
+    "legal": "Правовая информация",
+    "terms": "Условия использования",
+    "privacy": "Политика конфиденциальности",
+    "cookies": "Файлы cookie",
+    "social": "Социальные сети",
+    "followUs": "Подписывайтесь на нас",
+    "newsletter": "Новостная рассылка",
+    "subscribe": "Подписаться",
+    "emailPlaceholder": "Ваш email"
+  },
+  "errors": {
+    "404": {
+      "title": "Страница не найдена",
+      "subtitle": "Извините, страница, которую вы ищете, не существует",
+      "backHome": "Вернуться на главную",
+      "search": "Поиск по сайту"
+    },
+    "500": {
+      "title": "Внутренняя ошибка сервера",
+      "subtitle": "Что-то пошло не так. Попробуйте обновить страницу",
+      "refresh": "Обновить страницу",
+      "backHome": "Вернуться на главную"
+    },
+    "network": {
+      "title": "Ошибка сети",
+      "subtitle": "Проверьте подключение к интернету и попробуйте снова",
+      "retry": "Попробовать снова"
+    },
+    "auth": {
+      "title": "Ошибка авторизации",
+      "subtitle": "Не удалось выполнить вход. Проверьте данные и попробуйте снова",
+      "login": "Войти",
+      "register": "Зарегистрироваться"
+    }
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "markAllRead": "Отметить все как прочитанные",
+    "noNotifications": "У вас нет новых уведомлений",
+    "types": {
+      "appointment": "Запись",
+      "reminder": "Напоминание",
+      "promotion": "Акция",
+      "system": "Система"
+    },
+    "actions": {
+      "view": "Просмотреть",
+      "dismiss": "Отклонить",
+      "markRead": "Отметить как прочитанное"
+    }
+  },
+  "booking": {
+    "title": "Бронирование",
+    "selectService": "Выберите услугу",
+    "selectDate": "Выберите дату",
+    "selectTime": "Выберите время",
+    "selectStaff": "Выберите мастера",
+    "customerInfo": "Информация о клиенте",
+    "confirmation": "Подтверждение",
+    "summary": "Сводка",
+    "total": "Итого",
+    "bookNow": "Забронировать",
+    "cancel": "Отменить",
+    "reschedule": "Перенести",
+    "status": {
+      "pending": "Ожидает подтверждения",
+      "confirmed": "Подтверждена",
+      "completed": "Завершена",
+      "cancelled": "Отменена"
+    }
+  },
+  "auth": {
+    "signIn": "Войти",
+    "signUp": "Зарегистрироваться",
     "noAccount": "Нет аккаунта?",
     "haveAccount": "Уже есть аккаунт?",
-    "signUp": "Зарегистрироваться",
-    "signIn": "Войти",
-    "resetPassword": "Сбросить пароль",
-    "confirmPassword": "Подтвердите пароль",
-    "passwordMismatch": "Пароли не совпадают",
-    "invalidEmail": "Неверный формат email",
-    "requiredField": "Это поле обязательно",
-    "minPasswordLength": "Пароль должен быть не менее 8 символов",
-    "resetPasswordSuccess": "Инструкции по сбросу пароля отправлены на ваш email",
-    "loginSuccess": "Успешный вход",
-    "registerSuccess": "Успешная регистрация",
-    "newPassword": "Придумайте и введите новый пароль",
-    "repeatPassword": "Повторите новый пароль",
-    "verifyEmail": "Подтверждение email",
-    "verifyEmailMessage": "Пожалуйста, проверьте вашу почту и перейдите по ссылке для подтверждения email",
-    "verifyEmailSuccess": "Email успешно подтвержден",
-    "verifyEmailError": "Ошибка при подтверждении email",
-    "verifyEmailResend": "Отправить код повторно",
-    "verifyEmailCode": "Код подтверждения",
-    "verifyEmailCodeSent": "Код подтверждения отправлен на ваш email",
-    "verifyEmailCodeError": "Неверный код подтверждения",
-    "verifyEmailCodeExpired": "Срок действия кода истек",
-    "verifyEmailCodeResend": "Отправить код повторно через",
-    "verifyEmailCodeResendNow": "Отправить код повторно",
-    "loading": "загрузка",
-    "verificationCodeHint": "Введите 6-значный код, отправленный на вашу почту",
-    "resendCodeIn": "Отправить код повторно через 60 секунд",
-    "resendCode": "Отправить код повторно",
-    "verificationCode": "Код подтверждения"
+    "switchToRegister": "Зарегистрироваться",
+    "switchToLogin": "Войти",
+    "login": {
+      "title": "Войти в аккаунт",
+      "subtitle": "Добро пожаловать обратно! Войдите в свой аккаунт",
+      "email": "Email",
+      "password": "Пароль",
+      "forgotPassword": "Забыли пароль?",
+      "signIn": "Войти",
+      "noAccount": "Нет аккаунта?",
+      "switchToRegister": "Зарегистрироваться"
+    },
+    "register": {
+      "title": "Создать аккаунт",
+      "subtitle": "Присоединяйтесь к нам! Создайте свой аккаунт",
+      "name": "Имя",
+      "email": "Email",
+      "password": "Пароль",
+      "confirmPassword": "Подтвердите пароль",
+      "signUp": "Зарегистрироваться",
+      "haveAccount": "Уже есть аккаунт?",
+      "switchToLogin": "Войти"
+    },
+    "or": "или",
+    "continueWithGoogle": "Продолжить с Google",
+    "errors": {
+      "invalidCredentials": "Неверный email или пароль",
+      "emailAlreadyInUse": "Этот email уже используется",
+      "weakPassword": "Пароль слишком слабый",
+      "passwordsDoNotMatch": "Пароли не совпадают",
+      "invalidEmail": "Некорректный email",
+      "requiredField": "Это поле обязательно для заполнения"
+    }
   },
-  "publications": {
-    "createPost": "Запостить",
-    "whatsNew": "Что у вас нового?",
-    "activityFeed": "Лента активностей",
-    "all": "Все",
-    "myPosts": "Мои",
-    "loading": "Загрузка публикаций...",
-    "noPosts": "Пока нет публикаций. Будьте первым, кто поделится чем-то интересным!",
-    "post": "Запостить",
-    "showFull": "Показать полностью",
-    "collapse": "Свернуть",
-    "enterComment": "Введите комментарий",
-    "send": "Отправить",
-    "comments": "Комментарии",
-    "reply": "Ответить"
+  "salon": {
+    "create": {
+      "title": "Создать салон",
+      "success": "Салон успешно создан!",
+      "error": "Ошибка при создании салона"
+    },
+    "edit": {
+      "title": "Редактировать салон",
+      "success": "Салон успешно обновлен!",
+      "error": "Ошибка при обновлении салона"
+    },
+    "delete": {
+      "title": "Удалить салон",
+      "confirm": "Вы уверены, что хотите удалить этот салон?",
+      "success": "Салон успешно удален!",
+      "error": "Ошибка при удалении салона"
+    }
   },
-  "clips": {
-    "sortByNewest": "Сначала новые",
-    "yourClips": "Ваши клипы",
-    "showMore": "Показать больше",
-    "earnMoney": "Зарабатывайте деньги, вырезая для ROKY",
-    "paymentsFrom": "Выплаты с 20K просмотров",
+  "appointments": {
+    "title": "Записи",
+    "create": "Создать запись",
+    "edit": "Редактировать запись",
+    "delete": "Удалить запись",
     "status": {
-      "checking": "Проверяется",
-      "accepted": "Принят"
+      "pending": "Ожидает подтверждения",
+      "confirmed": "Подтверждена",
+      "completed": "Завершена",
+      "cancelled": "Отменена",
+      "no_show": "Не явился"
+    },
+    "actions": {
+      "confirm": "Подтвердить",
+      "complete": "Завершить",
+      "cancel": "Отменить",
+      "reschedule": "Перенести"
     }
   },
-  "profile": {
-    "thisIsYou": "Это вы!",
-    "changePassword": "Сменить пароль",
-    "changeWallet": "Сменить кошелек",
-    "connectInstagram": "Привязать Instagram",
-    "connectTikTok": "Привязать TikTok",
-    "tabs": {
-      "community": "Коммьюнити",
-      "posts": "Публикации",
-      "clips": "Клипы",
-      "offers": "Предложения",
-      "reviews": "Отзывы"
+  "services": {
+    "title": "Услуги",
+    "create": "Создать услугу",
+    "edit": "Редактировать услугу",
+    "delete": "Удалить услугу",
+    "name": "Название услуги",
+    "description": "Описание",
+    "price": "Цена",
+    "duration": "Длительность",
+    "category": "Категория"
+  },
+  "staff": {
+    "title": "Сотрудники",
+    "add": "Добавить сотрудника",
+    "edit": "Редактировать сотрудника",
+    "remove": "Удалить сотрудника",
+    "name": "Имя",
+    "role": "Должность",
+    "email": "Email",
+    "phone": "Телефон"
+  },
+  "schedule": {
+    "title": "Расписание",
+    "workingHours": "Рабочие часы",
+    "breaks": "Перерывы",
+    "days": {
+      "monday": "Понедельник",
+      "tuesday": "Вторник",
+      "wednesday": "Среда",
+      "thursday": "Четверг",
+      "friday": "Пятница",
+      "saturday": "Суббота",
+      "sunday": "Воскресенье"
+    },
+    "status": {
+      "open": "Открыто",
+      "closed": "Закрыто"
     }
+  },
+  "clients": {
+    "title": "Клиенты",
+    "add": "Добавить клиента",
+    "edit": "Редактировать клиента",
+    "name": "Имя",
+    "email": "Email",
+    "phone": "Телефон",
+    "notes": "Заметки"
+  },
+  "analytics": {
+    "title": "Аналитика",
+    "revenue": "Доход",
+    "appointments": "Записи",
+    "clients": "Клиенты",
+    "services": "Услуги",
+    "period": {
+      "today": "Сегодня",
+      "week": "Неделя",
+      "month": "Месяц",
+      "year": "Год"
+    }
+  },
+  "reports": {
+    "title": "Отчеты",
+    "generate": "Сгенерировать отчет",
+    "export": "Экспорт",
+    "types": {
+      "revenue": "Отчет по доходам",
+      "appointments": "Отчет по записям",
+      "clients": "Отчет по клиентам",
+      "services": "Отчет по услугам"
+    }
+  },
+  "workspaces": {
+    "title": "Ваши рабочие пространства",
+    "description": "Создайте новое рабочее пространство или выберите существующее для управления контентом",
+    "createNewWorkspace": "Создать рабочее пространство",
+    "existingWorkspaces": "Ваши рабочие пространства",
+    "workspaceNamePlaceholder": "Введите название рабочего пространства",
+    "create": "Создать",
+    "creating": "Создание...",
+    "noName": "Без названия",
+    "noDescription": "Без описания",
+    "members": "участников",
+    "contentPlans": "планов контента",
+    "settings": "Настройки",
+    "leave": "Покинуть",
+    "delete": "Удалить",
+    "confirmDelete": "Вы уверены, что хотите удалить это рабочее пространство? Это действие нельзя отменить.",
+    "confirmLeave": "Вы уверены, что хотите покинуть это рабочее пространство?",
+    "error": {
+      "create": "Не удалось создать рабочее пространство",
+      "delete": "Не удалось удалить рабочее пространство",
+      "leave": "Не удалось покинуть рабочее пространство",
+      "switch": "Не удалось переключить рабочее пространство",
+      "update": "Не удалось обновить рабочее пространство",
+      "fetch": "Не удалось загрузить рабочие пространства"
+    }
+  },
+  "dashboard": {
+    "title": "Панель управления",
+    "welcome": "Добро пожаловать в",
+    "quickStats": "Быстрая статистика",
+    "members": "Участники",
+    "contentPlans": "Планы контента",
+    "recentActivity": "Недавняя активность",
+    "noRecentActivity": "Нет недавней активности",
+    "quickActions": "Быстрые действия",
+    "createContentPlan": "Создать план контента",
+    "workspaceSettings": "Настройки рабочего пространства",
+    "viewAll": "Посмотреть все",
+    "stats": {
+      "totalMembers": "Всего участников",
+      "activeContentPlans": "Активных планов контента",
+      "totalViews": "Всего просмотров",
+      "totalEngagement": "Общее взаимодействие",
+      "conversionRate": "Конверсия"
+    }
+  },
+  "Workspace": {
+    "navigation": {
+      "dashboard": "Панель управления",
+      "content": "Контент",
+      "contacts": "Контакты",
+      "companies": "Компании",
+      "analytics": "Аналитика",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "settings": "Настройки"
+    },
+    "dashboard": {
+      "workspaceInfo": "Информация о пространстве",
+      "industry": "Отрасль",
+      "members": "Участники",
+      "created": "Создано"
+    },
+    "content": {
+      "title": "Контент",
+      "createNew": "Создать контент",
+      "noContent": "Нет контента",
+      "startCreating": "Начните создавать контент"
+    },
+    "campaigns": {
+      "title": "Кампании",
+      "createNew": "Создать кампанию",
+      "noCampaigns": "Нет кампаний",
+      "startCreating": "Начните создавать кампании"
+    },
+    "analytics": {
+      "title": "Аналитика",
+      "last7Days": "Последние 7 дней",
+      "last30Days": "Последние 30 дней",
+      "last90Days": "Последние 90 дней",
+      "noData": "Нет данных",
+      "startTracking": "Начните отслеживать метрики"
+    },
+    "settings": {
+      "title": "Настройки",
+      "general": {
+        "title": "Общие настройки",
+        "description": "Управление основной информацией рабочего пространства",
+        "name": "Название рабочего пространства",
+        "description": "Описание",
+        "industry": "Отрасль",
+        "save": "Сохранить изменения"
+  },
+  "notifications": {
+    "title": "Уведомления",
+        "description": "Управление настройками уведомлений",
+        "enable": "Включить уведомления",
+        "enableDescription": "Получать уведомления о действиях в рабочем пространстве"
+      },
+      "ai": {
+        "title": "Настройки ИИ",
+        "description": "Настройте, как ИИ генерирует контент для вашего рабочего пространства",
+        "tone": "Тон контента",
+        "style": "Стиль письма",
+        "contentLength": "Длина контента",
+        "tones": {
+          "professional": "Профессиональный",
+          "casual": "Повседневный",
+          "friendly": "Дружелюбный"
+        },
+        "styles": {
+          "formal": "Формальный",
+          "informal": "Неформальный"
+        },
+        "lengths": {
+          "short": "Короткий",
+          "medium": "Средний",
+          "long": "Длинный"
+        }
+      },
+      "danger": {
+        "title": "Опасная зона",
+        "description": "Необратимые и разрушительные действия",
+        "deleteTitle": "Удалить рабочее пространство",
+        "deleteDescription": "После удаления рабочего пространства восстановление невозможно. Пожалуйста, будьте внимательны.",
+        "delete": "Удалить рабочее пространство",
+        "confirmLabel": "Пожалуйста, введите {name} для подтверждения",
+        "confirm": "Да, удалить рабочее пространство",
+        "cancel": "Отмена"
+      },
+      "workspaceName": "Название пространства",
+      "description": "Описание",
+      "industry": "Отрасль",
+      "emailNotifications": "Email уведомления",
+      "emailNotificationsDesc": "Получать уведомления по email о важных событиях",
+      "aiTone": "Тон ИИ",
+      "aiStyle": "Стиль ИИ",
+      "contentLength": "Длина контента",
+      "toneProfessional": "Профессиональный",
+      "toneCasual": "Неформальный",
+      "toneFriendly": "Дружелюбный",
+      "styleFormal": "Формальный",
+      "styleInformal": "Неформальный",
+      "lengthShort": "Короткий",
+      "lengthMedium": "Средний",
+      "lengthLong": "Длинный",
+      "deleteWorkspace": "Удалить пространство",
+      "deleteWorkspaceWarning": "Это действие нельзя отменить. Все данные будут удалены навсегда.",
+      "typeDeleteToConfirm": "Введите DELETE для подтверждения",
+      "confirmDelete": "Подтвердить удаление",
+      "cancel": "Отмена",
+      "save": "Сохранить",
+      "updateSuccess": "Настройки успешно обновлены",
+      "updateError": "Ошибка при обновлении настроек",
+      "deleteSuccess": "Пространство успешно удалено",
+      "deleteError": "Ошибка при удалении пространства",
+      "targetAudience": {
+        "title": "Целевая аудитория",
+        "description": "Определите демографию и характеристики вашей целевой аудитории",
+        "ageRange": "Возрастной диапазон",
+        "gender": "Пол",
+        "genders": {
+          "male": "Мужской",
+          "female": "Женский",
+          "other": "Другой"
+        },
+        "location": "Локация",
+        "locationPlaceholder": "Введите локации через запятую",
+        "interests": "Интересы",
+        "interestsPlaceholder": "Введите интересы через запятую",
+        "painPoints": "Боли",
+        "painPointsPlaceholder": "Введите каждую боль с новой строки",
+        "goals": "Цели",
+        "goalsPlaceholder": "Введите каждую цель с новой строки"
+      },
+      "demographics": "Демография",
+      "ageRange": "Возрастной диапазон",
+      "gender": "Пол",
+      "location": "География",
+      "interests": "Интересы",
+      "painPointsAndGoals": "Боли и цели",
+      "painPoints": "Боли аудитории",
+      "painPointsPlaceholder": "Введите каждую боль с новой строки",
+      "goals": "Цели аудитории",
+      "goalsPlaceholder": "Введите каждую цель с новой строки",
+      "members": {
+        "title": "Участники рабочего пространства",
+        "description": "Управление доступом к рабочему пространству",
+        "invite": "Пригласить участника",
+        "inviteTitle": "Пригласить участника",
+        "inviteDescription": "Найдите пользователя по email, чтобы пригласить его в рабочее пространство",
+        "search": "Поиск",
+        "searching": "Поиск...",
+        "searchPlaceholder": "Введите email",
+        "searchError": "Не удалось найти пользователя",
+        "inviteError": "Не удалось пригласить пользователя",
+        "noUsersFound": "Пользователи не найдены",
+        "empty": "Пока нет участников",
+        "roles": {
+          "admin": "Администратор",
+          "member": "Участник"
+        }
+      }
+    }
+  },
+  "Companies": {
+    "title": "Компании",
+    "description": "Управляйте контактами компаний и отношениями",
+    "createButton": "Создать компанию",
+    "searchPlaceholder": "Поиск компаний...",
+    "deleteConfirm": "Вы уверены, что хотите удалить эту компанию?",
+    "empty": {
+      "title": "Нет компаний",
+      "description": "Создайте первую компанию для управления бизнес-отношениями."
+    },
+    "filters": {
+      "allStatuses": "Все статусы"
+    },
+    "status": {
+      "prospect": "Перспектива",
+      "lead": "Лид",
+      "customer": "Клиент",
+      "partner": "Партнер",
+      "inactive": "Неактивен"
+    },
+    "priority": {
+      "low": "Низкий",
+      "medium": "Средний",
+      "high": "Высокий",
+      "urgent": "Срочный"
+    },
+    "size": {
+      "startup": "Стартап",
+      "small": "Малая",
+      "medium": "Средняя",
+      "large": "Крупная",
+      "enterprise": "Корпорация"
+    },
+    "stats": {
+      "contacts": "Контакты",
+      "opportunities": "Возможности",
+      "activities": "Активности"
+    },
+    "actions": {
+      "view": "Просмотр",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "addContact": "Добавить контакт"
+    },
+    "addContact": {
+      "title": "Добавить контакт в компанию",
+      "searchPlaceholder": "Поиск контактов...",
+      "noContacts": "Доступных контактов не найдено",
+      "add": "Добавить"
+    },
+    "create": {
+      "title": "Создать компанию",
+      "companyName": "Название компании",
+      "industry": "Отрасль",
+      "website": "Веб-сайт",
+      "phone": "Телефон",
+      "email": "Email",
+      "description": "Описание",
+      "size": "Размер компании",
+      "status": "Статус",
+      "priority": "Приоритет",
+      "notes": "Заметки",
+      "cancel": "Отмена",
+      "submit": "Создать компанию"
+    },
+    "edit": {
+      "title": "Редактировать компанию",
+      "submit": "Сохранить изменения"
+    },
+    "details": {
+      "companyInfo": "Информация о компании",
+      "industry": "Отрасль",
+      "website": "Веб-сайт",
+      "email": "Email",
+      "phone": "Телефон",
+      "description": "Описание",
+      "contacts": "Контакты",
+      "noContacts": "Контакты еще не добавлены",
+      "primary": "Основной",
+      "opportunities": "Возможности",
+      "activities": "Активности",
+      "value": "Стоимость"
+    },
+    "activityType": {
+      "call": "Звонок",
+      "email": "Email",
+      "meeting": "Встреча",
+      "note": "Заметка",
+      "task": "Задача"
+    }
+  },
+  "Tasks": {
+    "title": "Задачи",
+    "description": "Управляйте задачами и проектами в стиле Agile",
+    "createTask": "Создать задачу",
+    "createBoard": "Создать доску",
+    "board": "Доска",
+    "searchPlaceholder": "Поиск задач...",
+    "deleteConfirm": "Вы уверены, что хотите удалить эту задачу?",
+    "unassigned": "Не назначена",
+    "overdue": "Просрочена",
+    "estimatedHours": "Оценка часов",
+    "loading": "Загрузка задач...",
+    "noTasks": "Нет задач в этой колонке",
+    "stats": {
+      "total": "Всего",
+      "my": "Мои",
+      "unassigned": "Не назначены",
+      "overdue": "Просрочены",
+      "inProgress": "В работе",
+      "done": "Завершены"
+    },
+    "filters": {
+      "all": "Все задачи",
+      "my": "Мои задачи",
+      "unassigned": "Не назначенные",
+      "overdue": "Просроченные"
+    },
+    "status": {
+      "backlog": "Бэклог",
+      "todo": "К выполнению",
+      "inProgress": "В работе",
+      "review": "На проверке",
+      "done": "Завершено"
+    },
+    "priority": {
+      "low": "Низкий",
+      "medium": "Средний",
+      "high": "Высокий",
+      "urgent": "Срочный"
+    },
+    "type": {
+      "feature": "Функция",
+      "bug": "Ошибка",
+      "improvement": "Улучшение",
+      "task": "Задача",
+      "story": "История"
+    },
+    "actions": {
+      "edit": "Редактировать",
+    "delete": "Удалить",
+      "assign": "Назначить",
+      "move": "Переместить"
+    },
+    "create": {
+      "title": "Название",
+      "titlePlaceholder": "Введите название задачи",
+      "description": "Описание",
+      "descriptionPlaceholder": "Введите описание задачи",
+      "priority": "Приоритет",
+      "type": "Тип",
+      "assignee": "Исполнитель",
+      "estimatedHours": "Оценка часов",
+      "dueDate": "Срок выполнения",
+      "tags": "Теги",
+      "addTag": "Добавить тег",
+      "add": "Добавить",
+      "status": "Статус",
+      "cancel": "Отмена",
+      "submit": "Создать задачу"
+    },
+    "edit": {
+      "title": "Редактировать задачу",
+      "submit": "Сохранить изменения"
+    },
+    "createBoard": {
+      "title": "Создать доску",
+      "name": "Название",
+      "namePlaceholder": "Введите название доски",
+      "description": "Описание",
+      "descriptionPlaceholder": "Введите описание доски",
+      "cancel": "Отмена",
+      "submit": "Создать доску"
+    },
+    "list": {
+      "title": "Список задач",
+      "subtitle": "{count} задач найдено",
+      "empty": "Задачи не найдены",
+      "emptyTitle": "Пока нет задач"
+    },
+    "assignee": {
+      "placeholder": "Выберите исполнителя",
+      "loading": "Загрузка участников...",
+      "noMembers": "Участники рабочего пространства не найдены",
+      "workspaceMembers": "Участники рабочего пространства"
+    },
+    "dragAndDrop": {
+      "dragToMove": "Перетащите для перемещения задачи",
+      "dropHere": "Отпустите здесь для перемещения задачи",
+      "movingTask": "Перемещение задачи...",
+      "taskMoved": "Задача успешно перемещена"
+    },
+    "error": {
+      "title": "Ошибка загрузки задач"
+    }
+  },
+  "Instagram": {
+    "title": "Аналитика Instagram",
+    "description": "Подключите свой аккаунт Instagram для просмотра аналитики и статистики",
+    "loading": "Загрузка...",
+    "error": {
+      "title": "Ошибка",
+      "dismiss": "Закрыть"
+    },
+    "connect": {
+      "title": "Подключить аккаунт Instagram",
+      "description": "Подключите свой аккаунт Instagram для просмотра детальной аналитики, отслеживания вовлеченности и мониторинга эффективности постов.",
+      "button": "Подключить Instagram",
+      "connecting": "Подключение...",
+      "privacy": "Мы получаем доступ только к вашим публичным постам и базовой информации профиля. Ваши личные данные остаются в безопасности."
+    },
+    "disconnect": "Отключить",
+    "stats": {
+      "posts": "Всего постов",
+      "totalLikes": "Всего лайков",
+      "totalComments": "Всего комментариев",
+      "avgLikes": "Среднее лайков",
+      "details": "Детальная статистика",
+      "mediaTypes": "Типы медиа",
+      "engagement": "Вовлеченность",
+      "avgComments": "Среднее комментариев",
+      "engagementRate": "Уровень вовлеченности",
+      "account": "Информация аккаунта",
+      "accountType": "Тип аккаунта",
+      "userId": "ID пользователя"
+    },
+    "posts": {
+      "title": "Последние посты",
+      "count": "постов",
+      "details": "Детали поста",
+      "caption": "Описание",
+      "likes": "Лайки",
+      "comments": "Комментарии",
+      "viewOnInstagram": "Посмотреть в Instagram"
+    }
+  },
+  "TikTok": {
+    "title": "TikTok Аналитика",
+    "description": "Подключите свой аккаунт TikTok для просмотра аналитики и статистики",
+    "loading": "Загрузка...",
+    "error": {
+      "title": "Ошибка",
+      "dismiss": "Закрыть"
+    },
+    "connect": {
+      "title": "Подключить аккаунт TikTok",
+      "description": "Подключите свой аккаунт TikTok для просмотра детальной аналитики, отслеживания вовлеченности и мониторинга производительности ваших видео.",
+      "button": "Подключить TikTok",
+      "connecting": "Подключение...",
+      "privacy": "Мы получаем доступ только к вашим публичным видео и базовой информации профиля. Ваши личные данные остаются в безопасности."
+    },
+    "disconnect": "Отключить",
+    "stats": {
+      "videos": "Всего видео",
+      "followers": "Подписчики",
+      "totalLikes": "Всего лайков",
+      "totalPlays": "Всего просмотров",
+      "totalComments": "Всего комментариев",
+      "totalShares": "Всего репостов",
+      "avgLikes": "Сред. лайков",
+      "avgComments": "Сред. комментариев",
+      "avgPlays": "Сред. просмотров",
+      "details": "Детальная статистика",
+      "engagement": "Вовлеченность",
+      "interactions": "Взаимодействия",
+      "engagementRate": "Уровень вовлеченности",
+      "account": "Информация аккаунта",
+      "following": "Подписки",
+      "totalLikesReceived": "Всего получено лайков",
+      "verified": "Верифицирован",
+      "yes": "Да",
+      "no": "Нет"
+    },
+    "videos": {
+      "title": "Последние видео",
+      "count": "видео",
+      "details": "Детали видео",
+      "description": "Описание",
+      "likes": "Лайки",
+      "comments": "Комментарии",
+      "plays": "Просмотры",
+      "shares": "Репосты",
+      "viewOnTikTok": "Посмотреть в TikTok"
+    }
+  }
+  ,
+  "searchPage": {
+    "title": "Поиск салонов и услуг",
+    "placeholder": "Введите запрос (например: маникюр, стрижка, адрес...)",
+    "tabs": {
+      "all": "Все",
+      "salons": "Салоны",
+      "services": "Услуги"
+    },
+    "loading": "Загрузка...",
+    "empty": "Ничего не найдено",
+    "salonsTitle": "Салоны",
+    "servicesTitle": "Услуги",
+    "book": "Записаться",
+    "salonLabel": "Салон:"
+  },
+  "profilePage": {
+    "title": "Профиль",
+    "loading": "Загрузка...",
+    "requireLogin": {
+      "title": "Требуется авторизация",
+      "desc": "Для просмотра профиля необходимо войти в систему",
+      "login": "Войти",
+      "register": "Регистрация"
+    },
+    "settings": {
+      "title": "Настройки аккаунта",
+      "name": "Имя",
+      "language": "Язык",
+      "notifications": "Уведомления",
+      "savePrefs": "Сохранить настройки",
+      "saveProfile": "Сохранить профиль"
+    },
+    "appointments": {
+      "title": "Мои записи",
+      "empty": "У вас пока нет записей",
+      "status": "Статус:",
+      "rebook": "Записаться снова"
+    }
+  },
+  "salonSettings": {
+    "title": "Настройки салона",
+    "subtitle": "Управляйте настройками вашего бизнеса и системы",
+    "loading": "Загрузка...",
+    "saving": "Сохранение...",
+    "loadingTitle": "Загрузка настроек салона...",
+    "notFound": {
+      "title": "Салон не найден",
+      "description": "Запрашиваемый салон не существует или был удален"
+    },
+    "accessDenied": {
+      "title": "Доступ запрещен",
+      "description": "У вас нет прав для изменения настроек этого салона"
+    },
+    "error": {
+      "saveFailed": "Не удалось сохранить настройки",
+      "loadFailed": "Не удалось загрузить данные салона"
+    },
+    "sections": {
+      "business": {
+        "title": "Информация о бизнесе",
+        "name": "Название салона",
+        "email": "Email",
+        "phone": "Телефон",
+        "address": "Адрес",
+        "timezone": "Часовой пояс",
+        "currency": "Валюта",
+        "save": "Сохранить",
+        "saved": "Информация о бизнесе сохранена"
+      },
+      "notifications": {
+        "title": "Уведомления",
+        "email": "Email уведомления",
+        "sms": "SMS уведомления",
+        "push": "Push уведомления",
+        "reminderTime": "Время напоминания",
+        "save": "Сохранить",
+        "saved": "Настройки уведомлений сохранены"
+      },
+      "security": {
+        "title": "Безопасность",
+        "twoFactor": "Двухфакторная аутентификация",
+        "sessionTimeout": "Таймаут сессии",
+        "passwordExpiry": "Срок действия пароля",
+        "save": "Сохранить",
+        "saved": "Настройки безопасности сохранены"
+      },
+      "integrations": {
+        "title": "Интеграции",
+        "googleCalendar": "Google Календарь",
+        "telegramBot": "Telegram бот",
+        "whatsapp": "WhatsApp",
+        "save": "Сохранить",
+        "saved": "Настройки интеграций сохранены"
+      }
+    }
+  },
+  "salonCrm": {
+    "menu": {
+      "dashboard": "Панель управления",
+      "appointments": "Записи",
+      "clients": "Клиенты",
+      "services": "Услуги",
+      "staff": "Сотрудники",
+      "schedule": "Расписание",
+      "settings": "Настройки",
+      "analytics": "Аналитика",
+      "reports": "Отчеты"
+    }
+  },
+  "forms": {
+    "required": "Обязательное поле",
+    "invalidEmail": "Некорректный email",
+    "invalidPhone": "Некорректный номер телефона",
+    "minLength": "Минимальная длина: {min} символов",
+    "maxLength": "Максимальная длина: {max} символов",
+    "optional": "(необязательно)",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "submit": "Отправить",
+    "loading": "Загрузка...",
+    "saving": "Сохранение...",
+    "success": "Успешно сохранено",
+    "error": "Произошла ошибка"
+  },
+  "validation": {
+    "required": "Это поле обязательно для заполнения",
+    "email": "Введите корректный email",
+    "phone": "Введите корректный номер телефона",
+    "minLength": "Минимальная длина: {min} символов",
+    "maxLength": "Максимальная длина: {max} символов",
+    "invalidFormat": "Неверный формат"
   }
 }

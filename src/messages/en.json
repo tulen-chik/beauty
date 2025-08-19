@@ -13,136 +13,1072 @@
     "backToHome": "Back to Home",
     "clearError": "Clear error",
     "notFoundTitle": "Page Not Found",
-    "notFoundDescription": "The page you're looking for doesn't exist or has been moved."
-  },
-  "home": {
-    "title": "Home page",
-    "welcome": "Welcome to our application",
-    "heroTitle": "Create Viral Clips from Streams",
-    "heroSubtitle": "Automate your content creation with AI-powered stream clipping for TikTok and Instagram",
-    "getStarted": "Get Started",
-    "signIn": "Sign In",
-    "featuresTitle": "Why Choose Rocket",
-    "feature1Title": "AI-Powered Clipping",
-    "feature1Description": "Our AI automatically detects the most engaging moments in your streams and creates perfect clips",
-    "feature2Title": "Multi-Platform Export",
-    "feature2Description": "Export your clips directly to TikTok and Instagram with optimized formats and hashtags",
-    "feature3Title": "Smart Analytics",
-    "feature3Description": "Track your clip performance and get insights to improve your content strategy",
-    "howItWorksTitle": "How It Works",
-    "step1Title": "Connect Stream",
-    "step1Description": "Link your Twitch, YouTube, or other streaming platform account",
-    "step2Title": "AI Analysis",
-    "step2Description": "Our AI analyzes your stream and identifies viral moments",
-    "step3Title": "Edit & Customize",
-    "step3Description": "Review and customize the suggested clips with our easy editor",
-    "step4Title": "Export & Share",
-    "step4Description": "Export to TikTok and Instagram with one click",
-    "platformTitle": "Stream Clipping Platform",
-    "platformDescription": "Join our community of content creators and streamers",
-    "platformFeature1Title": "Create Publications",
-    "platformFeature1Description": "Share your work, get feedback, and connect with other creators",
-    "platformFeature2Title": "Post Stream Offers",
-    "platformFeature2Description": "Offer your streams for clipping and earn from your content",
-    "platformFeature3Title": "Find Clippers",
-    "platformFeature3Description": "Connect with professional clippers who can help grow your audience",
-    "blockchainTitle": "Powered by Blockchain",
-    "blockchainDescription": "Secure, transparent, and efficient content monetization",
-    "blockchainFeature1Title": "Smart Contracts",
-    "blockchainFeature1Description": "Automated payments and revenue sharing between creators and clippers",
-    "blockchainFeature2Title": "Content Ownership",
-    "blockchainFeature2Description": "Prove your ownership and track usage of your content",
-    "blockchainFeature3Title": "Transparent Earnings",
-    "blockchainFeature3Description": "Real-time tracking of your earnings and analytics",
-    "ctaTitle": "Start Creating Viral Content Today",
-    "ctaDescription": "Join thousands of content creators who are already using Rocket to grow their audience",
-    "startNow": "Start Now",
-    "footerText": "© 2024 Rocket. All rights reserved."
-  },
-  "navigation": {
-    "dashboard": "Dashboard",
+    "notFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "filter": "Filter",
+    "sort": "Sort",
+    "more": "More",
+    "less": "Less",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "close": "Close",
+    "open": "Open",
     "profile": "Profile",
     "logout": "Logout",
-    "add": "Add",
-    "categories": "Categories",
-    "chats": "Chats",
-    "stats": "Statistics",
-    "rating": "Rating"
-  },
-  "auth": {
     "login": "Login",
     "register": "Register",
+    "forgotPassword": "Forgot Password?",
+    "resetPassword": "Reset Password",
     "email": "Email",
     "password": "Password",
-    "confirmPassword": "Confirm Password",
-    "forgotPassword": "Forgot Password?",
-    "rememberMe": "Remember me",
-    "noAccount": "Don't have an account?",
-    "haveAccount": "Already have an account?",
+    "name": "Name",
+    "description": "Description",
+    "title": "Title",
+    "content": "Content",
+    "date": "Date",
+    "time": "Time",
+    "status": "Status",
+    "type": "Type",
+    "category": "Category",
+    "tags": "Tags",
+    "author": "Author",
+    "created": "Created",
+    "updated": "Updated",
+    "actions": "Actions",
+    "details": "Details",
+    "preview": "Preview",
+    "download": "Download",
+    "upload": "Upload",
+    "share": "Share",
+    "copy": "Copy",
+    "paste": "Paste",
+    "cut": "Cut",
+    "move": "Move",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
+    "export": "Export",
+    "import": "Import",
+    "print": "Print",
+    "help": "Help",
+    "support": "Support",
+    "feedback": "Feedback",
+    "about": "About",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "documentation": "Documentation",
+    "api": "API",
+    "geolocation": {
+      "unavailable": "Geolocation unavailable",
+      "permissionDenied": "Allow access to geolocation",
+      "determiningCity": "Determining city...",
+      "unknownCity": "Unknown city"
+    },
+    "navigation": {
+      "home": "Home",
+      "search": "Search",
+      "blog": "Blog"
+    },
+    "brand": {
+      "name": "Beauty Platform"
+    }
+  },
+  "salonCreation": {
+    "title": "Create Salon",
+    "name": "Name",
+    "namePlaceholder": "Enter salon name",
+    "address": "Address",
+    "addressPlaceholder": "Enter address or select on map",
+    "phone": "Phone",
+    "phonePlaceholder": "+1 (555) 123-4567",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief salon description...",
+    "map": "Map",
+    "hideMap": "Hide Map",
+    "showMap": "Show Map",
+    "mapInstructions": "Select location on map",
+    "mapHelp": "Click on map or drag marker to select location",
+    "coordinates": "Coordinates",
+    "createButton": "Create Salon",
+    "creating": "Creating...",
+    "success": "Salon created successfully!",
+    "mapError": "Google Maps failed to load",
+    "mapErrorHelp": "Make sure you have internet access and Google Maps API key is configured",
+    "error": "Map loading error",
+    "instructions": "Click on map or drag marker to select location"
+  },
+  "profilePage": {
+    "title": "Profile",
+    "loading": "Loading...",
+    "requireLogin": {
+      "title": "Authentication Required",
+      "desc": "You need to log in to view your profile",
+      "login": "Login",
+      "register": "Register"
+    },
+    "settings": {
+      "title": "Account Settings",
+      "name": "Name",
+      "language": "Language",
+      "notifications": "Notifications",
+      "savePrefs": "Save Settings",
+      "saveProfile": "Save Profile"
+    },
+    "appointments": {
+      "title": "My Appointments",
+      "empty": "You don't have any appointments yet",
+      "status": "Status:",
+      "rebook": "Book Again"
+    }
+  },
+  "salonSettings": {
+    "title": "Salon Settings",
+    "subtitle": "Manage your business and system settings",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "loadingTitle": "Loading salon settings...",
+    "notFound": {
+      "title": "Salon Not Found",
+      "description": "The requested salon does not exist or has been deleted"
+    },
+    "accessDenied": {
+      "title": "Access Denied",
+      "description": "You don't have permission to modify this salon's settings"
+    },
+    "error": {
+      "saveFailed": "Failed to save settings",
+      "loadFailed": "Failed to load salon data"
+    },
+    "sections": {
+      "business": {
+        "title": "Business Information",
+        "name": "Salon Name",
+        "email": "Email",
+        "phone": "Phone",
+        "address": "Address",
+        "timezone": "Timezone",
+        "currency": "Currency",
+        "save": "Save",
+        "saved": "Business information saved"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "email": "Email notifications",
+        "sms": "SMS notifications",
+        "push": "Push notifications",
+        "reminderTime": "Reminder time",
+        "save": "Save",
+        "saved": "Notification settings saved"
+      },
+      "security": {
+        "title": "Security",
+        "twoFactor": "Two-factor authentication",
+        "sessionTimeout": "Session timeout",
+        "passwordExpiry": "Password expiry",
+        "save": "Save",
+        "saved": "Security settings saved"
+      },
+      "integrations": {
+        "title": "Integrations",
+        "googleCalendar": "Google Calendar",
+        "telegramBot": "Telegram Bot",
+        "whatsapp": "WhatsApp",
+        "save": "Save",
+        "saved": "Integration settings saved"
+      }
+    }
+  },
+  "salonCrm": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "appointments": "Appointments",
+      "clients": "Clients",
+      "services": "Services",
+      "staff": "Staff",
+      "schedule": "Schedule",
+      "settings": "Settings",
+      "analytics": "Analytics",
+      "reports": "Reports"
+    }
+  },
+  "mapSelector": {
+    "title": "Select location on map",
+    "instructions": "Click on map or drag marker to select location",
+    "error": "Map loading error",
+    "errorHelp": "Make sure you have internet access and Google Maps API key is configured"
+  },
+  "forms": {
+    "required": "Required field",
+    "invalidEmail": "Invalid email",
+    "invalidPhone": "Invalid phone number",
+    "minLength": "Minimum length: {min} characters",
+    "maxLength": "Maximum length: {max} characters",
+    "optional": "(optional)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "success": "Successfully saved",
+    "error": "An error occurred"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email": "Please enter a valid email",
+    "phone": "Please enter a valid phone number",
+    "minLength": "Minimum length: {min} characters",
+    "maxLength": "Maximum length: {max} characters",
+    "invalidFormat": "Invalid format"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "pending": "Pending",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived"
+  },
+  "home": {
+    "title": "Beauty Platform",
+    "subtitle": "Find the best beauty salons near you",
+    "heroTitle": "Beauty starts here",
+    "heroSubtitle": "Discover the best beauty salons and spas in your city",
+    "mission": "Connecting beauty professionals with clients",
+    "getStartedClient": "Find Services",
+    "getStartedPro": "Join as Professional",
+    "featuresTitle": "Why choose us",
+    "clientBenefitsTitle": "For Clients",
+    "proBenefitsTitle": "For Professionals",
+    "howItWorksTitle": "How it works",
+    "clientBenefits": [
+      "Easy booking with verified salons",
+      "Transparent pricing and reviews",
+      "Wide range of beauty services",
+      "Convenient scheduling system"
+    ],
+    "proBenefits": [
+      "Manage appointments efficiently",
+      "Grow your client base",
+      "Professional booking platform",
+      "Analytics and insights"
+    ],
+    "steps": [
+      "Choose your service",
+      "Select preferred time",
+      "Book and confirm",
+      "Enjoy your appointment"
+    ],
+    "hero": {
+      "title": "Beauty starts here",
+      "subtitle": "Discover the best beauty salons and spas in your city",
+      "searchPlaceholder": "Search for services or salons...",
+      "searchButton": "Find",
+      "popularServices": "Popular services"
+    },
+    "features": {
+      "title": "Why choose us",
+      "easyBooking": "Easy booking",
+      "verifiedSalons": "Verified salons",
+      "bestPrices": "Best prices",
+      "customerSupport": "Customer support"
+    },
+    "categories": {
+      "title": "Service categories",
+      "hair": "Hair",
+      "nails": "Nails",
+      "face": "Face",
+      "body": "Body",
+      "massage": "Massage"
+    },
+    "testimonials": {
+      "title": "Customer reviews",
+      "subtitle": "What they say about us"
+    },
+    "ctaTitle": "Ready to get started?",
+    "ctaDescription": "Join thousands of satisfied customers who trust Beauty Platform for their beauty needs.",
+    "startNow": "Start Now",
+    "footerText": "Connecting beauty professionals with clients worldwide. Your beauty journey starts here.",
+    "faqTitle": "Frequently Asked Questions"
+  },
+  "footer": {
+    "company": "Company",
+    "about": "About",
+    "careers": "Careers",
+    "press": "Press",
+    "support": "Support",
+    "help": "Help",
+    "contact": "Contact",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookies",
+    "social": "Social",
+    "followUs": "Follow us",
+    "newsletter": "Newsletter",
+    "subscribe": "Subscribe",
+    "emailPlaceholder": "Your email"
+  },
+  "errors": {
+    "404": {
+      "title": "Page not found",
+      "subtitle": "Sorry, the page you're looking for doesn't exist",
+      "backHome": "Back to home",
+      "search": "Search the site"
+    },
+    "500": {
+      "title": "Internal server error",
+      "subtitle": "Something went wrong. Try refreshing the page",
+      "refresh": "Refresh page",
+      "backHome": "Back to home"
+    },
+    "network": {
+      "title": "Network error",
+      "subtitle": "Check your internet connection and try again",
+      "retry": "Try again"
+    },
+    "auth": {
+      "title": "Authentication error",
+      "subtitle": "Failed to sign in. Check your credentials and try again",
+      "login": "Sign in",
+      "register": "Sign up"
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "You have no new notifications",
+    "types": {
+      "appointment": "Appointment",
+      "reminder": "Reminder",
+      "promotion": "Promotion",
+      "system": "System"
+    },
+    "actions": {
+      "view": "View",
+      "dismiss": "Dismiss",
+      "markRead": "Mark as read"
+    }
+  },
+  "booking": {
+    "title": "Booking",
+    "selectService": "Select service",
+    "selectDate": "Select date",
+    "selectTime": "Select time",
+    "selectStaff": "Select staff member",
+    "customerInfo": "Customer information",
+    "confirmation": "Confirmation",
+    "summary": "Summary",
+    "total": "Total",
+    "bookNow": "Book now",
+    "cancel": "Cancel",
+    "reschedule": "Reschedule",
+    "status": {
+      "pending": "Pending confirmation",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Useful articles and tips",
+    "readMore": "Read more",
+    "publishedAt": "Published",
+    "readTime": "min read",
+    "author": "Author",
+    "category": "Category",
+    "tags": "Tags",
+    "relatedPosts": "Related articles",
+    "search": "Blog search",
+    "searchPlaceholder": "Find article...",
+    "noResults": "No articles found",
+    "loading": "Loading articles..."
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find the services and salons you need",
+    "searchPlaceholder": "Search for services, salons...",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "results": "Search results",
+    "noResults": "Nothing found",
+    "tryDifferent": "Try changing search parameters",
+    "loading": "Searching...",
+    "servicesTitle": "Services",
+    "book": "Book",
+    "unknownCity": "Unknown city",
+    "cityFilter": "Showing services in city: {city}",
+    "noServicesInCity": "No services found in city {city}",
+    "aboutSalon": "About salon",
+    "servicesCount": "{count} services",
+    "servicesCountOne": "{count} service",
+    "servicesCountFew": "{count} services",
+    "servicesCountMany": "{count} services",
+    "showMap": "Show Map",
+    "hideMap": "Hide Map",
+    "mapTitle": "Salons Map",
+    "mapInstructions": "Click on salon marker to view its services",
+    "mapError": "Map loading error",
+    "mapErrorHelp": "Make sure you have internet access and Google Maps API key is configured",
+    "selectedSalonFilter": "Showing services for salon: {salonName}",
+    "cityFilterMessage": "Showing services in city: {city}",
+    "noServicesInCityMessage": "No services found in city {city}",
+    "salonsCount": "{count} salons",
+    "salonsCountOne": "{count} salon",
+    "salonsCountFew": "{count} salons",
+    "salonsCountMany": "{count} salons",
+    "selectCity": "Select city",
+    "popularCities": "Popular cities",
+    "customCity": "Other city",
+    "enterCityName": "Enter city name",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "showingInCity": "Showing services in city: {city}",
+    "detectedCity": "Detected city: {city}",
+    "clearCitySelection": "Clear city selection",
+    "showingSalonServices": "Showing services for salon: {salonName}",
+    "clearSalonFilter": "Clear salon filter",
+    "activeFilters": "Active filters",
+    "searchQuery": "Search query",
+    "city": "City",
+    "salon": "Salon",
+    "clearAll": "Clear all",
+    "loadingMap": "Loading map...",
+    "noSalonsWithCoordinates": "No salons with coordinates to display on map",
+    "categories": {
+      "all": "All categories",
+      "hair": "Hair",
+      "nails": "Nails",
+      "face": "Face",
+      "body": "Body",
+      "massage": "Massage"
+    },
+    "sortOptions": {
+      "relevance": "By relevance",
+      "rating": "By rating",
+      "price": "By price",
+      "distance": "By distance"
+    }
+  },
+  "auth": {
     "signIn": "Sign In",
     "signUp": "Sign Up",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "switchToRegister": "Sign up",
+    "switchToLogin": "Sign in",
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Welcome back! Sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign In",
+      "noAccount": "Don't have an account?",
+      "switchToRegister": "Sign up"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join us! Create your account",
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "signUp": "Sign Up",
+      "haveAccount": "Already have an account?",
+      "switchToLogin": "Sign in"
+    },
     "or": "or",
-    "continueWith": "Continue with",
-    "resetPassword": "Reset Password",
-    "resetPasswordSuccess": "If an account exists with this email, you will receive password reset instructions.",
-    "passwordMismatch": "Passwords do not match",
-    "minPasswordLength": "Password must be at least 8 characters long",
-    "verifyEmail": "Verify Email",
-    "verifyEmailMessage": "Please check your email and click the link to verify your email address",
-    "verifyEmailSuccess": "Email successfully verified",
-    "verifyEmailError": "Error verifying email",
-    "verifyEmailResend": "Resend verification code",
-    "verifyEmailCode": "Verification code",
-    "verifyEmailCodeSent": "Verification code has been sent to your email",
-    "verifyEmailCodeError": "Invalid verification code",
-    "verifyEmailCodeExpired": "Verification code has expired",
-    "verifyEmailCodeResend": "Resend code in",
-    "verifyEmailCodeResendNow": "Resend code now",
-    "loading": "loading",
-    "verificationCodeHint": "Enter the 6-digit code sent to your email",
-    "resendCodeIn": "Resend code in 60 seconds",
-    "resendCode": "Resend code",
-    "verificationCode": "Verification code"
+    "continueWithGoogle": "Continue with Google",
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailAlreadyInUse": "This email is already in use",
+      "weakPassword": "Password is too weak",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "invalidEmail": "Invalid email format",
+      "requiredField": "This field is required"
+    }
   },
-  "publications": {
-    "createPost": "Create Post",
-    "whatsNew": "What's new?",
-    "activityFeed": "Activity Feed",
-    "all": "All",
-    "myPosts": "My Posts",
-    "loading": "Loading publications...",
-    "noPosts": "No publications yet. Be the first to share something interesting!",
-    "post": "Post",
-    "showFull": "Show full",
-    "collapse": "Collapse",
-    "enterComment": "Enter comment",
-    "send": "Send",
-    "comments": "Comments",
-    "reply": "Reply"
+  "salon": {
+    "create": {
+      "title": "Create Salon",
+      "success": "Salon created successfully!",
+      "error": "Error creating salon"
+    },
+    "edit": {
+      "title": "Edit Salon",
+      "success": "Salon updated successfully!",
+      "error": "Error updating salon"
+    },
+    "delete": {
+      "title": "Delete Salon",
+      "confirm": "Are you sure you want to delete this salon?",
+      "success": "Salon deleted successfully!",
+      "error": "Error deleting salon"
+    }
   },
-  "clips": {
-    "sortByNewest": "Newest first",
-    "yourClips": "Your clips",
-    "showMore": "Show more",
-    "earnMoney": "Earn money by clipping for ROKY",
-    "paymentsFrom": "Payments from 20K views",
+  "appointments": {
+    "title": "Appointments",
+    "create": "Create Appointment",
+    "edit": "Edit Appointment",
+    "delete": "Delete Appointment",
     "status": {
-      "checking": "Checking",
-      "accepted": "Accepted"
+      "pending": "Pending confirmation",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No show"
+    },
+    "actions": {
+      "confirm": "Confirm",
+      "complete": "Complete",
+      "cancel": "Cancel",
+      "reschedule": "Reschedule"
     }
   },
-  "profile": {
-    "thisIsYou": "This is you!",
-    "changePassword": "Change password",
-    "changeWallet": "Change wallet",
-    "connectInstagram": "Connect Instagram",
-    "connectTikTok": "Connect TikTok",
-    "tabs": {
-      "community": "Community",
-      "posts": "Posts",
-      "clips": "Clips",
-      "offers": "Offers",
-      "reviews": "Reviews"
+  "services": {
+    "title": "Services",
+    "create": "Create Service",
+    "edit": "Edit Service",
+    "delete": "Delete Service",
+    "name": "Service Name",
+    "description": "Description",
+    "price": "Price",
+    "duration": "Duration",
+    "category": "Category"
+  },
+  "staff": {
+    "title": "Staff",
+    "add": "Add Staff Member",
+    "edit": "Edit Staff Member",
+    "remove": "Remove Staff Member",
+    "name": "Name",
+    "role": "Role",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "schedule": {
+    "title": "Schedule",
+    "workingHours": "Working Hours",
+    "breaks": "Breaks",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed"
     }
+  },
+  "clients": {
+    "title": "Clients",
+    "add": "Add Client",
+    "edit": "Edit Client",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "notes": "Notes"
+  },
+  "analytics": {
+    "title": "Analytics",
+    "revenue": "Revenue",
+    "appointments": "Appointments",
+    "clients": "Clients",
+    "services": "Services",
+    "period": {
+      "today": "Today",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate Report",
+    "export": "Export",
+    "types": {
+      "revenue": "Revenue Report",
+      "appointments": "Appointments Report",
+      "clients": "Clients Report",
+      "services": "Services Report"
+    }
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "description": "Manage your workspaces and projects",
+    "createButton": "Create Workspace",
+    "searchPlaceholder": "Search workspaces...",
+    "deleteConfirm": "Are you sure you want to delete this workspace?",
+    "empty": {
+      "title": "No workspaces yet",
+      "description": "Create your first workspace to start managing your projects."
+    },
+    "create": {
+      "title": "Create New Workspace",
+      "name": "Workspace Name",
+      "description": "Description",
+      "industry": "Industry",
+      "cancel": "Cancel",
+      "submit": "Create Workspace"
+    },
+    "stats": {
+      "members": "Members",
+      "projects": "Projects",
+      "tasks": "Tasks"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "Overview of your workspace activities and performance",
+    "welcome": "Welcome back",
+    "recentActivity": "Recent Activity",
+    "noRecentActivity": "No recent activity",
+    "quickActions": "Quick Actions",
+    "createContentPlan": "Create Content Plan",
+    "workspaceSettings": "Workspace Settings",
+    "viewAll": "View All",
+    "stats": {
+      "totalMembers": "Total Members",
+      "activeContentPlans": "Active Content Plans",
+      "totalViews": "Total Views",
+      "totalEngagement": "Total Engagement",
+      "conversionRate": "Conversion Rate"
+    }
+  },
+  "Workspace": {
+    "settings": {
+      "members": {
+        "title": "Workspace Members",
+        "description": "Manage who has access to this workspace",
+        "invite": "Invite Member",
+        "inviteTitle": "Invite a Member",
+        "inviteDescription": "Search for a user by email to invite them to your workspace",
+        "search": "Search",
+        "searching": "Searching...",
+        "searchPlaceholder": "Enter email address",
+        "searchError": "Failed to search for user",
+        "inviteError": "Failed to invite user",
+        "noUsersFound": "No users found",
+        "empty": "No members yet",
+        "roles": {
+          "admin": "Admin",
+          "member": "Member"
+        }
+      },
+      "general": {
+        "title": "General Settings",
+        "description": "Manage your workspace basic information",
+        "name": "Workspace Name",
+        "description": "Description",
+        "industry": "Industry",
+        "save": "Save Changes",
+        "aiSuggestionTitle": "AI suggestion for general settings",
+        "aiSuggests": "AI suggests",
+        "apply": "Apply",
+        "reject": "Reject",
+        "applyAll": "Apply all",
+        "rejectAll": "Reject all",
+        "changed": "Changed",
+        "current": "Current"
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage your notification preferences",
+        "enable": "Enable Notifications",
+        "enableDescription": "Receive notifications about workspace activities"
+      },
+      "ai": {
+        "title": "AI Preferences",
+        "description": "Customize how AI generates content for your workspace",
+        "tone": "Content Tone",
+        "style": "Writing Style",
+        "contentLength": "Content Length",
+        "tones": {
+          "professional": "Professional",
+          "casual": "Casual",
+          "friendly": "Friendly"
+        },
+        "styles": {
+          "formal": "Formal",
+          "informal": "Informal"
+        },
+        "lengths": {
+          "short": "Short",
+          "medium": "Medium",
+          "long": "Long"
+        }
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "description": "Irreversible and destructive actions",
+        "deleteTitle": "Delete Workspace",
+        "deleteDescription": "Once you delete a workspace, there is no going back. Please be certain.",
+        "delete": "Delete Workspace",
+        "confirmLabel": "Please type {name} to confirm",
+        "confirm": "Yes, delete workspace",
+        "cancel": "Cancel"
+      },
+      "targetAudience": {
+        "title": "Target Audience",
+        "description": "Define your target audience demographics and characteristics",
+        "ageRange": "Age Range",
+        "gender": "Gender",
+        "genders": {
+          "male": "Male",
+          "female": "Female",
+          "other": "Other"
+        },
+        "location": "Location",
+        "locationPlaceholder": "Enter locations separated by commas",
+        "interests": "Interests",
+        "interestsPlaceholder": "Enter interests separated by commas",
+        "painPoints": "Pain Points",
+        "painPointsPlaceholder": "Enter each pain point on a new line",
+        "goals": "Goals",
+        "goalsPlaceholder": "Enter each goal on a new line",
+        "aiSuggestionTitle": "AI suggestion for target audience",
+        "aiSuggests": "AI suggests",
+        "apply": "Apply",
+        "reject": "Reject",
+        "applyAll": "Apply all",
+        "rejectAll": "Reject all",
+        "changed": "Changed",
+        "current": "Current"
+      }
+    },
+    "navigation": {
+      "dashboard": "Dashboard",
+      "content": "Content",
+      "contacts": "Contacts",
+      "companies": "Companies",
+      "analytics": "Analytics",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "settings": "Settings"
+    }
+  },
+  "Companies": {
+    "title": "Companies",
+    "description": "Manage your company contacts and relationships",
+    "createButton": "Create Company",
+    "searchPlaceholder": "Search companies...",
+    "deleteConfirm": "Are you sure you want to delete this company?",
+    "empty": {
+      "title": "No companies yet",
+      "description": "Create your first company to start managing your business relationships."
+    },
+    "filters": {
+      "allStatuses": "All Statuses"
+    },
+    "status": {
+      "prospect": "Prospect",
+      "lead": "Lead",
+      "customer": "Customer",
+      "partner": "Partner",
+      "inactive": "Inactive"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "size": {
+      "startup": "Startup",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "enterprise": "Enterprise"
+    },
+    "stats": {
+      "contacts": "Contacts",
+      "opportunities": "Opportunities",
+      "activities": "Activities"
+    },
+    "actions": {
+      "view": "View Details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "addContact": "Add Contact"
+    },
+    "addContact": {
+      "title": "Add Contact to Company",
+      "searchPlaceholder": "Search contacts...",
+      "noContacts": "No available contacts found",
+      "add": "Add"
+    },
+    "create": {
+      "title": "Create New Company",
+      "companyName": "Company Name",
+      "industry": "Industry",
+      "website": "Website",
+      "phone": "Phone",
+      "email": "Email",
+      "description": "Description",
+      "size": "Company Size",
+      "status": "Status",
+      "priority": "Priority",
+      "notes": "Notes",
+      "cancel": "Cancel",
+      "submit": "Create Company"
+    },
+    "edit": {
+      "title": "Edit Company",
+      "submit": "Save Changes"
+    },
+    "details": {
+      "companyInfo": "Company Information",
+      "industry": "Industry",
+      "website": "Website",
+      "email": "Email",
+      "phone": "Phone",
+      "description": "Description",
+      "contacts": "Contacts",
+      "noContacts": "No contacts added yet",
+      "primary": "Primary",
+      "opportunities": "Opportunities",
+      "activities": "Activities",
+      "value": "Value"
+    },
+    "activityType": {
+      "call": "Call",
+      "email": "Email",
+      "meeting": "Meeting",
+      "note": "Note",
+      "task": "Task"
+    }
+  },
+  "Tasks": {
+    "title": "Tasks",
+    "description": "Manage tasks and projects in Agile style",
+    "createTask": "Create Task",
+    "createBoard": "Create Board",
+    "board": "Board",
+    "searchPlaceholder": "Search tasks...",
+    "deleteConfirm": "Are you sure you want to delete this task?",
+    "unassigned": "Unassigned",
+    "overdue": "Overdue",
+    "estimatedHours": "Estimated Hours",
+    "loading": "Loading tasks...",
+    "noTasks": "No tasks in this column",
+    "stats": {
+      "total": "Total",
+      "my": "My",
+      "unassigned": "Unassigned",
+      "overdue": "Overdue",
+      "inProgress": "In Progress",
+      "done": "Done"
+    },
+    "filters": {
+      "all": "All Tasks",
+      "my": "My Tasks",
+      "unassigned": "Unassigned",
+      "overdue": "Overdue"
+    },
+    "status": {
+      "backlog": "Backlog",
+      "todo": "To Do",
+      "inProgress": "In Progress",
+      "review": "Review",
+      "done": "Done"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "type": {
+      "feature": "Feature",
+      "bug": "Bug",
+      "improvement": "Improvement",
+      "task": "Task",
+      "story": "Story"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "assign": "Assign",
+      "move": "Move"
+    },
+    "create": {
+      "title": "Title",
+      "titlePlaceholder": "Enter task title",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter task description",
+      "priority": "Priority",
+      "type": "Type",
+      "assignee": "Assignee",
+      "estimatedHours": "Estimated Hours",
+      "dueDate": "Due Date",
+      "tags": "Tags",
+      "addTag": "Add tag",
+      "add": "Add",
+      "status": "Status",
+      "cancel": "Cancel",
+      "submit": "Create Task"
+    },
+    "edit": {
+      "title": "Edit Task",
+      "submit": "Save Changes"
+    },
+    "createBoard": {
+      "title": "Create Board",
+      "name": "Name",
+      "namePlaceholder": "Enter board name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter board description",
+      "cancel": "Cancel",
+      "submit": "Create Board"
+    },
+    "list": {
+      "title": "Task List",
+      "subtitle": "{count} tasks found",
+      "empty": "No tasks found",
+      "emptyTitle": "No tasks yet"
+    },
+    "assignee": {
+      "placeholder": "Select assignee",
+      "loading": "Loading members...",
+      "noMembers": "No workspace members found",
+      "workspaceMembers": "Workspace Members"
+    },
+    "dragAndDrop": {
+      "dragToMove": "Drag to move task",
+      "dropHere": "Drop here to move task",
+      "movingTask": "Moving task...",
+      "taskMoved": "Task moved successfully"
+    },
+    "error": {
+      "title": "Error Loading Tasks"
+    }
+  },
+  "Instagram": {
+    "title": "Instagram Analytics",
+    "description": "Connect your Instagram account to view analytics and insights",
+    "loading": "Loading...",
+    "error": {
+      "title": "Error",
+      "dismiss": "Dismiss"
+    },
+    "connect": {
+      "title": "Connect Instagram Account",
+      "description": "Connect your Instagram account to view detailed analytics, track engagement, and monitor your posts performance.",
+      "button": "Connect Instagram",
+      "connecting": "Connecting...",
+      "privacy": "We only access your public posts and basic profile information. Your private data remains secure."
+    },
+    "disconnect": "Disconnect",
+    "stats": {
+      "posts": "Total Posts",
+      "totalLikes": "Total Likes",
+      "totalComments": "Total Comments",
+      "avgLikes": "Avg. Likes",
+      "details": "Detailed Statistics",
+      "mediaTypes": "Media Types",
+      "engagement": "Engagement",
+      "avgComments": "Avg. Comments",
+      "engagementRate": "Engagement Rate",
+      "account": "Account Info",
+      "accountType": "Account Type",
+      "userId": "User ID"
+    },
+    "posts": {
+      "title": "Recent Posts",
+      "count": "posts",
+      "details": "Post Details",
+      "caption": "Caption",
+      "likes": "Likes",
+      "comments": "Comments",
+      "viewOnInstagram": "View on Instagram"
+    }
+  },
+  "TikTok": {
+    "title": "TikTok Analytics",
+    "description": "Connect your TikTok account to view analytics and insights",
+    "loading": "Loading...",
+    "error": {
+      "title": "Error",
+      "dismiss": "Dismiss"
+    },
+    "connect": {
+      "title": "Connect TikTok Account",
+      "description": "Connect your TikTok account to view detailed analytics, track engagement, and monitor your videos performance.",
+      "button": "Connect TikTok",
+      "connecting": "Connecting...",
+      "privacy": "We only access your public videos and basic profile information. Your private data remains secure."
+    },
+    "disconnect": "Disconnect",
+    "stats": {
+      "videos": "Total Videos",
+      "followers": "Followers",
+      "totalLikes": "Total Likes",
+      "totalPlays": "Total Plays",
+      "totalComments": "Total Comments",
+      "totalShares": "Total Shares",
+      "avgLikes": "Avg. Likes",
+      "avgComments": "Avg. Comments",
+      "avgPlays": "Avg. Plays",
+      "details": "Detailed Statistics",
+      "engagement": "Engagement",
+      "interactions": "Interactions",
+      "engagementRate": "Engagement Rate",
+      "account": "Account Info",
+      "following": "Following",
+      "totalLikesReceived": "Total Likes Received",
+      "verified": "Verified",
+      "yes": "Yes",
+      "no": "No"
+    },
+    "videos": {
+      "title": "Recent Videos",
+      "count": "videos",
+      "details": "Video Details",
+      "description": "Description",
+      "likes": "Likes",
+      "comments": "Comments",
+      "plays": "Plays",
+      "shares": "Shares",
+      "viewOnTikTok": "View on TikTok"
+    }
+  }
+  ,
+  "searchPage": {
+    "title": "Search salons and services",
+    "placeholder": "Type a query (e.g., manicure, haircut, address...)",
+    "tabs": {
+      "all": "All",
+      "salons": "Salons",
+      "services": "Services"
+    },
+    "loading": "Loading...",
+    "empty": "No results",
+    "salonsTitle": "Salons",
+    "servicesTitle": "Services",
+    "book": "Book",
+    "salonLabel": "Salon:"
   }
 }

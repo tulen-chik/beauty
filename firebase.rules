@@ -1,0 +1,102 @@
+{
+  "rules": {
+    "users": {
+      "$userId": {
+        ".read": "auth != null && (auth.uid === $userId || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $userId || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "userSalons": {
+      "$userId": {
+        ".read": "auth != null && auth.uid === $userId",
+        ".write": "auth != null && auth.uid === $userId"
+      }
+    },
+    "salons": {
+      "$salonId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('salons').child($salonId).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "salonServices": {
+      "$serviceId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('salonServices').child($serviceId).child('salonId').exists() && root.child('salons').child(root.child('salonServices').child($serviceId).child('salonId').val()).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "salonSchedules": {
+      "$salonId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('salons').child($salonId).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "appointments": {
+      "$salonId": {
+        "$appointmentId": {
+          ".read": "auth != null && (root.child('appointments').child($salonId).child($appointmentId).child('customerUserId').val() === auth.uid || root.child('appointments').child($salonId).child($appointmentId).child('employeeId').val() === auth.uid || root.child('salons').child($salonId).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && (root.child('appointments').child($salonId).child($appointmentId).child('customerUserId').val() === auth.uid || root.child('appointments').child($salonId).child($appointmentId).child('employeeId').val() === auth.uid || root.child('salons').child($salonId).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+        }
+      }
+    },
+    "salonInvitations": {
+      "$invitationId": {
+        ".read": "auth != null && (root.child('salonInvitations').child($invitationId).child('email').val() === root.child('users').child(auth.uid).child('email').val() || root.child('salonInvitations').child($invitationId).child('invitedBy').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('salonInvitations').child($invitationId).child('invitedBy').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "serviceCategories": {
+      "$categoryId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "corporate_accounts": {
+      "$corporateId": {
+        ".read": "auth != null && (root.child('corporate_accounts').child($corporateId).child('adminId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('corporate_accounts').child($corporateId).child('adminId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "profiles": {
+      "$profileId": {
+        ".read": "auth != null && (root.child('profiles').child($profileId).child('userId').val() === auth.uid || root.child('profiles').child($profileId).child('parentId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('profiles').child($profileId).child('userId').val() === auth.uid || root.child('profiles').child($profileId).child('parentId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "courses": {
+      "$courseId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('courses').child($courseId).child('creatorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "lessons": {
+      "$lessonId": {
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('courses').child(data.child('courseId').val()).child('creatorId').val() === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "enrollments": {
+      "$enrollmentId": {
+        ".read": "auth != null && (root.child('enrollments').child($enrollmentId).child('userId').val() === auth.uid || root.child('enrollments').child($enrollmentId).child('profileId').exists() && root.child('profiles').child(root.child('enrollments').child($enrollmentId).child('profileId').val()).child('parentId').val() === auth.uid)",
+        ".write": "auth != null && (root.child('enrollments').child($enrollmentId).child('userId').val() === auth.uid || root.child('enrollments').child($enrollmentId).child('profileId').exists() && root.child('profiles').child(root.child('enrollments').child($enrollmentId).child('profileId').val()).child('parentId').val() === auth.uid)"
+      }
+    },
+    "progress": {
+      "$progressId": {
+        ".read": "auth != null && root.child('enrollments').child(data.child('enrollmentId').val()).child('userId').val() === auth.uid",
+        ".write": "auth != null && root.child('enrollments').child(data.child('enrollmentId').val()).child('userId').val() === auth.uid"
+      }
+    },
+    "achievements": {
+      "$achievementId": {
+        ".read": "auth != null && (root.child('profiles').child(data.child('profileId').val()).child('userId').val() === auth.uid || root.child('profiles').child(data.child('profileId').val()).child('parentId').val() === auth.uid)",
+        ".write": "auth != null && (root.child('profiles').child(data.child('profileId').val()).child('userId').val() === auth.uid || root.child('profiles').child(data.child('profileId').val()).child('parentId').val() === auth.uid)"
+      }
+    },
+    "notifications": {
+      "$notificationId": {
+        ".read": "auth != null && root.child('notifications').child($notificationId).child('userId').val() === auth.uid",
+        ".write": "auth != null && root.child('notifications').child($notificationId).child('userId').val() === auth.uid"
+      }
+    }
+  }
+} 
