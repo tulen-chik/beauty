@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { MapPin, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
   locale: string;
@@ -20,8 +19,20 @@ export default function SiteHeader({ locale }: Props) {
   const [city, setCity] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   
-  // Состояние для управления открытием/закрытием мобильного меню
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      // Если меню должно открыться, сразу делаем его видимым для анимации
+      setIsMenuVisible(true);
+    } else {
+      // Если меню должно закрыться, сначала запускаем анимацию скрытия
+      const timer = setTimeout(() => setIsMenuVisible(false), 300); // Длительность анимации
+      return () => clearTimeout(timer);
+    }
+  }, [isMenuOpen]);
 
   useEffect(() => {
     // Закрываем меню при изменении маршрута
@@ -30,14 +41,13 @@ export default function SiteHeader({ locale }: Props) {
     }
   }, [pathname]);
 
-  // Блокируем прокрутку фона, когда меню открыто
   useEffect(() => {
+    // Блокируем прокрутку фона, когда меню открыто
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto';
     }
-    // Очистка при размонтировании компонента
     return () => {
       document.body.style.overflow = 'auto';
     };
@@ -87,14 +97,12 @@ export default function SiteHeader({ locale }: Props) {
   ];
 
   const isActive = (href: string) => {
-    // Для главной страницы проверяем точное совпадение
     if (href === `/${locale}`) {
       return pathname === href;
     }
     return pathname?.startsWith(href);
   };
 
-  // Компонент для кнопок авторизации, чтобы не дублировать код
   const AuthButtons = ({ isMobile = false }: { isMobile?: boolean }) => (
     authLoading ? (
       <div className={`text-sm text-gray-600 ${isMobile ? 'w-full text-center p-4' : ''}`}>{t('loading')}</div>
@@ -134,7 +142,6 @@ export default function SiteHeader({ locale }: Props) {
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="h-16 flex items-center justify-between gap-4">
-            {/* Левая часть: Логотип и десктоп-навигация */}
             <div className="flex items-center gap-3">
               <Link href={`/${locale}`} className="text-xl font-bold text-gray-900">
                 {t('brand.name')}
@@ -156,19 +163,16 @@ export default function SiteHeader({ locale }: Props) {
               </nav>
             </div>
 
-            {/* Правая часть: Гео, кнопки авторизации для десктопа и бургер для мобильных */}
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-1 text-xs text-gray-600 px-2 py-1 rounded-lg bg-gray-50 border border-gray-200">
                 <MapPin className="w-3.5 h-3.5 text-rose-600" />
                 <span className="truncate">{city || geoError || t('geolocation.determiningCity')}</span>
               </div>
               
-              {/* Кнопки авторизации для десктопа */}
               <div className="hidden md:flex">
                 <AuthButtons />
               </div>
 
-              {/* Иконка бургера для мобильных */}
               <button 
                 onClick={() => setIsMenuOpen(true)} 
                 className="md:hidden p-2 -mr-2 text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -181,66 +185,62 @@ export default function SiteHeader({ locale }: Props) {
         </div>
       </header>
 
-      {/* Мобильное меню (Drawer) */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-50 bg-black/40"
-            onClick={() => setIsMenuOpen(false)}
+      {/* Мобильное меню (Drawer) с CSS-анимацией */}
+      {isMenuVisible && (
+        <div
+          // Фон-затемнение
+          onClick={() => setIsMenuOpen(false)}
+          className={`fixed inset-0 z-50 bg-black/40 transition-opacity duration-300 ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div
+            // Само меню
+            onClick={(e) => e.stopPropagation()}
+            className={`fixed top-0 right-0 h-full w-full max-w-xs bg-white shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
+              isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
           >
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              onClick={(e) => e.stopPropagation()} // Предотвращаем закрытие по клику на само меню
-              className="fixed top-0 right-0 h-full w-full max-w-xs bg-white shadow-xl flex flex-col"
-            >
-              {/* Шапка меню */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <span className="font-bold text-lg">{t('brand.name')}</span>
-                <button 
-                  onClick={() => setIsMenuOpen(false)} 
-                  className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                  aria-label="Закрыть меню"
+            {/* Шапка меню */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <span className="font-bold text-lg">{t('brand.name')}</span>
+              <button 
+                onClick={() => setIsMenuOpen(false)} 
+                className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                aria-label="Закрыть меню"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Навигация в меню */}
+            <nav className="flex-grow p-4 space-y-2">
+              {nav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`block px-4 py-3 rounded-lg text-base font-semibold transition-colors ${
+                    isActive(item.href)
+                      ? 'text-rose-700 bg-rose-50'
+                      : 'text-gray-800 hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
 
-              {/* Навигация в меню */}
-              <nav className="flex-grow p-4 space-y-2">
-                {nav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`block px-4 py-3 rounded-lg text-base font-semibold transition-colors ${
-                      isActive(item.href)
-                        ? 'text-rose-700 bg-rose-50'
-                        : 'text-gray-800 hover:bg-gray-100'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-
-              {/* Футер меню: Гео и кнопки авторизации */}
-              <div className="p-4 border-t border-gray-200 space-y-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg bg-gray-50">
-                  <MapPin className="w-4 h-4 text-rose-600 flex-shrink-0" />
-                  <span className="truncate">{city || geoError || t('geolocation.determiningCity')}</span>
-                </div>
-                <AuthButtons isMobile />
+            {/* Футер меню: Гео и кнопки авторизации */}
+            <div className="p-4 border-t border-gray-200 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg bg-gray-50">
+                <MapPin className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span className="truncate">{city || geoError || t('geolocation.determiningCity')}</span>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <AuthButtons isMobile />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
