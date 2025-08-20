@@ -714,7 +714,9 @@ export default function BookServicePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Calendar */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('selectDate')}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {t('selectDate')} <span className="text-red-500">*</span>
+                </h3>
                 
                 {/* Month Navigation */}
                 <div className="flex items-center justify-between mb-4">
@@ -799,7 +801,9 @@ export default function BookServicePage() {
 
               {/* Time Selection */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('selectTime')}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  {t('selectTime')} <span className="text-red-500">*</span>
+                </h3>
                 
                 {/* Time Interval Info */}
                 <div className="mb-4">
@@ -912,7 +916,9 @@ export default function BookServicePage() {
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerName')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('customerName')} <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={customerName}
@@ -931,7 +937,9 @@ export default function BookServicePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('customerPhone')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('customerPhone')} <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="tel"
                   value={customerPhone}
@@ -940,11 +948,6 @@ export default function BookServicePage() {
                   placeholder={t('customerPhonePlaceholder')}
                   required
                 />
-                {currentUser && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✓ Автоматически заполнено из профиля
-                  </p>
-                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
@@ -985,4 +988,3 @@ export default function BookServicePage() {
     </div>
   )
 }
-

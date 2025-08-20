@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react"
-import { Search, MapPin, Scissors, Map, X, ChevronDown, Globe } from "lucide-react"
+import { Search, MapPin, Scissors, Map, X, ChevronDown, Globe, Store } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useParams } from "next/navigation"
@@ -31,6 +31,7 @@ type AnyService = {
 
 // Popular cities for quick selection
 const POPULAR_CITIES = [
+  // Россия
   { name: 'Москва', value: 'Москва' },
   { name: 'Санкт-Петербург', value: 'Санкт-Петербург' },
   { name: 'Новосибирск', value: 'Новосибирск' },
@@ -40,11 +41,19 @@ const POPULAR_CITIES = [
   { name: 'Челябинск', value: 'Челябинск' },
   { name: 'Самара', value: 'Самара' },
   { name: 'Ростов-на-Дону', value: 'Ростов-на-Дону' },
-  { name: 'Уфа', value: 'Уфа' }
-]
-
+  { name: 'Уфа', value: 'Уфа' },
+  
+  // Беларусь
+  { name: 'Минск', value: 'Минск' },
+  { name: 'Гомель', value: 'Гомель' },
+  { name: 'Могилёв', value: 'Могилёв' },
+  { name: 'Витебск', value: 'Витебск' },
+  { name: 'Гродно', value: 'Гродно' },
+  { name: 'Брест', value: 'Брест' },
+];
 // Popular cities for English locale
 const POPULAR_CITIES_EN = [
+  // Russia
   { name: 'Moscow', value: 'Moscow' },
   { name: 'Saint Petersburg', value: 'Saint Petersburg' },
   { name: 'Novosibirsk', value: 'Novosibirsk' },
@@ -54,8 +63,16 @@ const POPULAR_CITIES_EN = [
   { name: 'Chelyabinsk', value: 'Chelyabinsk' },
   { name: 'Samara', value: 'Samara' },
   { name: 'Rostov-on-Don', value: 'Rostov-on-Don' },
-  { name: 'Ufa', value: 'Ufa' }
-]
+  { name: 'Ufa', value: 'Ufa' },
+
+  // Belarus
+  { name: 'Minsk', value: 'Minsk' },
+  { name: 'Gomel', value: 'Gomel' },
+  { name: 'Mogilev', value: 'Mogilev' },
+  { name: 'Vitebsk', value: 'Vitebsk' },
+  { name: 'Grodno', value: 'Grodno' },
+  { name: 'Brest', value: 'Brest' },
+];
 
 // City selector component
 const CitySelector = ({ 
@@ -704,6 +721,14 @@ export default function SearchPage() {
   // Current city (manual selection takes precedence over geolocation)
   const currentCity = manualCity || userCity
 
+  // Helper function to format address for display
+  const formatAddress = (fullAddress: string) => {
+    if (!fullAddress) return '';
+    const parts = fullAddress.split(',');
+    // Take the first 2 parts (e.g., street and city) for a cleaner look
+    return parts.slice(0, 2).join(',').trim();
+  };
+
   // Function for proper Russian pluralization
   const getServicesCountText = (count: number) => {
     if (locale === 'ru') {
@@ -1040,22 +1065,28 @@ export default function SearchPage() {
                   const salon = salonsById[s.salonId]
                   return (
                     <div key={s.id} className="border border-gray-100 rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow">
-                      <Link href={`/${locale}/book/${s.id}`} className="group">
+                      <div className="group">
                         <div className="flex items-start gap-3 sm:gap-4">
                           <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                             <Image src={serviceImages[s.id] || "/placeholder.svg"} alt={s.name} fill className="object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
-                              {s.name}
-                            </h3>
+                            <Link href={`/${locale}/book/${s.id}`}>
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors line-clamp-2">
+                                {s.name}
+                              </h3>
+                            </Link>
                             
                             {salon && (
-                              <div className="flex items-center gap-2 mt-2 text-xs sm:text-sm text-gray-600">
-                                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />
-                                <span className="font-medium">{salon.name}</span>
-                                <span className="text-gray-400 hidden sm:inline">•</span>
-                                <span className="text-xs sm:text-sm">{salon.address}</span>
+                              <div className="mt-2 text-sm text-gray-600">
+                                <div className="flex items-center gap-2 font-medium">
+                                  <Store className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                                  <span>{salon.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 font-medium">
+                                  <MapPin className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                                  <span>{formatAddress(salon.address)}</span>
+                                </div>
                               </div>
                             )}
                             
@@ -1073,7 +1104,7 @@ export default function SearchPage() {
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                       
                       <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2">
                         <Link 
@@ -1084,14 +1115,14 @@ export default function SearchPage() {
                         </Link>
                         <Link 
                           href={`/${locale}/services/${s.id}`} 
-                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium text-center"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium text-center whitespace-nowrap"
                         >
                           {t('details')}
                         </Link>
                         {salon && (
                           <Link 
                             href={`/${locale}/s/${salon.id}`} 
-                            className="px-4 py-2 text-rose-600 border border-rose-600 rounded-lg hover:bg-rose-50 transition-colors text-xs sm:text-sm font-medium text-center"
+                            className="px-4 py-2 text-rose-600 border border-rose-600 rounded-lg hover:bg-rose-50 transition-colors text-xs sm:text-sm font-medium text-center whitespace-nowrap"
                           >
                             {t('aboutSalon')}
                           </Link>
@@ -1108,4 +1139,3 @@ export default function SearchPage() {
     </div>
   )
 }
-

@@ -1,12 +1,26 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Calendar, Clock, Share2, ArrowLeft, Tag } from "lucide-react"
+import { Calendar, Clock, Share2, ArrowLeft, Tag, Copy, Check } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useParams } from "next/navigation"
 import { getPostById, getCategoryById, getRelatedPosts } from "../BlogData"
 import BlogContent from "../BlogContent"
+import {
+  FacebookShareButton,
+  TwitterShareButton,
+  LinkedinShareButton,
+  TelegramShareButton,
+  WhatsappShareButton,
+  FacebookIcon,
+  TwitterIcon,
+  LinkedinIcon,
+  TelegramIcon,
+  WhatsappIcon,
+} from "react-share"
+import { useState, useEffect } from "react"
+import copy from "copy-to-clipboard"
 
 export default function BlogPostPage() {
   const params = useParams()
@@ -15,6 +29,21 @@ export default function BlogPostPage() {
   const post = getPostById(postId)
   const category = post ? getCategoryById(post.categoryId) : null
   const relatedPosts = post ? getRelatedPosts(post.id) : []
+
+  const [currentUrl, setCurrentUrl] = useState("")
+  const [isCopied, setIsCopied] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setCurrentUrl(window.location.href)
+    }
+  }, [])
+
+  const handleCopy = () => {
+    copy(currentUrl)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000) // Сбросить статус "скопировано" через 2 секунды
+  }
 
   if (!post || !category) {
     return (
@@ -126,8 +155,27 @@ export default function BlogPostPage() {
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-gray-900">Поделиться статьей:</h3>
                     <div className="flex items-center gap-3">
-                      <button className="p-2 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-full transition-colors duration-300">
-                        <Share2 className="w-5 h-5" />
+                      <FacebookShareButton url={currentUrl} title={post.title}>
+                        <FacebookIcon size={32} round />
+                      </FacebookShareButton>
+                      <TwitterShareButton url={currentUrl} title={post.title}>
+                        <TwitterIcon size={32} round />
+                      </TwitterShareButton>
+                      <LinkedinShareButton url={currentUrl} title={post.title}>
+                        <LinkedinIcon size={32} round />
+                      </LinkedinShareButton>
+                      <TelegramShareButton url={currentUrl} title={post.title}>
+                        <TelegramIcon size={32} round />
+                      </TelegramShareButton>
+                      <WhatsappShareButton url={currentUrl} title={post.title} separator=":: ">
+                        <WhatsappIcon size={32} round />
+                      </WhatsappShareButton>
+                      <button
+                        onClick={handleCopy}
+                        className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors duration-300"
+                        title="Скопировать ссылку"
+                      >
+                        {isCopied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
                       </button>
                     </div>
                   </div>

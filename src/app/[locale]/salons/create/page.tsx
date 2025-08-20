@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
-import { Map, MapPin, Building2, Phone, FileText } from "lucide-react";
+import { Map, MapPin, Building2, Phone, FileText, CheckCircle } from "lucide-react";
 import { useTranslations } from 'next-intl';
 
 // Google Maps component for address selection
@@ -180,11 +180,12 @@ export default function CreateSalonPage() {
   const handleLocationSelect = (newAddress: string, newCoordinates: { lat: number; lng: number }) => {
     setAddress(newAddress);
     setCoordinates(newCoordinates);
+    setShowMap(false); // Automatically hide map after selection
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId) return;
+    if (!userId || !name || !address) return;
     const salonId = Date.now().toString(); // Можно заменить на uuid
     try {
       await createSalon(salonId, {
@@ -232,6 +233,7 @@ export default function CreateSalonPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <Building2 className="inline h-4 w-4 mr-2" />
                 {t('name')}
+                <span className="text-red-500 ml-1">*</span>
               </label>
               <input
                 type="text"
@@ -245,43 +247,36 @@ export default function CreateSalonPage() {
             
             {/* Address and Map */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700">
                 <MapPin className="inline h-4 w-4 mr-2" />
                 {t('address')}
+                <span className="text-red-500 ml-1">*</span>
               </label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-base"
-                  value={address}
-                  onChange={e => setAddress(e.target.value)}
-                  placeholder={t('addressPlaceholder')}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowMap(!showMap)}
-                  className="px-6 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 flex items-center justify-center gap-2 font-medium min-w-[120px]"
-                >
-                  <MapPin className="h-4 w-4" />
-                  <span className="hidden sm:inline">{showMap ? t('hideMap') : t('map')}</span>
-                  <span className="sm:hidden">{showMap ? '✕' : '🗺️'}</span>
-                </button>
-              </div>
+              
+              <button
+                type="button"
+                onClick={() => setShowMap(!showMap)}
+                className="w-full px-6 py-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl hover:bg-rose-100 flex items-center justify-center gap-2 font-medium transition-colors"
+              >
+                <Map className="h-4 w-4" />
+                {/* <span>{address ? t('changeOnMap') : t('selectOnMap')}</span> */}
+              </button>
+
+              {address && (
+                <div className="text-sm text-gray-800 flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">{t('selectedAddress')}:</span>
+                    <p className="mt-1">{address}</p>
+                  </div>
+                </div>
+              )}
               
               {showMap && (
                 <MapSelector
                   onLocationSelect={handleLocationSelect}
                   initialCoordinates={coordinates}
                 />
-              )}
-              
-              {coordinates && (
-                <div className="text-sm text-gray-600 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                  <MapPin className="h-4 w-4 text-rose-600" />
-                  <span className="font-medium">{t('coordinates')}:</span>
-                  <span className="font-mono">{coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}</span>
-                </div>
               )}
             </div>
             
@@ -330,8 +325,8 @@ export default function CreateSalonPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
-              className="w-full py-4 px-6 bg-rose-600 text-white font-semibold rounded-xl shadow-lg hover:bg-rose-700 transition-all disabled:opacity-50 text-base"
+              disabled={loading || !name || !address}
+              className="w-full py-4 px-6 bg-rose-600 text-white font-semibold rounded-xl shadow-lg hover:bg-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               {loading ? t('creating') : t('createButton')}
             </button>
@@ -340,4 +335,4 @@ export default function CreateSalonPage() {
       </div>
     </div>
   );
-} 
+}

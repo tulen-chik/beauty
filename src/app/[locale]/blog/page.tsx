@@ -64,7 +64,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <section className="py-20 bg-gray-900 text-white relative overflow-hidden">
+      <section className="py-20 bg-gray-900 relative overflow-hidden">
         <div className="absolute inset-0">
           <motion.div
             className="absolute inset-0"
@@ -91,7 +91,7 @@ export default function BlogPage() {
           </motion.div>
 
           <motion.h1
-            className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-white"
+            className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-rose-500"
             initial={{ opacity: 0, y: -40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
@@ -381,7 +381,7 @@ export default function BlogPage() {
       </section>
 
       {/* Newsletter Subscription */}
-      <section className="py-20 bg-rose-600 text-white">
+      {/* <section className="py-20 bg-rose-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             className="max-w-2xl mx-auto"
@@ -405,7 +405,7 @@ export default function BlogPage() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </section> */}
     </div>
   )
 }
