@@ -83,7 +83,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             await userOperations.create(user.uid, {
               email: user.email || '',
               displayName: name,
-              createdAt: new Date().toISOString(),
+              avatarUrl: '',
+              avatarStoragePath: '',
+                createdAt: new Date().toISOString(),
               role: 'user',
               settings: {
                 language: 'en',
@@ -240,6 +242,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         await userOperations.create(user.uid, {
           email: user.email || '',
           displayName: name,
+          avatarUrl: '',
+          avatarStoragePath: '',
           createdAt: new Date().toISOString(),
           role: 'user',
           settings: {

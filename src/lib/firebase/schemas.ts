@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const userSchema = z.object({
   email: z.string().email(),
   displayName: z.string().min(2),
+  avatarUrl: z.string().optional(),
+  avatarStoragePath: z.string().optional(),
   createdAt: z.string(),
   role: z.enum(['admin', 'user']),
   settings: z.object({

@@ -34,6 +34,8 @@ export const authService = {
     await userOperations.create(user.uid, {
       email,
       displayName,
+      avatarUrl: '',
+      avatarStoragePath: '',
       createdAt: new Date().toISOString(),
       role: 'user',
       settings: {
