@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2 } from "lucide-react"
+import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, Search, MessageCircle, Settings, User, Bell, Globe } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
+import { useSalonRating } from "@/contexts"
 import { getAllSalons, getAllSalonServices, appointmentOperations, userOperations } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
+import RatingCard from "@/components/RatingCard"
 
 type AnySalon = { id: string; name: string; address?: string }
 type AnyService = { id: string; salonId: string; name: string; durationMinutes: number }
@@ -13,10 +15,12 @@ type AnyService = { id: string; salonId: string; name: string; durationMinutes: 
 export default function ProfilePage() {
   const t = useTranslations('profilePage')
   const { currentUser, loading: userLoading, updateProfile, updateEmail, updatePassword } = useUser()
+  const { getRatingsByCustomer, getResponsesByRating } = useSalonRating()
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<AnySalon[]>([])
   const [services, setServices] = useState<AnyService[]>([])
   const [appointments, setAppointments] = useState<any[]>([])
+  const [userRatings, setUserRatings] = useState<any[]>([])
 
   const [displayName, setDisplayName] = useState("")
   const [language, setLanguage] = useState("en")
@@ -48,6 +52,13 @@ export default function ProfilePage() {
       // sort by start date DESC (upcoming first)
       flat.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
       setAppointments(flat)
+
+      // Load user ratings
+      if (currentUser) {
+        const ratings = await getRatingsByCustomer(currentUser.userId)
+        setUserRatings(ratings)
+      }
+      
       setLoading(false)
     }
     if (!userLoading) load()
@@ -145,11 +156,23 @@ export default function ProfilePage() {
                 className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group"
               >
                 <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                  <Scissors className="w-5 h-5 text-blue-600" />
+                  <Search className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">{t('quickActions.findServices')}</div>
                   <div className="text-sm text-gray-600">{t('quickActions.findServicesDesc')}</div>
+                </div>
+              </Link>
+              <Link 
+                href="/chats" 
+                className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors group"
+              >
+                <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-semibold text-gray-900">Мои чаты</div>
+                  <div className="text-sm text-gray-600">Общение с салонами</div>
                 </div>
               </Link>
             </div>
@@ -292,6 +315,25 @@ export default function ProfilePage() {
             </ul>
           )}
         </div>
+
+        {/* User Ratings */}
+        {userRatings.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl">
+            <div className="p-3 sm:p-4 border-b border-gray-200">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Мои отзывы</h2>
+            </div>
+            <div className="p-4 sm:p-6 space-y-4">
+              {userRatings.map((rating) => (
+                <RatingCard
+                  key={rating.id}
+                  rating={rating}
+                  responses={[]}
+                  className="border border-gray-200 rounded-lg"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

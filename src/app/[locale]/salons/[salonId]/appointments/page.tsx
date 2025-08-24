@@ -11,11 +11,14 @@ import {
   Phone,
   Search,
   User,
+  MessageCircle,
 } from "lucide-react";
 
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useUser } from "@/contexts/UserContext";
+import { useChat } from "@/contexts/ChatContext";
+import ChatButton from "@/components/ChatButton";
 
 type Appointment = {
   id: string;
@@ -54,6 +57,8 @@ export default function SalonAppointmentsPage() {
   const { listAppointments, updateAppointment } = useAppointment();
   const { getServicesBySalon } = useSalonService();
   const { getUserById } = useUser();
+  const { currentUser } = useUser();
+  const { createOrGetChat } = useChat();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -492,6 +497,17 @@ export default function SalonAppointmentsPage() {
                         </option>
                         <option value="no_show">{t("status.no_show")}</option>
                       </select>
+                      {appointment.customerUserId && (
+                        <ChatButton
+                          salonId={salonId}
+                          customerUserId={appointment.customerUserId}
+                          customerName={appointment.customerName || "Клиент"}
+                          appointmentId={appointment.id}
+                          serviceId={appointment.serviceId}
+                          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
+                          variant="button"
+                        />
+                      )}
                     </div>
                   </div>
                 </div>

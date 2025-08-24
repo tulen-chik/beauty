@@ -1,10 +1,63 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
-import { useAppointment } from "@/contexts/AppointmentContext"
-import { ChevronLeft, ChevronRight, Coffee, Palmtree, X, Settings, Calendar, Clock, User, Scissors } from "lucide-react"
-import { SalonWorkDay, WeekDay, Appointment } from "@/types/database"
+import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  FileText,
+  Phone,
+  Scissors,
+  Settings,
+  User,
+  X,
+  MessageCircle,
+} from "lucide-react";
+
+import { useAppointment } from "@/contexts/AppointmentContext";
+import { useSalonSchedule } from "@/contexts/SalonScheduleContext";
+import { useSalonService } from "@/contexts/SalonServiceContext";
+import { useUser } from "@/contexts/UserContext";
+import { useChat } from "@/contexts/ChatContext";
+import ChatButton from "@/components/ChatButton";
+import { SalonWorkDay, WeekDay } from "@/types/database";
+
+// --- TYPE DEFINITIONS ---
+
+type Appointment = {
+  id: string;
+  salonId: string;
+  serviceId: string;
+  employeeId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerUserId?: string;
+  startAt: string;
+  durationMinutes: number;
+  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type Service = {
+  id: string;
+  name: string;
+  price: number;
+  durationMinutes: number;
+};
+
+type User = {
+  userId: string;
+  displayName: string;
+  email: string;
+};
+
+// --- CONSTANTS ---
 
 const WEEKDAYS = [
   { key: "monday", label: "Пн", fullLabel: "Понедельник", shortLabel: "Пн" },
@@ -14,173 +67,217 @@ const WEEKDAYS = [
   { key: "friday", label: "Пт", fullLabel: "Пятница", shortLabel: "Пт" },
   { key: "saturday", label: "Сб", fullLabel: "Суббота", shortLabel: "Сб" },
   { key: "sunday", label: "Вс", fullLabel: "Воскресенье", shortLabel: "Вс" },
-]
+];
 
 const TIME_SLOTS = [
-  "06:00", "07:00", "08:00", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
   "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "19:00", "20:00", "21:00",
-  "22:00", "23:00", "23:30", "00:00", "00:30", "01:00", "01:30", "02:00", "02:30",
-]
+  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+  "20:00", "20:30", "21:00",
+];
 
-export default function SalonSchedulePage({ params }: { params: { salonId: string } }) {
-  const { salonId } = params
-  const { getSchedule, updateSchedule, loading, error } = useSalonSchedule()
-  const { listAppointmentsByDay } = useAppointment()
+// --- CALENDAR GRID CONSTANTS ---
+const SLOT_HEIGHT_IN_REM = 6; // Corresponds to h-24 in Tailwind
+const MINUTES_PER_SLOT = 30;
+const REM_IN_PX = 16; // Standard browser default
+const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX;
+const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
+
+// --- HELPER FUNCTIONS ---
+const timeToMinutes = (timeString: string) => {
+  const [hours, minutes] = timeString.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const DAY_START_MINUTES = timeToMinutes(TIME_SLOTS[0]);
+
+
+// --- MAIN COMPONENT ---
+
+export default function SalonSchedulePage() {
+  const params = useParams() as { salonId: string };
+  const { salonId } = params;
+  const t = useTranslations("salonSchedule");
+
+  // --- HOOKS ---
+  const { getSchedule, updateSchedule } = useSalonSchedule();
+  const { listAppointmentsByDay, updateAppointment } = useAppointment();
+  const { getServicesBySalon } = useSalonService();
+  const { getUserById } = useUser();
+  const { currentUser } = useUser();
+  const { createOrGetChat } = useChat();
+
+  // --- STATE MANAGEMENT ---
   const [weeks, setWeeks] = useState<SalonWorkDay[][]>([]);
-  const [success, setSuccess] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [currentWeek, setCurrentWeek] = useState(0);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [services, setServices] = useState<Service[]>([]);
+  const [users, setUsers] = useState<Record<string, User>>({});
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const [currentWeek, setCurrentWeek] = useState(0);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const maxWeeks = 3;
 
-  // Ensure currentWeek is within bounds when weeks change
-  useEffect(() => {
-    if (weeks.length > 0 && currentWeek >= weeks.length) {
-      setCurrentWeek(Math.max(0, weeks.length - 1));
-    }
-  }, [weeks.length, currentWeek]);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  // Check if mobile view
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [serviceFilter, setServiceFilter] = useState<string>("all");
+
+  // --- DATA FETCHING ---
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const schedule = await getSchedule(salonId);
+        if (schedule && schedule.weeks) {
+          setWeeks(schedule.weeks);
+        } else {
+          setWeeks(
+            Array.from({ length: maxWeeks + 1 }, () =>
+              WEEKDAYS.map((d) => ({
+                day: d.key as WeekDay,
+                isOpen: false,
+                times: [],
+              }))
+            )
+          );
+        }
+
+        const svcs = await getServicesBySalon(salonId);
+        setServices(svcs);
+
+        const weekDates = getWeekDates(currentWeek);
+        const allAppointments: Appointment[] = [];
+        for (const date of weekDates) {
+          const dayAppointments = await listAppointmentsByDay(salonId, date);
+          allAppointments.push(...dayAppointments);
+        }
+        setAppointments(allAppointments);
+
+        const userIds = new Set<string>();
+        allAppointments.forEach((apt) => {
+          if (apt.employeeId) userIds.add(apt.employeeId);
+          if (apt.customerUserId) userIds.add(apt.customerUserId);
+        });
+
+        const userData: Record<string, User> = {};
+        for (const userId of Array.from(userIds)) {
+          try {
+            const user = await getUserById(userId);
+            if (user) userData[userId] = { userId, displayName: user.displayName, email: user.email };
+          } catch (err) {
+            console.warn(`Could not load user ${userId}`, err);
+          }
+        }
+        setUsers(userData);
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
     };
-    
+
+    loadData();
+  }, [salonId, currentWeek, getSchedule, getServicesBySalon, listAppointmentsByDay, getUserById]);
+
+  // --- RESPONSIVE CHECK ---
+  useEffect(() => {
+    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const today = new Date()
-  // const currentDayIndex = (today.getDay() + 6) % 7
-
-  useEffect(() => {
-    getSchedule(salonId).then((schedule) => {
-      if (schedule && schedule.weeks) {
-        const normalizedWeeks = schedule.weeks.map(week => 
-          week.map(day => ({
-            day: day.day,
-            isOpen: day.isOpen || false,
-            times: day.times || []
-          }))
-        );
-        setWeeks(normalizedWeeks);
-      } else {
-        setWeeks(Array.from({ length: maxWeeks + 1 }, () => WEEKDAYS.map(d => ({ day: d.key as WeekDay, isOpen: false, times: [] }))));
-      }
+  // --- FILTERING LOGIC ---
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((apt) => {
+      if (statusFilter !== "all" && apt.status !== statusFilter) return false;
+      if (serviceFilter !== "all" && apt.serviceId !== serviceFilter) return false;
+      return true;
     });
-  }, [salonId, getSchedule]);
+  }, [appointments, statusFilter, serviceFilter]);
 
-  // Функция для проверки, является ли дата сегодняшней
-  const isTodayDate = (date: Date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
-  };
+  // --- HELPER & UTILITY FUNCTIONS ---
+  const today = new Date();
+  const isTodayDate = (date: Date) => date.toDateString() === today.toDateString();
 
-  // Функция для получения индекса сегодняшнего дня в текущей неделе
-  const getTodayIndex = () => {
-    const today = new Date();
-    const currentWeekStart = new Date(today);
-    const dayOfWeek = today.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-    currentWeekStart.setDate(today.getDate() - daysToMonday);
-    currentWeekStart.setHours(0, 0, 0, 0);
-    
-    const weekStart = new Date(currentWeekStart);
-    weekStart.setDate(currentWeekStart.getDate() + currentWeek * 7);
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
-      if (isTodayDate(date)) {
-        return i;
-      }
-    }
-    return -1; // Сегодняшний день не в этой неделе
-  };
-
-  const currentDayIndex = getTodayIndex();
-
-  // Функция для загрузки записей на выбранную неделю
-  const loadWeekAppointments = async () => {
-    if (!listAppointmentsByDay) return;
-    
-    setLoadingAppointments(true);
-    try {
-      const weekStart = getWeekDates(currentWeek)[0];
-      const weekEnd = getWeekDates(currentWeek)[6];
-      
-      console.log(`📅 Loading appointments for week:`, {
-        start: weekStart.toDateString(),
-        end: weekEnd.toDateString()
-      });
-      
-      const allAppointments: Appointment[] = [];
-      
-      // Загружаем записи для каждого дня недели
-      for (let i = 0; i < 7; i++) {
-        const date = getWeekDates(currentWeek)[i];
-        const dayAppointments = await listAppointmentsByDay(salonId, date);
-        allAppointments.push(...dayAppointments);
-      }
-      
-      console.log(`📅 Loaded ${allAppointments.length} appointments for the week:`, allAppointments);
-      setAppointments(allAppointments);
-    } catch (error) {
-      console.error(`❌ Error loading appointments:`, error);
-    } finally {
-      setLoadingAppointments(false);
-    }
-  };
-
-  // Загружаем записи при изменении недели
-  useEffect(() => {
-    loadWeekAppointments();
-  }, [currentWeek, salonId, listAppointmentsByDay]);
-
-  // Функция для получения записей на конкретный день и время
-  const getAppointmentsForTimeSlot = (date: Date, timeSlot: string) => {
-    const dayStart = new Date(date);
-    const [hour, minute] = timeSlot.split(':').map(Number);
-    dayStart.setHours(hour, minute, 0, 0);
-    
-    const slotStart = new Date(dayStart);
-    const slotEnd = new Date(dayStart);
-    slotEnd.setMinutes(slotEnd.getMinutes() + 30); // 30-минутные слоты
-    
-    return appointments.filter(appointment => {
-      const appointmentStart = new Date(appointment.startAt);
-      const appointmentEnd = new Date(appointment.startAt);
-      appointmentEnd.setMinutes(appointmentEnd.getMinutes() + appointment.durationMinutes);
-      
-      // Проверяем пересечение временных интервалов
-      return appointmentStart < slotEnd && slotStart < appointmentEnd;
+  const getWeekDates = (weekOffset: number) => {
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1));
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(startOfWeek.getDate() + weekOffset * 7);
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(startOfWeek);
+      date.setDate(startOfWeek.getDate() + i);
+      return date;
     });
   };
 
-  // Функция для получения записей на конкретный день
+  const weekDates = getWeekDates(currentWeek);
+  
   const getAppointmentsForDay = (date: Date) => {
     const dayStart = new Date(date);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(dayStart);
     dayEnd.setDate(dayEnd.getDate() + 1);
     
-    return appointments.filter(appointment => {
+    return filteredAppointments.filter(appointment => {
       const appointmentDate = new Date(appointment.startAt);
       return appointmentDate >= dayStart && appointmentDate < dayEnd;
     });
   };
 
-  const openModal = () => {
-    setIsModalOpen(true)
-  }
+  const isTimeInWorkingHours = (dayData: any, timeSlot: string) => {
+    if (!dayData?.isOpen || !dayData.times) return false;
+    return dayData.times.some((interval: any) => timeSlot >= interval.start && timeSlot < interval.end);
+  };
 
-  const closeModal = () => {
-    setIsModalOpen(false)
-  }
+  const getStatusColor = (status: string) => {
+    const colors = {
+      confirmed: "bg-blue-100 text-blue-800 border-blue-300",
+      completed: "bg-green-100 text-green-800 border-green-300",
+      cancelled: "bg-red-100 text-red-800 border-red-300",
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
+      no_show: "bg-orange-100 text-orange-800 border-orange-300",
+    };
+    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-300";
+  };
+
+  const getStatusText = (status: string) => t(`status.${status}`) || status;
+
+  // --- EVENT HANDLERS ---
+  const handleSaveSchedule = async () => {
+    try {
+      await updateSchedule(salonId, { salonId, weeks, updatedAt: new Date().toISOString() });
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 2000);
+      setIsScheduleModalOpen(false);
+    } catch (e) {
+      setError("Failed to save schedule");
+    }
+  };
+
+  const handleStatusChange = async (appointmentId: string, newStatus: Appointment["status"]) => {
+    try {
+      await updateAppointment(salonId, appointmentId, { status: newStatus });
+      const updatedAppointments = appointments.map((apt) => 
+        apt.id === appointmentId ? { ...apt, status: newStatus } : apt
+      );
+      setAppointments(updatedAppointments);
+      if (selectedAppointment?.id === appointmentId) {
+        setSelectedAppointment(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update status");
+    }
+  };
 
   const handleOpenToggle = (dayIdx: number, isOpen: boolean) => {
     setWeeks(prev => prev.map((week, wIdx) =>
@@ -221,473 +318,392 @@ export default function SalonSchedulePage({ params }: { params: { salonId: strin
     ));
   };
 
-  const handleSave = async () => {
-    try {
-      await updateSchedule(salonId, {
-        salonId,
-        weeks,
-        updatedAt: new Date().toISOString(),
-      });
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 1500);
-    } catch (e) {
-      console.error('Failed to save schedule', e)
-    }
-  };
-
-  const isTimeInWorkingHours = (dayData: any, timeSlot: string) => {
-    if (!dayData || !dayData.isOpen || !dayData.times) return false;
-    return dayData.times.some((interval: any) => {
-      const slotTime = timeSlot.replace(":", "");
-      const startTime = interval.start.replace(":", "");
-      const endTime = interval.end.replace(":", "");
-      return slotTime >= startTime && slotTime < endTime;
-    });
+  // --- RENDER LOGIC ---
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">{t("loading")}</p>
+        </div>
+      </div>
+    );
   }
 
-  // Функция для получения дат недели с правильным расчетом
-  const getWeekDates = (weekOffset: number) => {
-    // Находим начало текущей недели (понедельник)
-    const currentWeekStart = new Date(today);
-    const dayOfWeek = today.getDay();
-    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 0 = воскресенье, 1 = понедельник
-    currentWeekStart.setDate(today.getDate() - daysToMonday);
-    currentWeekStart.setHours(0, 0, 0, 0);
-    
-    // Добавляем смещение недель
-    const weekStart = new Date(currentWeekStart);
-    weekStart.setDate(currentWeekStart.getDate() + weekOffset * 7);
-    
-    // Генерируем даты для недели (понедельник - воскресенье)
-    return WEEKDAYS.map((_, i) => {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
-      return date;
-    });
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-600 mb-4">{t("error")}</div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+        >
+          {t("retry")}
+        </button>
+      </div>
+    );
+  }
+
+  // --- SUB-COMPONENTS ---
+
+  const PositionedAppointmentCard = ({ appointment }: { appointment: Appointment }) => {
+    const service = services.find((s) => s.id === appointment.serviceId);
+    const appointmentStart = new Date(appointment.startAt);
+    const startTimeString = appointmentStart.toTimeString().substring(0, 5);
+    const startMinutes = timeToMinutes(startTimeString);
+
+    const top = (startMinutes - DAY_START_MINUTES) * PX_PER_MINUTE;
+    const height = appointment.durationMinutes * PX_PER_MINUTE;
+
+    return (
+      <button
+        onClick={() => setSelectedAppointment(appointment)}
+        style={{ 
+          top: `${top}px`, 
+          height: `calc(${height}px - 2px)` // Subtract 2px for top/bottom borders
+        }}
+        className={`absolute left-1 right-1 p-1.5 rounded-lg border flex flex-col overflow-hidden text-left transition-all hover:shadow-md hover:border-rose-400 ${getStatusColor(appointment.status)}`}
+      >
+        <div className="font-semibold text-xs truncate">{service?.name || "Услуга"}</div>
+        <div className="flex items-center gap-1 text-xs text-gray-700 mt-1">
+          <User className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{appointment.customerName || "Клиент"}</span>
+        </div>
+        <div className="mt-auto pt-1 text-xs font-medium">
+          {getStatusText(appointment.status)}
+        </div>
+      </button>
+    );
   };
 
-  const weekDates = getWeekDates(currentWeek);
-
-  // Mobile-friendly week view component
-  const MobileWeekView = () => {
-    const days = weeks[currentWeek] || [];
-    
+  const MobileAppointmentCard = ({ appointment }: { appointment: Appointment }) => {
+    const service = services.find((s) => s.id === appointment.serviceId);
     return (
-      <div className="space-y-4">
-        {WEEKDAYS.map((weekday, dayIndex) => {
-          const dayData = days.find((d) => d && d.day && d.day === weekday.key) || { day: weekday.key, isOpen: false, times: [] };
-          const safeDayData = {
-            day: dayData.day || weekday.key,
-            isOpen: dayData.isOpen || false,
-            times: (dayData.times || []).filter(time => time && typeof time === 'object' && time.start && time.end).map(time => ({
-              start: time.start || "09:00",
-              end: time.end || "18:00"
-            }))
-          };
-          const dateObj = weekDates[dayIndex];
-          const dayNumber = dateObj.getDate();
-          const monthName = dateObj.toLocaleDateString('ru-RU', { month: 'short' });
-          const isCurrentMonth = dateObj.getMonth() === today.getMonth();
-          const isToday = isTodayDate(dateObj);
-
-          return (
-            <div key={weekday.key} className={`bg-white rounded-lg border-2 ${isToday ? 'border-red-200 bg-red-50' : 'border-gray-200'} p-4`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
-                    isToday ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {dayNumber}
+      <div className="w-full text-left p-3 rounded-lg border bg-white">
+        <button 
+          onClick={() => setSelectedAppointment(appointment)} 
+          className={`w-full text-left ${getStatusColor(appointment.status)}`}
+        >
+          <div className="flex justify-between items-start">
+              <div>
+                  <div className="font-bold">{service?.name || "Услуга"}</div>
+                  <div className="text-sm text-gray-600">
+                      {new Date(appointment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({appointment.durationMinutes} мин)
                   </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{weekday.fullLabel}</div>
-                    <div className="text-sm text-gray-500">
-                      {weekday.shortLabel} • {monthName}
-                      {!isCurrentMonth && <span className="text-gray-400"> {dateObj.getFullYear()}</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm ${safeDayData.isOpen ? 'text-green-600' : 'text-gray-500'}`}>
-                    {safeDayData.isOpen ? 'Открыто' : 'Закрыто'}
-                  </span>
-                  <button
-                    onClick={() => handleOpenToggle(dayIndex, !safeDayData.isOpen)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      safeDayData.isOpen 
-                        ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {safeDayData.isOpen ? 'Изменить' : 'Открыть'}
-                  </button>
-                </div>
               </div>
-              
-              {safeDayData.isOpen && (
-                <div className="space-y-3">
-                  {safeDayData.times.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500">
-                      <Clock className="w-6 h-6 mx-auto mb-2 text-gray-400" />
-                      <p>Нет рабочих часов</p>
-                    </div>
-                  ) : (
-                    safeDayData.times.map((time, timeIdx) => (
-                      <div key={timeIdx} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex-1 flex items-center gap-2">
-                          <input
-                            type="time"
-                            value={time?.start || ""}
-                            onChange={e => handleTimeChange(dayIndex, timeIdx, "start", e.target.value)}
-                            className="px-2 py-1 border rounded text-sm"
-                            required
-                          />
-                          <span className="text-gray-500">—</span>
-                          <input
-                            type="time"
-                            value={time?.end || ""}
-                            onChange={e => handleTimeChange(dayIndex, timeIdx, "end", e.target.value)}
-                            className="px-2 py-1 border rounded text-sm"
-                            required
-                          />
-                        </div>
-                        <button 
-                          type="button" 
-                          onClick={() => handleRemoveInterval(dayIndex, timeIdx)}
-                          className="text-red-500 hover:text-red-700 p-1"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                  
-                  {/* Показываем записи на этот день */}
-                  {(() => {
-                    const dayAppointments = getAppointmentsForDay(dateObj);
-                    if (dayAppointments.length === 0) return null;
-                    
-                    return (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                          <Scissors className="w-4 h-4" />
-                          Записи на этот день ({dayAppointments.length})
-                        </div>
-                        <div className="space-y-2">
-                          {dayAppointments.map((appointment) => (
-                            <div key={appointment.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-gray-500" />
-                                <span className="text-sm font-medium">
-                                  {appointment.customerName || 'Клиент'}
-                                </span>
-                                <span className="text-xs text-gray-500">
-                                  {new Date(appointment.startAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  appointment.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                                  appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                  appointment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                  appointment.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {appointment.status === 'confirmed' ? 'Подтверждено' :
-                                   appointment.status === 'pending' ? 'Ожидает' :
-                                   appointment.status === 'completed' ? 'Завершено' :
-                                   appointment.status === 'cancelled' ? 'Отменено' :
-                                   appointment.status}
-                                </span>
-                                <span className="text-xs text-gray-600">
-                                  {appointment.durationMinutes} мин
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  
-                  <button 
-                    type="button" 
-                    onClick={() => handleAddInterval(dayIndex)}
-                    className="w-full py-2 text-blue-600 text-sm border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    + Добавить интервал
-                  </button>
+              <div className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
+                  {getStatusText(appointment.status)}
+              </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-current/20 text-sm">
+              <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-gray-500" />
+                  <span>{appointment.customerName || "Клиент"}</span>
+              </div>
+          </div>
+        </button>
+        {appointment.customerUserId && (
+          <div className="mt-3 pt-2 border-t border-gray-200">
+            <ChatButton
+              salonId={salonId}
+              customerUserId={appointment.customerUserId}
+              customerName={appointment.customerName || "Клиент"}
+              appointmentId={appointment.id}
+              serviceId={appointment.serviceId}
+              className="w-full py-2 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium text-sm"
+              variant="button"
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  const MobileDayView = ({ date, dayIndex }: { date: Date, dayIndex: number }) => {
+    const dayAppointments = getAppointmentsForDay(date);
+    return (
+        <div className="border-b last:border-b-0 py-4">
+            <div className="flex items-center gap-3 mb-4">
+                <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center ${isTodayDate(date) ? 'bg-rose-600 text-white' : 'bg-gray-100'}`}>
+                    <span className="text-xs font-medium">{WEEKDAYS[dayIndex].shortLabel}</span>
+                    <span className="text-lg font-bold">{date.getDate()}</span>
                 </div>
-              )}
+                <div>
+                    <div className="font-semibold">{WEEKDAYS[dayIndex].fullLabel}</div>
+                    <div className="text-sm text-gray-500">{date.toLocaleDateString('ru-RU', { month: 'long' })}</div>
+                </div>
             </div>
-          );
-        })}
+            {dayAppointments.length > 0 ? (
+                <div className="space-y-3">
+                    {dayAppointments.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()).map(apt => (
+                        <MobileAppointmentCard key={apt.id} appointment={apt} />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-6 text-gray-500">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                    <p>Нет записей на этот день</p>
+                </div>
+            )}
+        </div>
+    );
+  };
+
+  const AppointmentDetailsModal = () => {
+    if (!selectedAppointment) return null;
+
+    const service = services.find((s) => s.id === selectedAppointment.serviceId);
+    const employee = selectedAppointment.employeeId ? users[selectedAppointment.employeeId] : null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedAppointment(null)}>
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold">{service?.name || "Детали записи"}</h2>
+            <button onClick={() => setSelectedAppointment(null)} className="p-2 hover:bg-gray-100 rounded-full">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="space-y-3 text-gray-700">
+                <div className="flex items-center gap-3">
+                    <Calendar className="w-5 h-5 text-gray-400"/>
+                    <span>{new Date(selectedAppointment.startAt).toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5 text-gray-400"/>
+                    <span>{new Date(selectedAppointment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({selectedAppointment.durationMinutes} мин)</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <User className="w-5 h-5 text-gray-400"/>
+                    <span>{selectedAppointment.customerName || "Клиент"}</span>
+                </div>
+                {selectedAppointment.customerPhone && (
+                    <div className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-gray-400"/>
+                        <span>{selectedAppointment.customerPhone}</span>
+                    </div>
+                )}
+                {employee && (
+                    <div className="flex items-center gap-3">
+                        <Scissors className="w-5 h-5 text-gray-400"/>
+                        <span>Мастер: {employee.displayName}</span>
+                    </div>
+                )}
+                {selectedAppointment.notes && (
+                    <div className="flex items-start gap-3 pt-2">
+                        <FileText className="w-5 h-5 text-gray-400 mt-1"/>
+                        <div className="bg-gray-50 p-3 rounded-md border w-full">
+                            <p className="font-medium text-sm text-gray-600">Комментарий:</p>
+                            <p>{selectedAppointment.notes}</p>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div>
+                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-1">Изменить статус</label>
+                <select
+                    id="status-select"
+                    value={selectedAppointment.status}
+                    onChange={(e) => handleStatusChange(selectedAppointment.id, e.target.value as Appointment["status"])}
+                    className={`w-full px-3 py-2 border rounded-lg font-semibold transition-colors ${getStatusColor(selectedAppointment.status)}`}
+                >
+                    <option value="pending">{t("status.pending")}</option>
+                    <option value="confirmed">{t("status.confirmed")}</option>
+                    <option value="completed">{t("status.completed")}</option>
+                    <option value="cancelled">{t("status.cancelled")}</option>
+                    <option value="no_show">{t("status.no_show")}</option>
+                </select>
+            </div>
+            {selectedAppointment.customerUserId && (
+              <div className="pt-2">
+                <ChatButton
+                  salonId={salonId}
+                  customerUserId={selectedAppointment.customerUserId}
+                  customerName={selectedAppointment.customerName || "Клиент"}
+                  appointmentId={selectedAppointment.id}
+                  serviceId={selectedAppointment.serviceId}
+                  className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                  variant="button"
+                />
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto p-3 sm:p-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Расписание салона</h1>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {success && (
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-gray-600 mt-1">
+            {t("showingAppointments", { count: filteredAppointments.length })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+           {success && (
+              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
                 Расписание сохранено!
               </div>
             )}
-            {error && (
-              <div className="text-red-500 bg-red-50 px-4 py-2 rounded-lg text-center">{error}</div>
-            )}
-            <div className="text-xs text-gray-500 text-center">
-              Планирование на {maxWeeks + 1} недель вперед
-            </div>
-            <button
-              onClick={loadWeekAppointments}
-              disabled={loadingAppointments}
-              className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 disabled:opacity-50"
-              title="Обновить записи"
-            >
-              <Calendar className="w-4 h-4" />
-              Обновить
-            </button>
-            <button
-              onClick={openModal}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Настроить расписание</span>
-              <span className="sm:hidden">Настроить</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setIsScheduleModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            {t("setupSchedule")}
+          </button>
         </div>
+      </div>
 
-        {/* Calendar Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6 mb-4">
-          <div className="flex items-center justify-between mb-4">
+      {/* Filters & Calendar Navigation */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex flex-col lg:flex-row gap-4 items-center">
+          <div className="flex items-center justify-center gap-2">
             <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setCurrentWeek((w) => Math.max(0, w - 1))}
               disabled={currentWeek === 0}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="text-lg font-semibold text-center flex-1">
-              {currentWeek === 0 ? 'Текущая неделя' : `Неделя ${currentWeek + 1}`}
-              <div className="text-sm font-normal text-gray-600 mt-1">
-                {weekDates[0]?.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })} — {weekDates[6]?.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
+            <div className="text-center">
+              <div className="font-semibold">
+                {currentWeek === 0 ? t("currentWeek") : t("week", { weekNum: currentWeek + 1 })}
               </div>
-              {currentWeek === 0 && (
-                <div className="text-xs text-blue-600 mt-1 font-medium">
-                  ← Сегодня здесь
-                </div>
-              )}
-              {loadingAppointments && (
-                <div className="text-xs text-gray-500 mt-1 flex items-center justify-center gap-1">
-                  <div className="w-3 h-3 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                  Загрузка записей...
-                </div>
-              )}
-              {!loadingAppointments && appointments.length > 0 && (
-                <div className="text-xs text-green-600 mt-1 font-medium">
-                  📅 {appointments.length} записей на неделю
-                </div>
-              )}
+              <div className="text-sm text-gray-500">
+                {weekDates[0]?.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} -{" "}
+                {weekDates[6]?.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
             </div>
             <button
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               onClick={() => setCurrentWeek((w) => Math.min(maxWeeks, w + 1))}
               disabled={currentWeek === maxWeeks}
+              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
-
-          {/* Today Button */}
-          <div className="flex justify-center mb-4">
-            <button
-              onClick={() => setCurrentWeek(0)}
-              className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                currentWeek === 0
-                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
-              }`}
+          <div className="flex-1 h-px bg-gray-200 lg:h-auto lg:w-px"></div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-lg"
             >
-              Сегодня
-            </button>
-          </div>
-
-          {/* Days Header */}
-          <div className="grid grid-cols-7 gap-2">
-            {WEEKDAYS.map((weekday, index) => {
-              const dateObj = weekDates[index];
-              const dayNumber = dateObj.getDate();
-              const monthName = dateObj.toLocaleDateString('ru-RU', { month: 'short' });
-              const isCurrentMonth = dateObj.getMonth() === today.getMonth();
-              const isToday = isTodayDate(dateObj);
-
-              return (
-                <div key={weekday.key} className="text-center">
-                  <div className={`text-xs sm:text-sm font-medium mb-1 ${isToday ? "text-red-500" : "text-gray-900"}`}>
-                    {isMobileView ? weekday.shortLabel : weekday.label}
-                  </div>
-                  <div className={`text-lg font-bold ${isToday ? "text-red-500" : "text-gray-700"}`}>
-                    {dayNumber}
-                  </div>
-                  <div className={`text-xs ${isToday ? "text-red-400" : "text-gray-500"}`}>
-                    {monthName}
-                    {!isCurrentMonth && <span className="text-gray-400"> {dateObj.getFullYear()}</span>}
-                  </div>
-                </div>
-              )
-            })}
+              <option value="all">{t("filters.allStatuses")}</option>
+              <option value="pending">{t("status.pending")}</option>
+              <option value="confirmed">{t("status.confirmed")}</option>
+              <option value="completed">{t("status.completed")}</option>
+              <option value="cancelled">{t("status.cancelled")}</option>
+              <option value="no_show">{t("status.no_show")}</option>
+            </select>
+            <select
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+              className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-lg"
+            >
+              <option value="all">{t("filters.allServices")}</option>
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+      </div>
 
-        {/* Schedule Content */}
-        {isMobileView ? (
-          <MobileWeekView />
-        ) : (
-          /* Desktop Schedule Grid */
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6">
-            {/* Legend */}
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm font-medium text-gray-700 mb-2">Легенда статусов:</div>
-              <div className="flex flex-wrap gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-200 rounded"></div>
-                  <span>Подтверждено</span>
+      {/* Schedule View */}
+      {isMobileView ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+            {weekDates.map((date, index) => (
+                <MobileDayView key={date.toISOString()} date={date} dayIndex={index} />
+            ))}
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
+            <div className="grid grid-cols-8 min-w-[1200px]">
+                <div className="text-sm text-center text-gray-500">
+                    {TIME_SLOTS.map((time) => (
+                    <div key={time} className="h-24 flex items-center justify-center">
+                        {time}
+                    </div>
+                    ))}
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-200 rounded"></div>
-                  <span>Ожидает</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-200 rounded"></div>
-                  <span>Завершено</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-200 rounded"></div>
-                  <span>Отменено</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-200 rounded"></div>
-                  <span>Другое</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-8 gap-2">
-              {/* Time Column */}
-              <div className="space-y-2 text-xs sm:text-sm">
-                {TIME_SLOTS.map((time) => (
-                  <div key={time} className="h-12 flex items-center text-sm text-gray-500 font-medium">
-                    {time}
-                  </div>
-                ))}
-              </div>
+                {weekDates.map((date, dayIndex) => {
+                    const dayKey = WEEKDAYS[dayIndex].key;
+                    const dayData = weeks[currentWeek]?.find((d) => d.day === dayKey);
+                    const isToday = isTodayDate(date);
+                    const dayAppointments = getAppointmentsForDay(date);
 
-              {/* Day Columns */}
-              {WEEKDAYS.map((weekday, dayIndex) => {
-                const days = weeks[currentWeek] || [];
-                const dayData = days.find((d) => d && d.day && d.day === weekday.key) || { day: weekday.key, isOpen: false, times: [] };
-                const safeDayData = {
-                  day: dayData.day || weekday.key,
-                  isOpen: dayData.isOpen || false,
-                  times: (dayData.times || []).filter(time => time && typeof time === 'object' && time.start && time.end).map(time => ({
-                    start: time.start || "09:00",
-                    end: time.end || "18:00"
-                  }))
-                };
-                const dateObj = weekDates[dayIndex];
-                const isToday = isTodayDate(dateObj)
-                const dayAppointments = getAppointmentsForDay(dateObj);
-
-                return (
-                  <div key={weekday.key} className={`space-y-2 ${isToday ? "bg-red-50 rounded-lg p-2 -m-2" : ""}`}>
-                    {TIME_SLOTS.map((timeSlot) => {
-                      const isWorking = isTimeInWorkingHours(safeDayData, timeSlot)
-                      const slotAppointments = getAppointmentsForTimeSlot(dateObj, timeSlot);
-
-                      return (
-                        <div
-                          key={timeSlot}
-                          className={`h-12 rounded border-2 border-dashed transition-colors cursor-pointer ${
-                            isWorking
-                              ? "border-blue-200 bg-blue-50 hover:bg-blue-100"
-                              : "border-gray-100 bg-gray-50 hover:bg-gray-100"
-                          }`}
-                        >
-                          {/* Показываем записи */}
-                          {slotAppointments.length > 0 && (
-                            <div className="h-full p-1">
-                              {slotAppointments.map((appointment, idx) => (
-                                <div
-                                  key={appointment.id}
-                                  className={`h-full rounded text-xs flex items-center justify-center font-medium ${
-                                    appointment.status === 'confirmed' ? 'bg-blue-200 text-blue-800' :
-                                    appointment.status === 'pending' ? 'bg-yellow-200 text-yellow-800' :
-                                    appointment.status === 'completed' ? 'bg-green-200 text-green-800' :
-                                    appointment.status === 'cancelled' ? 'bg-red-200 text-red-800' :
-                                    'bg-gray-200 text-gray-800'
-                                  }`}
-                                  title={`${appointment.customerName || 'Клиент'}: ${appointment.durationMinutes} мин (${appointment.status})`}
-                                >
-                                  <Scissors className="w-3 h-3 mr-1" />
-                                  {appointment.durationMinutes}м
-                                </div>
-                              ))}
+                    return (
+                    <div key={dayKey} className="border-l border-gray-200">
+                        <div className={`text-center py-2 border-b border-gray-200 ${isToday ? "bg-rose-50" : ""}`}>
+                            <div className="font-semibold">{WEEKDAYS[dayIndex].label}</div>
+                            <div className={`text-xl font-bold ${isToday ? "text-rose-600" : ""}`}>
+                                {date.getDate()}
                             </div>
-                          )}
                         </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
+                        <div className="relative">
+                            {TIME_SLOTS.map((time) => {
+                                const isWorking = isTimeInWorkingHours(dayData, time);
+                                return (
+                                <div
+                                    key={time}
+                                    className={`h-24 border-b border-dashed ${
+                                    isWorking ? "bg-blue-50/50" : "bg-gray-50/50"
+                                    }`}
+                                ></div>
+                                );
+                            })}
+                            <div className="absolute inset-0">
+                                {dayAppointments.map((apt) => (
+                                    <PositionedAppointmentCard key={apt.id} appointment={apt} />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    );
+                })}
             </div>
-          </div>
-        )}
-
-        {/* Modal */}
-        {isModalOpen && (
+        </div>
+      )}
+      
+      {/* Modals */}
+      <AppointmentDetailsModal />
+      {isScheduleModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Настройка расписания</h2>
-                <button onClick={closeModal} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-xl font-semibold">Настройка расписания</h2>
+                <button onClick={() => setIsScheduleModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                   <X className="h-5 w-5" />
                 </button>
               </div>
-
-              {/* Modal Content */}
-              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
-                <div className="space-y-4 sm:space-y-6">
+              <div className="p-6 overflow-y-auto">
+                <div className="space-y-6">
                   {weeks[currentWeek]?.map((d, i) => {
-                    // Ensure day object has all required properties
                     const safeDay = {
-                      day: d?.day || WEEKDAYS[i]?.key || `day-${i}`,
+                      day: d?.day || WEEKDAYS[i]?.key,
                       isOpen: d?.isOpen || false,
-                      times: (d?.times || []).filter(time => time && typeof time === 'object' && time.start && time.end).map(time => ({
+                      times: (d?.times || []).map(time => ({
                         start: time.start || "09:00",
                         end: time.end || "18:00"
                       }))
                     };
-                    
                     return (
-                      <div key={safeDay.day} className="border rounded-xl p-4 flex flex-col gap-2 bg-gray-50">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
-                          <span className="font-semibold text-gray-800 w-full sm:w-32">{WEEKDAYS.find(w => w.key === safeDay.day)?.label || safeDay.day}</span>
-                          <label className="flex items-center gap-2">
+                      <div key={safeDay.day} className="border rounded-lg p-4 bg-gray-50">
+                        <div className="flex items-center gap-4 mb-3">
+                          <span className="font-semibold w-32">{WEEKDAYS.find(w => w.key === safeDay.day)?.fullLabel}</span>
+                          <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               checked={safeDay.isOpen}
                               onChange={e => handleOpenToggle(i, e.target.checked)}
                             />
@@ -695,40 +711,28 @@ export default function SalonSchedulePage({ params }: { params: { salonId: strin
                           </label>
                         </div>
                         {safeDay.isOpen && (
-                          <div className="flex flex-col gap-2">
-                            {safeDay.times.map((t: any, j: number) => (
-                              <div key={j} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                <div className="flex items-center gap-2 flex-1">
-                                  <input
-                                    type="time"
-                                    value={t?.start || ""}
-                                    onChange={e => handleTimeChange(i, j, "start", e.target.value)}
-                                    className="px-2 py-1 border rounded text-sm"
-                                    required
-                                  />
-                                  <span className="text-gray-500">—</span>
-                                  <input
-                                    type="time"
-                                    value={t?.end || ""}
-                                    onChange={e => handleTimeChange(i, j, "end", e.target.value)}
-                                    className="px-2 py-1 border rounded text-sm"
-                                    required
-                                  />
-                                </div>
-                                <button 
-                                  type="button" 
-                                  onClick={() => handleRemoveInterval(i, j)} 
-                                  className="text-red-500 hover:text-red-700 px-2 py-1 rounded text-sm"
-                                >
-                                  Удалить
+                          <div className="space-y-2 pl-4 border-l-2 border-blue-200">
+                            {safeDay.times.map((t, j) => (
+                              <div key={j} className="flex items-center gap-2">
+                                <input
+                                  type="time"
+                                  value={t.start}
+                                  onChange={e => handleTimeChange(i, j, "start", e.target.value)}
+                                  className="px-2 py-1 border rounded-md text-sm w-28"
+                                />
+                                <span>—</span>
+                                <input
+                                  type="time"
+                                  value={t.end}
+                                  onChange={e => handleTimeChange(i, j, "end", e.target.value)}
+                                  className="px-2 py-1 border rounded-md text-sm w-28"
+                                />
+                                <button onClick={() => handleRemoveInterval(i, j)} className="text-red-500 hover:text-red-700 p-1">
+                                  <X className="w-4 h-4" />
                                 </button>
                               </div>
                             ))}
-                            <button 
-                              type="button" 
-                              onClick={() => handleAddInterval(i)} 
-                              className="text-rose-600 text-sm mt-1 text-left"
-                            >
+                            <button onClick={() => handleAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
                               + Добавить интервал
                             </button>
                           </div>
@@ -738,27 +742,17 @@ export default function SalonSchedulePage({ params }: { params: { salonId: strin
                   })}
                 </div>
               </div>
-
-              {/* Modal Footer */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
-                <button
-                  onClick={closeModal}
-                  className="px-6 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors font-medium order-2 sm:order-1"
-                >
+              <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
+                <button onClick={() => setIsScheduleModalOpen(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300">
                   Отмена
                 </button>
-                <button
-                  onClick={handleSave}
-                  disabled={loading}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
-                >
-                  {loading ? "Сохранение..." : "Сохранить изменения"}
+                <button onClick={handleSaveSchedule} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                  Сохранить
                 </button>
               </div>
             </div>
           </div>
         )}
-      </div>
     </div>
-  )
+  );
 }

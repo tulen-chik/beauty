@@ -8,6 +8,8 @@ import Image from "next/image"
 import { useParams } from "next/navigation"
 import { getAllSalons, getAllSalonServices, getServiceImages } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
+import { useSalonRating } from "@/contexts"
+import RatingDisplay from "@/components/RatingDisplay"
 
 // --- ТИПЫ ДАННЫХ ---
 type AnySalon = {
@@ -225,7 +227,7 @@ const CitySelector = React.memo(({ currentCity, onCityChange, locale }: { curren
   )
 });
 
-const ServiceCard = React.memo(({ service, locale }: { service: ProcessedService; locale: string }) => {
+const ServiceCard = React.memo(({ service, locale, salonRating }: { service: ProcessedService; locale: string; salonRating?: any }) => {
   const t = useTranslations("search");
   const formatAddress = (fullAddress: string) => { if (!fullAddress) return ""; return fullAddress.split(",").slice(0, 2).join(",").trim() };
 
@@ -237,7 +239,17 @@ const ServiceCard = React.memo(({ service, locale }: { service: ProcessedService
         </div>
         <div className="flex-1 min-w-0">
           <Link href={`/${locale}/book/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
-          {service.salon && <p className="text-sm text-gray-600 mb-2">{service.salon.name}・{formatAddress(service.salon.address)}</p>}
+          {service.salon && (
+            <div className="mb-2">
+              <p className="text-sm text-gray-600">{service.salon.name}・{formatAddress(service.salon.address)}</p>
+              {salonRating && (
+                <div className="flex items-center gap-2 mt-1">
+                  <RatingDisplay rating={salonRating.averageRating} size="sm" />
+                  <span className="text-xs text-gray-500">({salonRating.totalRatings} отзывов)</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <div className="text-base font-bold text-gray-800">{service.price} ₽</div>
             <div className="text-sm text-gray-500">{service.durationMinutes} мин</div>
@@ -255,9 +267,12 @@ export default function SearchPage() {
   const t = useTranslations("search");
   const locale = useParams().locale as string;
 
+  const { getRatingStats } = useSalonRating();
+
   const [loading, setLoading] = useState(true);
   const [processedServices, setProcessedServices] = useState<ProcessedService[]>([]);
   const [allSalons, setAllSalons] = useState<AnySalon[]>([]);
+  const [salonRatings, setSalonRatings] = useState<Record<string, any>>({});
   
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -290,6 +305,18 @@ export default function SearchPage() {
       
       setAllSalons(salonsList);
       setProcessedServices(servicesWithDetails);
+      
+      // Загружаем рейтинги для всех салонов
+      const ratingsData: Record<string, any> = {};
+      for (const salon of salonsList) {
+        try {
+          const stats = await getRatingStats(salon.id);
+          ratingsData[salon.id] = stats;
+        } catch (error) {
+          console.warn(`Failed to load ratings for salon ${salon.id}`, error);
+        }
+      }
+      setSalonRatings(ratingsData);
       setLoading(false);
     };
     loadData();
@@ -367,7 +394,14 @@ export default function SearchPage() {
                 <p className="text-sm mt-1">{currentCity ? t("noServicesInCityMessage", { city: currentCity }) : ""}</p>
               </div>
             ) : (
-              <div>{filteredServices.map((service) => (<ServiceCard key={service.id} service={service} locale={locale} />))}</div>
+              <div>{filteredServices.map((service) => (
+                <ServiceCard 
+                  key={service.id} 
+                  service={service} 
+                  locale={locale} 
+                  salonRating={service.salon ? salonRatings[service.salon.id] : undefined}
+                />
+              ))}</div>
             )
           )}
         </div>

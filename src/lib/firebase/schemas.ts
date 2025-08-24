@@ -133,3 +133,110 @@ export const appointmentSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+
+// Chat schemas
+export const chatMessageSchema = z.object({
+  chatId: z.string(),
+  senderId: z.string(),
+  senderType: z.enum(['customer', 'salon']),
+  senderName: z.string().min(1),
+  messageType: z.enum(['text', 'image', 'file', 'system']),
+  content: z.string().min(1),
+  attachments: z.array(z.object({
+    url: z.string().url(),
+    filename: z.string(),
+    size: z.number().positive(),
+    type: z.string()
+  })).optional(),
+  status: z.enum(['sent', 'delivered', 'read', 'failed']),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  readAt: z.string().optional(),
+});
+
+export const chatSchema = z.object({
+  salonId: z.string(),
+  customerUserId: z.string(),
+  customerName: z.string().min(1),
+  customerPhone: z.string().optional(),
+  appointmentId: z.string().optional(),
+  serviceId: z.string().optional(),
+  status: z.enum(['active', 'archived', 'closed']),
+  lastMessageAt: z.string(),
+  lastMessagePreview: z.string().optional(),
+  unreadCount: z.object({
+    customer: z.number().int().min(0),
+    salon: z.number().int().min(0),
+  }),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  archivedAt: z.string().optional(),
+  closedAt: z.string().optional(),
+});
+
+export const chatParticipantSchema = z.object({
+  chatId: z.string(),
+  userId: z.string(),
+  userType: z.enum(['customer', 'salon']),
+  displayName: z.string().min(1),
+  avatarUrl: z.string().url().optional(),
+  isOnline: z.boolean(),
+  lastSeenAt: z.string(),
+  joinedAt: z.string(),
+  leftAt: z.string().optional(),
+});
+
+export const chatNotificationSchema = z.object({
+  chatId: z.string(),
+  userId: z.string(),
+  messageId: z.string(),
+  type: z.enum(['new_message', 'message_read', 'chat_archived', 'chat_closed']),
+  title: z.string().min(1),
+  body: z.string().min(1),
+  isRead: z.boolean(),
+  createdAt: z.string(),
+  readAt: z.string().optional(),
+});
+
+// Salon rating schemas
+export const salonRatingSchema = z.object({
+  salonId: z.string(),
+  customerUserId: z.string(),
+  customerName: z.string().min(1),
+  appointmentId: z.string().optional(),
+  serviceId: z.string().optional(),
+  rating: z.number().int().min(1).max(5),
+  review: z.string().min(10).max(1000),
+  categories: z.object({
+    service: z.number().int().min(1).max(5).optional(),
+    cleanliness: z.number().int().min(1).max(5).optional(),
+    atmosphere: z.number().int().min(1).max(5).optional(),
+    staff: z.number().int().min(1).max(5).optional(),
+    value: z.number().int().min(1).max(5).optional(),
+  }).optional(),
+  isAnonymous: z.boolean(),
+  isVerified: z.boolean(),
+  status: z.enum(['pending', 'approved', 'rejected']),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  approvedAt: z.string().optional(),
+  rejectedAt: z.string().optional(),
+  rejectedReason: z.string().optional(),
+});
+
+export const salonRatingResponseSchema = z.object({
+  ratingId: z.string(),
+  salonId: z.string(),
+  responseText: z.string().min(1).max(500),
+  respondedBy: z.string(),
+  respondedAt: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const salonRatingHelpfulSchema = z.object({
+  ratingId: z.string(),
+  userId: z.string(),
+  isHelpful: z.boolean(),
+  createdAt: z.string(),
+});

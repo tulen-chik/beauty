@@ -12,6 +12,9 @@ import { useEffect, useMemo, useState } from "react"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
+import { useSalonRating } from "@/contexts"
+import RatingDisplay from "@/components/RatingDisplay"
+import RatingStats from "@/components/RatingStats"
 
 // 2. Определены интерфейсы для улучшения типобезопасности
 type AnyService = {
@@ -58,6 +61,7 @@ export default function SalonPublicPage() {
   const { fetchSalon } = useSalon()
   const { getSchedule } = useSalonSchedule()
   const { getServicesBySalon, getImages } = useSalonService()
+  const { getRatingStats } = useSalonRating()
   const t = useTranslations('search')
 
   const [loading, setLoading] = useState(true)
@@ -68,6 +72,7 @@ export default function SalonPublicPage() {
   const [schedule, setSchedule] = useState<Schedule | null>(null)
   const [services, setServices] = useState<AnyService[]>([])
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({})
+  const [ratingStats, setRatingStats] = useState<any>(null)
 
   const heroImage = useMemo(() => {
     const firstService = services[0]
@@ -96,6 +101,13 @@ export default function SalonPublicPage() {
         } catch (err) {
           // 4. Пустые catch-блоки заменены на логирование ошибок
           console.error("Не удалось загрузить расписание:", err)
+        }
+
+        try {
+          const stats = await getRatingStats(salonId)
+          if (!cancelled) setRatingStats(stats)
+        } catch (err) {
+          console.error("Не удалось загрузить рейтинги:", err)
         }
 
         try {
@@ -263,6 +275,16 @@ export default function SalonPublicPage() {
                     ))}
                   </div>
                   <div className="text-xs text-gray-500 mt-3">Расписание рассчитывается на несколько недель вперед</div>
+                </div>
+              )}
+
+              {ratingStats && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Star className="w-5 h-5 text-rose-600" />
+                    <h3 className="text-lg font-bold text-gray-900">Отзывы и рейтинги</h3>
+                  </div>
+                  <RatingStats stats={ratingStats} />
                 </div>
               )}
 

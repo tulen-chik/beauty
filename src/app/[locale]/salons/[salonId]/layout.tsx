@@ -3,7 +3,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import React, { useState } from "react";
-import { Menu, X, Building2 } from "lucide-react";
+import { Menu, X, Building2, MessageCircle } from "lucide-react";
 
 export default function SalonCrmLayout({ 
   children, 
@@ -23,6 +23,8 @@ export default function SalonCrmLayout({
     { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
     { key: "services", label: t('menu.services'), path: "/services" },
     { key: "schedule", label: t('menu.schedule'), path: "/schedule" },
+    { key: "chats", label: "Чаты", path: "/chats" },
+    { key: "ratings", label: "Отзывы", path: "/ratings" },
     { key: "staff", label: t('menu.staff'), path: "/staff" },
     { key: "settings", label: t('menu.settings'), path: "/settings" },
   ];
@@ -92,13 +94,14 @@ export default function SalonCrmLayout({
 
         {/* Desktop Layout */}
         <div className="hidden lg:flex lg:min-h-screen lg:py-12 lg:px-4 lg:items-center lg:justify-center">
-          <div className="w-full max-w-5xl flex bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[600px]">
+          <div className="w-full max-w-7xl flex bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[600px]">
             {/* Основной контент */}
-            <div className="flex-1 p-8">
+            {/* THE FIX IS HERE: Added min-w-0 to allow this flex item to shrink */}
+            <div className="flex-1 p-8 min-w-0">
               {children}
             </div>
             {/* Меню справа */}
-            <aside className="w-64 border-l border-gray-100 bg-gray-50 p-8 flex flex-col gap-2">
+            <aside className="w-64 border-l border-gray-100 bg-gray-50 p-8 flex flex-col gap-2 flex-shrink-0">
               <div className="text-lg font-bold text-gray-800 mb-4">{t('menu.title')}</div>
               {MENU.map((item) => (
                 <button
@@ -128,4 +131,4 @@ export default function SalonCrmLayout({
       </div>
     </ProtectedRoute>
   );
-} 
+}

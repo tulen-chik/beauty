@@ -5,13 +5,18 @@ import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Scissors, Building2, MapPin, Clock, ArrowLeft, Calendar, Images, CheckCircle, Map as MapIcon } from "lucide-react"
+import { Scissors, Building2, MapPin, Clock, ArrowLeft, Calendar, Images, CheckCircle, Map as MapIcon, MessageCircle, Star } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
+import { useUser } from "@/contexts/UserContext"
+import { useChat } from "@/contexts/ChatContext"
+import { useSalonRating } from "@/contexts"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
+import ChatButton from "@/components/ChatButton"
+import RatingDisplay from "@/components/RatingDisplay"
 
 type Service = {
   id: string
@@ -30,6 +35,9 @@ export default function ServicePublicPage() {
   const { getService, getImages } = useSalonService()
   const { fetchSalon } = useSalon()
   const { getSchedule } = useSalonSchedule()
+  const { getRatingStats } = useSalonRating()
+  const { currentUser } = useUser()
+  const { createOrGetChat } = useChat()
   const t = useTranslations('search')
 
   const [loading, setLoading] = useState(true)
@@ -39,6 +47,7 @@ export default function ServicePublicPage() {
   const [images, setImages] = useState<Array<{ id: string; url: string; storagePath: string }>>([])
   const [salon, setSalon] = useState<any>(null)
   const [schedule, setSchedule] = useState<any>(null)
+  const [ratingStats, setRatingStats] = useState<any>(null)
 
   const coverUrl = useMemo(() => images[0]?.url || "/placeholder.svg", [images])
 
@@ -81,6 +90,13 @@ export default function ServicePublicPage() {
           } catch (e) {
             // ИСПРАВЛЕНО: Добавлена обработка ошибки
             console.error("Не удалось загрузить расписание:", e)
+          }
+          
+          try {
+            const stats = await getRatingStats(s.salonId)
+            if (!cancelled) setRatingStats(stats)
+          } catch (e) {
+            console.error("Не удалось загрузить рейтинги:", e)
           }
         }
       } catch (e: any) {
@@ -256,6 +272,19 @@ export default function ServicePublicPage() {
                     <span className="text-sm font-medium">{salon.address}</span>
                   </div>
                 )}
+                
+                {ratingStats && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span className="text-sm font-medium text-gray-700">Рейтинг салона</span>
+                    </div>
+                    <RatingDisplay rating={ratingStats.averageRating} showValue size="sm" />
+                    <div className="text-xs text-gray-500 mt-1">
+                      {ratingStats.totalRatings} отзывов
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 gap-2">
                   <Link
                     href={`/${locale}/s/${salon?.id || service.salonId}`}
@@ -263,6 +292,16 @@ export default function ServicePublicPage() {
                   >
                     {t('aboutSalon')}
                   </Link>
+                  {currentUser && salon && (
+                    <ChatButton
+                      salonId={salon.id}
+                      customerUserId={currentUser.userId}
+                      customerName={currentUser.displayName}
+                      serviceId={service.id}
+                      className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                      variant="button"
+                    />
+                  )}
                   <Link
                     href={`/${locale}/book/${service.id}`}
                     className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"

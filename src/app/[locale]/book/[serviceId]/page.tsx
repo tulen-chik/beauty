@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
-import { Calendar, Clock, User, Shield, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, User, Phone, Shield, MessageCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import { getServiceImages } from "@/lib/firebase/database"
 import { useUser } from "@/contexts/UserContext"
 import { useSalon } from "@/contexts/SalonContext"
@@ -12,6 +12,8 @@ import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { useTranslations } from "next-intl"
+import { useChat } from "@/contexts/ChatContext"
+import ChatButton from "@/components/ChatButton"
 
 type Service = {
   id: string
@@ -41,6 +43,7 @@ export default function BookServicePage() {
   const { getSchedule } = useSalonSchedule()
   const { getService } = useSalonService()
   const { getUserById } = useUser()
+  const { createOrGetChat } = useChat()
 
   // Debug: Log when context functions change
   useEffect(() => {
@@ -962,6 +965,16 @@ export default function BookServicePage() {
             </div>
 
             <div className="flex items-center justify-end gap-3 pt-2">
+              {currentUser && salon && (
+                <ChatButton
+                  salonId={salon.id}
+                  customerUserId={currentUser.userId}
+                  customerName={currentUser.displayName}
+                  serviceId={serviceId}
+                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                  variant="button"
+                />
+              )}
               <button
                 onClick={() => router.back()}
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
