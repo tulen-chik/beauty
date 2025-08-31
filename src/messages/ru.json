@@ -120,7 +120,15 @@
     "mapError": "Google Maps не загружен",
     "mapErrorHelp": "Убедитесь, что у вас есть доступ к интернету и Google Maps API ключ настроен",
     "error": "Ошибка загрузки карты",
-    "instructions": "Кликните на карту или перетащите маркер для выбора местоположения"
+    "instructions": "Кликните на карту или перетащите маркер для выбора местоположения",
+    "selectedAddress": "Выбранный адрес",
+    "selectOnMap": "Выбрать на карте",
+    "changeOnMap": "Изменить на карте",
+    "requiredName": "Название салона обязательно",
+    "requiredAddress": "Адрес обязателен",
+    "invalidPhone": "Пожалуйста, введите корректный номер телефона",
+    "descriptionTooLong": "Описание слишком длинное (макс {max} символов)",
+    "phoneHelp": "Укажите код страны, например +7 999 123-45-67"
   },
   "mapSelector": {
     "title": "Выберите местоположение на карте",
@@ -612,9 +620,9 @@
         "description": "Описание",
         "industry": "Отрасль",
         "save": "Сохранить изменения"
-  },
-  "notifications": {
-    "title": "Уведомления",
+      },
+      "notifications": {
+        "title": "Уведомления",
         "description": "Управление настройками уведомлений",
         "enable": "Включить уведомления",
         "enableDescription": "Получать уведомления о действиях в рабочем пространстве"
@@ -649,79 +657,6 @@
         "confirmLabel": "Пожалуйста, введите {name} для подтверждения",
         "confirm": "Да, удалить рабочее пространство",
         "cancel": "Отмена"
-      },
-      "workspaceName": "Название пространства",
-      "description": "Описание",
-      "industry": "Отрасль",
-      "emailNotifications": "Email уведомления",
-      "emailNotificationsDesc": "Получать уведомления по email о важных событиях",
-      "aiTone": "Тон ИИ",
-      "aiStyle": "Стиль ИИ",
-      "contentLength": "Длина контента",
-      "toneProfessional": "Профессиональный",
-      "toneCasual": "Неформальный",
-      "toneFriendly": "Дружелюбный",
-      "styleFormal": "Формальный",
-      "styleInformal": "Неформальный",
-      "lengthShort": "Короткий",
-      "lengthMedium": "Средний",
-      "lengthLong": "Длинный",
-      "deleteWorkspace": "Удалить пространство",
-      "deleteWorkspaceWarning": "Это действие нельзя отменить. Все данные будут удалены навсегда.",
-      "typeDeleteToConfirm": "Введите DELETE для подтверждения",
-      "confirmDelete": "Подтвердить удаление",
-      "cancel": "Отмена",
-      "save": "Сохранить",
-      "updateSuccess": "Настройки успешно обновлены",
-      "updateError": "Ошибка при обновлении настроек",
-      "deleteSuccess": "Пространство успешно удалено",
-      "deleteError": "Ошибка при удалении пространства",
-      "targetAudience": {
-        "title": "Целевая аудитория",
-        "description": "Определите демографию и характеристики вашей целевой аудитории",
-        "ageRange": "Возрастной диапазон",
-        "gender": "Пол",
-        "genders": {
-          "male": "Мужской",
-          "female": "Женский",
-          "other": "Другой"
-        },
-        "location": "Локация",
-        "locationPlaceholder": "Введите локации через запятую",
-        "interests": "Интересы",
-        "interestsPlaceholder": "Введите интересы через запятую",
-        "painPoints": "Боли",
-        "painPointsPlaceholder": "Введите каждую боль с новой строки",
-        "goals": "Цели",
-        "goalsPlaceholder": "Введите каждую цель с новой строки"
-      },
-      "demographics": "Демография",
-      "ageRange": "Возрастной диапазон",
-      "gender": "Пол",
-      "location": "География",
-      "interests": "Интересы",
-      "painPointsAndGoals": "Боли и цели",
-      "painPoints": "Боли аудитории",
-      "painPointsPlaceholder": "Введите каждую боль с новой строки",
-      "goals": "Цели аудитории",
-      "goalsPlaceholder": "Введите каждую цель с новой строки",
-      "members": {
-        "title": "Участники рабочего пространства",
-        "description": "Управление доступом к рабочему пространству",
-        "invite": "Пригласить участника",
-        "inviteTitle": "Пригласить участника",
-        "inviteDescription": "Найдите пользователя по email, чтобы пригласить его в рабочее пространство",
-        "search": "Поиск",
-        "searching": "Поиск...",
-        "searchPlaceholder": "Введите email",
-        "searchError": "Не удалось найти пользователя",
-        "inviteError": "Не удалось пригласить пользователя",
-        "noUsersFound": "Пользователи не найдены",
-        "empty": "Пока нет участников",
-        "roles": {
-          "admin": "Администратор",
-          "member": "Участник"
-        }
       }
     }
   },
@@ -865,7 +800,7 @@
     },
     "actions": {
       "edit": "Редактировать",
-    "delete": "Удалить",
+      "delete": "Удалить",
       "assign": "Назначить",
       "move": "Переместить"
     },
@@ -1009,8 +944,7 @@
       "shares": "Репосты",
       "viewOnTikTok": "Посмотреть в TikTok"
     }
-  }
-  ,
+  },
   "searchPage": {
     "title": "Поиск салонов и услуг",
     "placeholder": "Введите запрос (например: маникюр, стрижка, адрес...)",
@@ -1186,5 +1120,38 @@
     "minLength": "Минимальная длина: {min} символов",
     "maxLength": "Максимальная длина: {max} символов",
     "invalidFormat": "Неверный формат"
+  },
+  "salonChats": {
+    "title": "Чаты с клиентами",
+    "subtitle": "Общение с клиентами салона",
+    "backToSalon": "Назад к салону",
+    "needLogin": "Необходимо войти в систему",
+    "login": "Войти",
+    "loadingChats": "Загрузка чатов...",
+    "error": "Ошибка",
+    "errorDescription": "Не удалось загрузить чаты. Пожалуйста, попробуйте снова.",
+    "retry": "Повторить",
+    "noChatsTitle": "Нет активных чатов",
+    "noChatsDesc": "У вас пока нет чатов. Чаты появятся после бронирования услуг.",
+    "noMessages": "Нет сообщений",
+    "chatByAppointment": "Чат по записи",
+    "linkedToService": "Связан с услугой",
+    "yesterday": "Вчера"
+  },
+  "chat": {
+    "loadingChat": "Загрузка чата...",
+    "errorLoading": "Не удалось загрузить чат",
+    "retry": "Повторить",
+    "sendError": "Не удалось отправить сообщение",
+    "fileTooLarge": "Файл слишком большой: {name} (макс 5 МБ)",
+    "unsupportedFileType": "Неподдерживаемый тип файла: {name}",
+    "startConversation": "Начните разговор",
+    "active": "Активен",
+    "generalChat": "Общий чат",
+    "chatByAppointment": "Чат по записи",
+    "placeholder": "Введите сообщение...",
+    "filesSent": "Отправлено {count} файл(ов): {names}",
+    "errorMarkRead": "Не удалось отметить сообщения как прочитанные",
+    "errorNoUser": "Пользователь не авторизован"
   }
 }

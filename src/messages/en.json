@@ -120,7 +120,15 @@
     "mapError": "Google Maps failed to load",
     "mapErrorHelp": "Make sure you have internet access and Google Maps API key is configured",
     "error": "Map loading error",
-    "instructions": "Click on map or drag marker to select location"
+    "instructions": "Click on map or drag marker to select location",
+    "selectedAddress": "Selected address",
+    "selectOnMap": "Select on map",
+    "changeOnMap": "Change on map",
+    "requiredName": "Salon name is required",
+    "requiredAddress": "Address is required",
+    "invalidPhone": "Please enter a valid phone number",
+    "descriptionTooLong": "Description is too long (max {max} characters)",
+    "phoneHelp": "Include country code, e.g. +1 555 123 4567"
   },
   "profilePage": {
     "title": "Profile",
@@ -1119,8 +1127,7 @@
       "shares": "Shares",
       "viewOnTikTok": "View on TikTok"
     }
-  }
-  ,
+  },
   "searchPage": {
     "title": "Search salons and services",
     "placeholder": "Type a query (e.g., manicure, haircut, address...)",
@@ -1135,5 +1142,38 @@
     "servicesTitle": "Services",
     "book": "Book",
     "salonLabel": "Salon:"
+  },
+  "salonChats": {
+    "title": "Chats with customers",
+    "subtitle": "Communicate with salon customers",
+    "backToSalon": "Back to salon",
+    "needLogin": "You need to sign in",
+    "login": "Sign In",
+    "loadingChats": "Loading chats...",
+    "error": "Error",
+    "errorDescription": "Failed to load chats. Please try again.",
+    "retry": "Retry",
+    "noChatsTitle": "No active chats",
+    "noChatsDesc": "You don't have chats yet. Chats will appear after bookings.",
+    "noMessages": "No messages",
+    "chatByAppointment": "Chat for appointment",
+    "linkedToService": "Linked to service",
+    "yesterday": "Yesterday"
+  },
+  "chat": {
+    "loadingChat": "Loading chat...",
+    "errorLoading": "Failed to load chat",
+    "retry": "Retry",
+    "sendError": "Failed to send message",
+    "fileTooLarge": "File is too large: {name} (max 5 MB)",
+    "unsupportedFileType": "Unsupported file type: {name}",
+    "startConversation": "Start a conversation",
+    "active": "Active",
+    "generalChat": "General chat",
+    "chatByAppointment": "Chat for appointment",
+    "placeholder": "Type a message...",
+    "filesSent": "Sent {count} file(s): {names}",
+    "errorMarkRead": "Failed to mark messages as read",
+    "errorNoUser": "User not authenticated"
   }
 }

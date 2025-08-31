@@ -177,15 +177,42 @@ export default function CreateSalonPage() {
   const userId = currentUser?.userId;
   const t = useTranslations('salonCreation');
 
+  // validation state
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    address?: string;
+    phone?: string;
+    description?: string;
+  }>({});
+
+  const MAX_DESCRIPTION = 1000;
+  const PHONE_REGEX = /^\+?[0-9\s\-()]{7,20}$/;
+
   const handleLocationSelect = (newAddress: string, newCoordinates: { lat: number; lng: number }) => {
     setAddress(newAddress);
     setCoordinates(newCoordinates);
     setShowMap(false); // Automatically hide map after selection
+    setValidationErrors(prev => ({ ...prev, address: undefined }));
+  };
+
+  const validate = () => {
+    const errs: any = {};
+    if (!name.trim()) errs.name = t('requiredName');
+    if (!address.trim()) errs.address = t('requiredAddress');
+    if (phone.trim() && !PHONE_REGEX.test(phone.trim())) errs.phone = t('invalidPhone');
+    if (description.length > MAX_DESCRIPTION) errs.description = t('descriptionTooLong', { max: MAX_DESCRIPTION });
+    setValidationErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId || !name || !address) return;
+    if (!userId) {
+      // user must be authorized — handled elsewhere
+      return;
+    }
+    if (!validate()) return;
+
     const salonId = Date.now().toString(); // Можно заменить на uuid
     try {
       await createSalon(salonId, {
@@ -221,6 +248,14 @@ export default function CreateSalonPage() {
     }
   };
 
+  // clear field-specific error on change
+  const onNameChange = (v: string) => { setName(v); if (validationErrors.name) setValidationErrors(prev => ({ ...prev, name: undefined })); };
+  const onAddressChange = (v: string) => { setAddress(v); if (validationErrors.address) setValidationErrors(prev => ({ ...prev, address: undefined })); };
+  const onPhoneChange = (v: string) => { setPhone(v); if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined })); };
+  const onDescriptionChange = (v: string) => { setDescription(v); if (validationErrors.description) setValidationErrors(prev => ({ ...prev, description: undefined })); };
+
+  const isSubmitDisabled = loading || !name.trim() || !address.trim() || Object.keys(validationErrors).length > 0;
+
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-4">
       <div className="max-w-2xl mx-auto">
@@ -239,10 +274,12 @@ export default function CreateSalonPage() {
                 type="text"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-base"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => onNameChange(e.target.value)}
                 placeholder={t('namePlaceholder')}
+                aria-invalid={!!validationErrors.name}
                 required
               />
+              {validationErrors.name && <div className="text-red-500 text-sm mt-2">{validationErrors.name}</div>}
             </div>
             
             {/* Address and Map */}
@@ -257,9 +294,10 @@ export default function CreateSalonPage() {
                 type="button"
                 onClick={() => setShowMap(!showMap)}
                 className="w-full px-6 py-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl hover:bg-rose-100 flex items-center justify-center gap-2 font-medium transition-colors"
+                aria-expanded={showMap}
               >
                 <Map className="h-4 w-4" />
-                {/* <span>{address ? t('changeOnMap') : t('selectOnMap')}</span> */}
+                <span>{showMap ? t('changeOnMap') : t('selectOnMap')}</span>
               </button>
 
               {address && (
@@ -271,7 +309,9 @@ export default function CreateSalonPage() {
                   </div>
                 </div>
               )}
-              
+
+              {validationErrors.address && <div className="text-red-500 text-sm">{validationErrors.address}</div>}
+
               {showMap && (
                 <MapSelector
                   onLocationSelect={handleLocationSelect}
@@ -290,9 +330,12 @@ export default function CreateSalonPage() {
                 type="tel"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-base"
                 value={phone}
-                onChange={e => setPhone(e.target.value)}
+                onChange={e => onPhoneChange(e.target.value)}
                 placeholder={t('phonePlaceholder')}
+                aria-invalid={!!validationErrors.phone}
               />
+              <div className="text-xs text-gray-500 mt-1">{t('phoneHelp')}</div>
+              {validationErrors.phone && <div className="text-red-500 text-sm mt-2">{validationErrors.phone}</div>}
             </div>
             
             {/* Description */}
@@ -304,16 +347,19 @@ export default function CreateSalonPage() {
               <textarea
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-base resize-none"
                 value={description}
-                onChange={e => setDescription(e.target.value)}
+                onChange={e => onDescriptionChange(e.target.value)}
                 placeholder={t('descriptionPlaceholder')}
                 rows={3}
+                aria-invalid={!!validationErrors.description}
               />
+              <div className="text-xs text-gray-500 mt-1">{description.length}/{MAX_DESCRIPTION}</div>
+              {validationErrors.description && <div className="text-red-500 text-sm mt-2">{validationErrors.description}</div>}
             </div>
             
             {/* Error and Success Messages */}
             {error && (
               <div className="text-red-500 text-sm text-center p-3 bg-red-50 rounded-lg border border-red-200">
-                {error}
+                {String(error)}
               </div>
             )}
             {success && (
@@ -325,7 +371,7 @@ export default function CreateSalonPage() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || !name || !address}
+              // disabled={isSubmitDisabled}
               className="w-full py-4 px-6 bg-rose-600 text-white font-semibold rounded-xl shadow-lg hover:bg-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               {loading ? t('creating') : t('createButton')}

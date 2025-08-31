@@ -5,6 +5,7 @@ import { Send, Paperclip, Image, File, X, MessageCircle, Clock, Check, CheckChec
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
 import type { ChatMessage, ChatMessageType } from '@/types/database';
+import { useTranslations } from 'next-intl';
 
 interface ChatInterfaceProps {
   chatId: string;
@@ -34,9 +35,16 @@ export default function ChatInterface({
     error 
   } = useChat();
 
+  const t = useTranslations('chat'); // new: translations
+
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,31 +65,49 @@ export default function ChatInterface({
       );
       
       if (unreadMessages.length > 0) {
-        markMessagesAsRead(chatId, currentUser.userId);
+        try {
+          markMessagesAsRead(chatId, currentUser.userId);
+        } catch (err) {
+          console.error('Error marking messages as read:', err);
+          // non-fatal - show local error optionally
+          setLoadError((err as any)?.message ?? t('errorMarkRead'));
+        }
       }
     }
-  }, [chatId, currentUser, messages, markMessagesAsRead]);
+  }, [chatId, currentUser, messages, markMessagesAsRead, t]);
 
   // Load messages when chat is opened
   useEffect(() => {
-    if (chatId) {
-      getMessages(chatId, 50);
-    }
-  }, [chatId, getMessages]);
+    if (!chatId) return;
+    setLoadError(null);
+    const load = async () => {
+      try {
+        await getMessages(chatId, 50);
+        setLoadError(null);
+      } catch (err: any) {
+        console.error('Error loading messages:', err);
+        setLoadError(err?.message ?? t('errorLoading'));
+      }
+    };
+    load();
+  }, [chatId, getMessages, t]);
 
   const handleSendMessage = async () => {
+    setSendError(null);
     if (!messageText.trim() && attachments.length === 0) return;
-    if (!currentUser) return;
+    if (!currentUser) {
+      setSendError(t('errorNoUser'));
+      return;
+    }
 
+    setIsSending(true);
     setIsTyping(true);
     try {
       const messageType: ChatMessageType = attachments.length > 0 ? 'file' : 'text';
       let content = messageText;
-      
-      // If there are attachments, create a description
       if (attachments.length > 0) {
         const fileNames = attachments.map(file => file.name).join(', ');
-        content = `Отправлено ${attachments.length} файл(ов): ${fileNames}`;
+        content = t('filesSent', { count: attachments.length, names: fileNames });
       }
 
       await sendMessage(
@@ -92,7 +118,7 @@ export default function ChatInterface({
         content,
         messageType,
         attachments.length > 0 ? attachments.map(file => ({
-          url: URL.createObjectURL(file), // В реальном приложении нужно загрузить файл
+          url: URL.createObjectURL(file), // NOTE: real upload required in production
           filename: file.name,
           size: file.size,
           type: file.type
@@ -101,9 +127,12 @@ export default function ChatInterface({
 
       setMessageText('');
       setAttachments([]);
-    } catch (error) {
-      console.error('Error sending message:', error);
+      setSendError(null);
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      setSendError(err?.message ?? t('sendError'));
     } finally {
+      setIsSending(false);
       setIsTyping(false);
     }
   };
@@ -115,9 +144,35 @@ export default function ChatInterface({
     }
   };
 
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+  const ALLOWED_MIMES = [
+    'image/', // any image
+    'application/pdf',
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError(null);
     const files = Array.from(e.target.files || []);
-    setAttachments(prev => [...prev, ...files]);
+    const validFiles: File[] = [];
+    for (const f of files) {
+      if (f.size > MAX_FILE_SIZE) {
+        setFileError(t('fileTooLarge', { name: f.name }));
+        continue;
+      }
+      const ok = ALLOWED_MIMES.some(m => m.endsWith('/') ? f.type.startsWith(m) : f.type === m);
+      if (!ok) {
+        setFileError(t('unsupportedFileType', { name: f.name }));
+        continue;
+      }
+      validFiles.push(f);
+    }
+    if (validFiles.length > 0) {
+      setAttachments(prev => [...prev, ...validFiles]);
+      setFileError(null);
+    }
   };
 
   const removeAttachment = (index: number) => {
@@ -147,21 +202,33 @@ export default function ChatInterface({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Загрузка чата...</div>
+        <div className="text-gray-500">{t('loadingChat')}</div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Ошибка: {error}</div>
-      </div>
-    );
-  }
+  // show load error banner but keep component visible so user can retry
+  // error from context still shown, or local loadError
+  const loadErrMsg = loadError ?? (error ? String(error) : null);
 
   return (
     <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg">
+      {loadErrMsg && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+          <div>{loadErrMsg}</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setLoadError(null);
+                if (chatId) getMessages(chatId, 50).catch(err => setLoadError(err?.message ?? t('errorLoading')));
+              }}
+              className="px-3 py-1 bg-rose-600 text-white rounded"
+            >
+              {t('retry')}
+            </button>
+          </div>
+        </div>
+      )}
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center gap-3">
@@ -171,7 +238,7 @@ export default function ChatInterface({
           <div>
             <h3 className="font-semibold text-gray-900">{customerName}</h3>
             <p className="text-sm text-gray-500">
-              {appointmentId ? 'Чат по записи' : 'Общий чат'}
+              {appointmentId ? t('chatByAppointment') : t('generalChat')}
             </p>
           </div>
         </div>
@@ -179,7 +246,7 @@ export default function ChatInterface({
           {currentChat?.status === 'active' && (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              Активен
+              {t('active')}
             </span>
           )}
         </div>
@@ -190,7 +257,7 @@ export default function ChatInterface({
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>Начните разговор</p>
+            <p>{t('startConversation')}</p>
           </div>
         ) : (
           messages.map((message) => {
@@ -288,25 +355,25 @@ export default function ChatInterface({
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Введите сообщение..."
+              placeholder={t('placeholder')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
               rows={1}
-              disabled={isTyping}
+              disabled={isTyping || isSending}
             />
           </div>
           
           <div className="flex items-center gap-2">
-            <button
+            {/* <button
               onClick={() => fileInputRef.current?.click()}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               disabled={isTyping}
             >
               <Paperclip className="w-5 h-5" />
-            </button>
+            </button> */}
             
             <button
               onClick={handleSendMessage}
-              disabled={(!messageText.trim() && attachments.length === 0) || isTyping}
+              disabled={(!messageText.trim() && attachments.length === 0) || isTyping || isSending}
               className="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-5 h-5" />

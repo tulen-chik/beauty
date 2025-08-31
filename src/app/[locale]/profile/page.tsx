@@ -207,7 +207,7 @@ export default function ProfilePage() {
                   className="w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-base" 
                 />
               </div>
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.language')}</label>
                   <select 
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                   />
                   <label htmlFor="notifications" className="text-sm text-gray-700 font-medium">{t('settings.notifications')}</label>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">

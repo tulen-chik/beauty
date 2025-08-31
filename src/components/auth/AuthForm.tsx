@@ -23,6 +23,86 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // new: validation state
+  const [validationErrors, setValidationErrors] = useState<{ name?: string; email?: string; password?: string }>({});
+
+  // validation rules
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const MIN_PASSWORD_LENGTH = 6;
+
+  // map server error messages/codes to localized strings
+  const mapServerError = (err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    // simple mapping by known substrings or keys
+    if (/invalid credentials|invalid email or password/i.test(msg)) return tAuth('errors.invalidCredentials');
+    if (/email already|already in use/i.test(msg)) return tAuth('errors.emailAlreadyInUse');
+    if (/weak password/i.test(msg)) return tAuth('errors.weakPassword');
+    if (/passwords do not match/i.test(msg)) return tAuth('errors.passwordsDoNotMatch');
+    if (/invalid email/i.test(msg)) return tAuth('errors.invalidEmail');
+    if (/required/i.test(msg)) return tAuth('errors.requiredField');
+    // fallback to raw message (localized wrapper)
+    return msg;
+  };
+
+  const validate = () => {
+    const errs: { name?: string; email?: string; password?: string } = {};
+    if (mode === 'register' && !name.trim()) errs.name = tAuth('errors.requiredField');
+    if (!email.trim()) errs.email = tAuth('errors.requiredField');
+    else if (!EMAIL_REGEX.test(email.trim())) errs.email = tAuth('errors.invalidEmail');
+    if (!password) errs.password = tAuth('errors.requiredField');
+    else if (password.length < MIN_PASSWORD_LENGTH) errs.password = tAuth('errors.weakPassword');
+    setValidationErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    // client-side validation
+    if (!validate()) return;
+
+    setLoading(true);
+    try {
+      if (mode === 'login') {
+        await login(email.trim(), password);
+      } else {
+        await register(email.trim(), password, name.trim());
+      }
+      router.push('/profile');
+    } catch (err) {
+      setError(mapServerError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // clear specific validation error on change
+  const handleNameChange = (v: string) => { setName(v); if (validationErrors.name) setValidationErrors(prev => ({ ...prev, name: undefined })); };
+  const handleEmailChange = (v: string) => { setEmail(v); if (validationErrors.email) setValidationErrors(prev => ({ ...prev, email: undefined })); };
+  const handlePasswordChange = (v: string) => { setPassword(v); if (validationErrors.password) setValidationErrors(prev => ({ ...prev, password: undefined })); };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      const result = await loginWithGoogle();
+      if (result !== null) {
+        router.push('/profile');
+      } else {
+        setError(tAuth('continueWithGoogle')); // localized hint about redirect
+        setTimeout(() => {
+          if (loading) {
+            setLoading(false);
+            setError(tAuth('errors.invalidCredentials'));
+          }
+        }, 15000);
+      }
+    } catch (err) {
+      setError(mapServerError(err));
+      setLoading(false);
+    }
+  };
+
   const floatingVariants = {
     animate: {
       y: [-8, 8, -8],
@@ -33,54 +113,6 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
         ease: 'easeInOut',
       },
     },
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      if (mode === 'login') {
-        await login(email, password);
-      } else {
-        await register(email, password, name);
-      }
-      router.push('/profile');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      setError('');
-      setLoading(true);
-      const result = await loginWithGoogle();
-      
-      // Если результат null, значит используется redirect метод
-      // Пользователь будет перенаправлен автоматически
-      if (result !== null) {
-        router.push('/profile');
-      } else {
-        // При redirect методе показываем сообщение пользователю
-        setError('Перенаправление на Google... Пожалуйста, завершите аутентификацию.');
-        // Не сбрасываем loading, так как идет redirect
-        // Loading будет сброшен в UserContext после обработки redirect результата
-        // Добавляем таймаут для сброса loading, если что-то пошло не так
-        setTimeout(() => {
-          if (loading) {
-            setLoading(false);
-            setError('Время ожидания истекло. Попробуйте еще раз.');
-          }
-        }, 15000); // 15 секунд таймаут
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setLoading(false);
-    }
   };
 
   return (
@@ -133,8 +165,9 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
                   className="w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-shadow text-base"
                   placeholder={tCommon('name')}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
                 />
+                {validationErrors.name && <div className="text-red-500 text-sm mt-2">{validationErrors.name}</div>}
               </div>
             )}
             <div>
@@ -149,8 +182,9 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
                 className="w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-shadow text-base"
                 placeholder={tCommon('email')}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleEmailChange(e.target.value)}
               />
+              {validationErrors.email && <div className="text-red-500 text-sm mt-2">{validationErrors.email}</div>}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
@@ -164,8 +198,9 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
                 className="w-full px-4 py-3 sm:py-3 border border-gray-300 rounded-xl placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-shadow text-base"
                 placeholder={tCommon('password')}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handlePasswordChange(e.target.value)}
               />
+              {validationErrors.password && <div className="text-red-500 text-sm mt-2">{validationErrors.password}</div>}
             </div>
           </div>
 
@@ -251,4 +286,4 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
       </motion.div>
     </div>
   );
-}; 
+};
