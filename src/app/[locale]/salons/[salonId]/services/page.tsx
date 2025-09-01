@@ -164,6 +164,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       const imgs = await getImages(serviceId);
       setImagesMap((prev) => ({ ...prev, [serviceId]: imgs }));
     } catch (e) {
+      console.error("can't load image")
     } finally {
       setImagesLoading((prev) => ({ ...prev, [serviceId]: false }));
     }
@@ -176,6 +177,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       const imgs = await getImages(serviceId);
       setImagesMap((prev) => ({ ...prev, [serviceId]: imgs }));
     } catch (e) {
+      console.error("can't load image")
     } finally {
       setImagesLoading((prev) => ({ ...prev, [serviceId]: false }));
     }
