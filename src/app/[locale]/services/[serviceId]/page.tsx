@@ -25,6 +25,7 @@ type Service = {
   description?: string
   price: number
   durationMinutes: number
+  isApp?: boolean
 }
 
 export default function ServicePublicPage() {
@@ -48,6 +49,7 @@ export default function ServicePublicPage() {
   const [salon, setSalon] = useState<any>(null)
   const [schedule, setSchedule] = useState<any>(null)
   const [ratingStats, setRatingStats] = useState<any>(null)
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   const coverUrl = useMemo(() => images[0]?.url || "/placeholder.svg", [images])
 
@@ -210,12 +212,71 @@ export default function ServicePublicPage() {
                     <Images className="w-5 h-5 text-rose-600" />
                     <h3 className="text-lg font-bold text-gray-900">{t('preview') || 'Галерея'}</h3>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {images.slice(0, 9).map((img) => (
-                      <div key={img.id} className="relative w-full h-28 md:h-32 rounded-xl overflow-hidden border border-gray-200">
-                        <Image src={img.url} alt="service" fill className="object-cover" />
+                  
+                  {/* Слайдер с адаптивными размерами */}
+                  <div className="relative">
+                    {/* Основное изображение - адаптивное по размеру */}
+                    <div className="relative w-full aspect-video max-h-96 rounded-xl overflow-hidden border border-gray-200 mb-4 bg-gray-100">
+                      <Image
+                        src={images[currentSlide].url}
+                        alt={`service image ${currentSlide + 1}`}
+                        fill
+                        className="object-contain"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                      />
+                    </div>
+
+                    {/* Навигация */}
+                    {images.length > 1 && (
+                      <div className="flex items-center justify-center gap-4 mb-4">
+                        <button
+                          onClick={() => setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                          className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                          aria-label="Предыдущее изображение"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        
+                        <div className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                          {currentSlide + 1} / {images.length}
+                        </div>
+
+                        <button
+                          onClick={() => setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                          className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                          aria-label="Следующее изображение"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Миниатюры с адаптивными размерами */}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                      {images.map((img, index) => (
+                        <button
+                          key={img.id}
+                          onClick={() => setCurrentSlide(index)}
+                          className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                            index === currentSlide
+                              ? 'border-rose-600 ring-2 ring-rose-100 scale-105'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <Image
+                            src={img.url}
+                            alt={`thumbnail ${index + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 640px) 20vw, (max-width: 768px) 15vw, 10vw"
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -285,6 +346,9 @@ export default function ServicePublicPage() {
                     </div>
                   </div>
                 )}
+                {/* show only booking button when service.isApp === true,
+                    only chat button when service.isApp === false.
+                    if isApp is undefined (legacy), show both */}
                 <div className="grid grid-cols-1 gap-2">
                   <Link
                     href={`/${locale}/s/${salon?.id || service.salonId}`}
@@ -292,7 +356,17 @@ export default function ServicePublicPage() {
                   >
                     {t('aboutSalon')}
                   </Link>
-                  {currentUser && salon && (
+
+                  {service?.isApp === true && (
+                    <Link
+                      href={`/${locale}/book/${service.id}`}
+                      className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"
+                    >
+                      {t('book')}
+                    </Link>
+                  )}
+
+                  {service?.isApp === false && currentUser && salon && (
                     <ChatButton
                       salonId={salon.id}
                       customerUserId={currentUser.userId}
@@ -302,13 +376,30 @@ export default function ServicePublicPage() {
                       variant="button"
                     />
                   )}
-                  <Link
-                    href={`/${locale}/book/${service.id}`}
-                    className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"
-                  >
-                    {t('book')}
-                  </Link>
+
+                  {/* legacy: if isApp is undefined, show both options */}
+                  {service?.isApp === undefined && (
+                    <>
+                      {currentUser && salon && (
+                        <ChatButton
+                          salonId={salon.id}
+                          customerUserId={currentUser.userId}
+                          customerName={currentUser.displayName}
+                          serviceId={service.id}
+                          className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                          variant="button"
+                        />
+                      )}
+                      <Link
+                        href={`/${locale}/book/${service.id}`}
+                        className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"
+                      >
+                        {t('book')}
+                      </Link>
+                    </>
+                  )}
                 </div>
+
                 <div className="mt-4 text-xs text-gray-500 flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   <span>{t('tryDifferent')}</span>

@@ -20,12 +20,12 @@ export default function SalonCrmLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const MENU = [
-    { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
+    // { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
     { key: "services", label: t('menu.services'), path: "/services" },
     { key: "schedule", label: t('menu.schedule'), path: "/schedule" },
     { key: "chats", label: "Чаты", path: "/chats" },
     { key: "ratings", label: "Отзывы", path: "/ratings" },
-    { key: "staff", label: t('menu.staff'), path: "/staff" },
+    // { key: "staff", label: t('menu.staff'), path: "/staff" },
     { key: "settings", label: t('menu.settings'), path: "/settings" },
   ];
 
@@ -49,7 +49,7 @@ export default function SalonCrmLayout({
               </button>
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-rose-600" />
-                <span className="font-semibold text-gray-900">Салон #{salonId}</span>
+                <span className="font-semibold text-gray-900">Салон</span>
               </div>
             </div>
           </div>

@@ -36,14 +36,20 @@ type ProcessedService = AnyService & {
 
 // --- КОНСТАНТЫ ---
 const POPULAR_CITIES = [
-  { name: "Москва", value: "Москва" }, { name: "Санкт-Петербург", value: "Санкт-Петербург" },
-  { name: "Новосибирск", value: "Новосибирск" }, { name: "Екатеринбург", value: "Екатеринбург" },
-  { name: "Казань", value: "Казань" },
+  { name: "Москва", value: "Москва" },
+  { name: "Минск", value: "Минск" },
+  { name: "Гомель", value: "Гомель" },
+  { name: "Гродно", value: "Гродно" },
+  { name: "Брест", value: "Брест" },
+  { name: "Витебск", value: "Витебск" },
 ]
 const POPULAR_CITIES_EN = [
-  { name: "Moscow", value: "Moscow" }, { name: "Saint Petersburg", value: "Saint Petersburg" },
-  { name: "Novosibirsk", value: "Novosibirsk" }, { name: "Yekaterinburg", value: "Yekaterinburg" },
-  { name: "Kazan", value: "Kazan" },
+  { name: "Moscow", value: "Moscow" },
+  { name: "Minsk", value: "Minsk" },
+  { name: "Gomel", value: "Gomel" },
+  { name: "Grodno", value: "Grodno" },
+  { name: "Brest", value: "Brest" },
+  { name: "Vitebsk", value: "Vitebsk" },
 ]
 const DEBOUNCE_DELAY = 300;
 
@@ -238,7 +244,7 @@ const ServiceCard = React.memo(({ service, locale, salonRating }: { service: Pro
           <Image src={service.imageUrl || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
         </div>
         <div className="flex-1 min-w-0">
-          <Link href={`/${locale}/book/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
+          <Link href={`/${locale}/services/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
           {service.salon && (
             <div className="mb-2">
               <p className="text-sm text-gray-600">{service.salon.name}・{formatAddress(service.salon.address)}</p>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MessageCircle, Loader2 } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
+import { useSalonService } from '@/contexts/SalonServiceContext';
 import Link from 'next/link';
 
 interface ChatButtonProps {
@@ -27,24 +28,44 @@ export default function ChatButton({
 }: ChatButtonProps) {
   const { currentUser } = useUser();
   const { createOrGetChat, loading } = useChat();
+  const { getService } = useSalonService();
   const [isCreating, setIsCreating] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleCreateChat = async () => {
     if (!currentUser) return;
     
-    setIsCreating(true);
+    setLocalError(null);
     try {
-      const chat = await createOrGetChat(
-        salonId,
-        customerUserId,
-        customerName,
-        appointmentId,
-        serviceId
-      );
+      setIsCreating(true);
+
+      // ensure we have salonId; if not - try to resolve from serviceId
+      let sid = salonId;
+      if (!sid && serviceId) {
+        try {
+          const svc = await getService(serviceId);
+          sid = svc?.salonId ?? '';
+        } catch (err) {
+          console.error('Failed to fetch service to resolve salonId:', err);
+        }
+      }
+
+      if (!sid) {
+        const msg = 'Missing salonId for chat creation';
+        console.error(msg);
+        setLocalError(msg);
+        return;
+      }
+
+      const chat = await createOrGetChat(sid, customerUserId, customerName, serviceId);
+      if (!chat || !chat.id) {
+        throw new Error('Invalid chat response');
+      }
       setChatId(chat.id);
-    } catch (error) {
-      console.error('Error creating chat:', error);
+    } catch (err: any) {
+      console.error('Error creating chat:', err);
+      setLocalError(err?.message ?? 'Error creating chat');
     } finally {
       setIsCreating(false);
     }
@@ -91,6 +112,7 @@ export default function ChatButton({
           Создать чат
         </button>
       )}
+      {localError && <div className="text-xs text-red-500 mt-2">{localError}</div>}
     </div>
   );
 }

@@ -233,13 +233,13 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 pt-2">
-              <button 
+              {/* <button 
                 disabled={saving} 
                 onClick={handleSavePreferences} 
                 className="px-4 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
               >
                 {t('settings.savePrefs')}
-              </button>
+              </button> */}
               <button 
                 disabled={saving} 
                 onClick={handleSaveProfile} 

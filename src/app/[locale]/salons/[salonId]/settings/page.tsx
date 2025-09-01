@@ -524,7 +524,7 @@ export default function SalonSettingsPage() {
                     placeholder="Введите телефон или оставьте пустым"
                   />
                 </div>
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t('sections.business.currency')}
                   </label>
@@ -537,7 +537,7 @@ export default function SalonSettingsPage() {
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                   </select>
-                </div>
+                </div> */}
               </div>
               
               {/* Address and Map */}
@@ -573,11 +573,11 @@ export default function SalonSettingsPage() {
                   />
                 )}
                 
-                {settings.business.coordinates && (
+                {/* {settings.business.coordinates && (
                   <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
                     <span className="font-medium">Координаты:</span> {settings.business.coordinates.lat.toFixed(6)}, {settings.business.coordinates.lng.toFixed(6)}
                   </div>
-                )}
+                )} */}
               </div>
               
               <div className="flex justify-end">
@@ -599,7 +599,7 @@ export default function SalonSettingsPage() {
           </motion.div>
 
           {/* Notifications */}
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -659,7 +659,7 @@ export default function SalonSettingsPage() {
             </div>
           </motion.div>
 
-          {/* Security */}
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -702,7 +702,7 @@ export default function SalonSettingsPage() {
             </div>
           </motion.div>
 
-          {/* Integrations */}
+          
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -761,7 +761,7 @@ export default function SalonSettingsPage() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </div>
     </div>

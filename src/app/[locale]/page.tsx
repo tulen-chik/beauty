@@ -30,15 +30,15 @@ export default function Home() {
   const faqItems = [
     {
       question: "Как работает Beauty Platform?",
-      answer: "Beauty Platform соединяет клиентов с проверенными салонами красоты. Вы можете найти услуги, забронировать время и управлять своими записями онлайн."
+      answer: "Beauty Platform соединяет клиентов с салонами красоты и мастерами в сфере бьюти-услуг. Вы можете найти услуги, забронировать время и управлять своими записями онлайн."
     },
     {
       question: "Безопасно ли бронировать онлайн?",
-      answer: "Да, все салоны на нашей платформе проверены и сертифицированы. Мы используем безопасные методы оплаты и защищаем ваши личные данные."
+      answer: "Да, все салоны и мастера на нашей платформе проверены и сертифицированы. Мы используем безопасные методы оплаты и защищаем ваши личные данные."
     },
     {
       question: "Могу ли я отменить или перенести запись?",
-      answer: "Да, вы можете отменить или перенести запись до 24 часов до назначенного времени без дополнительных сборов."
+      answer: "Да, вы можете отменить или перенести запись, общаясь с мастером в удобном чате прямо на сайте."
     },
     {
       question: "Какие услуги доступны на платформе?",
@@ -378,7 +378,7 @@ export default function Home() {
       <FAQ items={faqItems} title={t("faqTitle")} className="bg-gray-100" />
 
       {/* Footer */}
-      <footer className="py-16 bg-gray-900 text-white">
+      <footer className="py-16 bg-gray-900">
         <div className="container mx-auto px-4 text-center">
           <motion.div
             className="flex flex-col items-center gap-4"
@@ -387,10 +387,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-rose-600 rounded-xl">
-                <Sparkles className="w-6 h-6 text-white" />
+              <div className="p-2 bg-rose-600 rounded-xl text-white">
+                <Sparkles className="w-6 h-6" />
               </div>
-              <span className="text-2xl font-bold text-white">Beauty Platform</span>
+              <span className="text-2xl font-bold">Beauty Platform</span>
             </div>
             <p className="text-gray-400 text-lg leading-relaxed max-w-2xl font-medium">{t("footerText")}</p>
             <div className="w-16 h-1 bg-rose-600 rounded-full mt-4"></div>

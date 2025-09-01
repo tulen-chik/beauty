@@ -135,9 +135,9 @@ export default function SalonChatsPage() {
           
           <div className="bg-white rounded-lg p-4 shadow-sm">
             <h1 className="text-xl font-bold text-gray-900 mb-2">{t('title')}</h1>
-            <div className="text-sm text-gray-600">
+            {/* <div className="text-sm text-gray-600">
               {t('subtitle')}
-            </div>
+            </div> */}
           </div>
         </div>
 

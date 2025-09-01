@@ -129,6 +129,7 @@ export interface SalonService {
   description?: string;
   price: number;
   durationMinutes: number;
+  isApp: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

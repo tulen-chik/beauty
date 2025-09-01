@@ -40,7 +40,7 @@ export default function UserSalonsPage() {
               <li key={s.salonId} className="p-4 border rounded-xl flex flex-col md:flex-row md:items-center md:justify-between">
                 <div>
                   <div className="font-semibold text-lg text-gray-900">
-                    <Link href={`/salons/${s.salonId}`} className="hover:underline text-rose-600">
+                    <Link href={`/salons/${s.salonId}/appointments`} className="hover:underline text-rose-600">
                       ID: {s.salonId}
                     </Link>
                   </div>
@@ -48,7 +48,7 @@ export default function UserSalonsPage() {
                   <div className="text-xs text-gray-400">Присоединились: {new Date(s.joinedAt).toLocaleDateString()}</div>
                 </div>
                 <Link
-                  href={`/salons/${s.salonId}`}
+                  href={`/salons/${s.salonId}/schedule`}
                   className="mt-2 md:mt-0 px-4 py-2 bg-rose-50 text-rose-700 rounded-xl font-semibold border border-rose-200 hover:bg-rose-100 transition-all"
                 >
                   Перейти в CRM

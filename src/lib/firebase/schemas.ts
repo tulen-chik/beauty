@@ -117,6 +117,7 @@ export const salonServiceSchema = z.object({
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  isApp: z.boolean(),
 }); 
 
 export const appointmentSchema = z.object({
