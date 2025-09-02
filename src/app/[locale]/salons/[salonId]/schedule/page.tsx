@@ -364,10 +364,10 @@ export default function SalonSchedulePage() {
         }}
         className={`absolute left-1 right-1 p-1.5 rounded-lg border flex flex-col overflow-hidden text-left transition-all hover:shadow-md hover:border-rose-400 ${getStatusColor(appointment.status)}`}
       >
-        <div className="font-semibold text-xs truncate">{service?.name || "Услуга"}</div>
+        <div className="font-semibold text-xs truncate">{service?.name || t("service")}</div>
         <div className="flex items-center gap-1 text-xs text-gray-700 mt-1">
           <User className="w-3 h-3 flex-shrink-0" />
-          <span className="truncate">{appointment.customerName || "Клиент"}</span>
+          <span className="truncate">{appointment.customerName || t("client")}</span>
         </div>
         <div className="mt-auto pt-1 text-xs font-medium">
           {getStatusText(appointment.status)}
@@ -386,7 +386,7 @@ export default function SalonSchedulePage() {
         >
           <div className="flex justify-between items-start">
               <div>
-                  <div className="font-bold">{service?.name || "Услуга"}</div>
+                  <div className="font-bold">{service?.name || t("service")}</div>
                   <div className="text-sm text-gray-600">
                       {new Date(appointment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({appointment.durationMinutes} мин)
                   </div>
@@ -398,7 +398,7 @@ export default function SalonSchedulePage() {
           <div className="mt-2 pt-2 border-t border-current/20 text-sm">
               <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-gray-500" />
-                  <span>{appointment.customerName || "Клиент"}</span>
+                  <span>{appointment.customerName || t("client")}</span>
               </div>
           </div>
         </button>
@@ -442,7 +442,7 @@ export default function SalonSchedulePage() {
             ) : (
                 <div className="text-center py-6 text-gray-500">
                     <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p>Нет записей на этот день</p>
+                    <p>{t("noAppointments")}</p>
                 </div>
             )}
         </div>
@@ -459,7 +459,7 @@ export default function SalonSchedulePage() {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedAppointment(null)}>
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">{service?.name || "Детали записи"}</h2>
+            <h2 className="text-lg font-semibold">{service?.name || t("appointmentDetails")}</h2>
             <button onClick={() => setSelectedAppointment(null)} className="p-2 hover:bg-gray-100 rounded-full">
               <X className="h-5 w-5" />
             </button>
@@ -476,7 +476,7 @@ export default function SalonSchedulePage() {
                 </div>
                 <div className="flex items-center gap-3">
                     <User className="w-5 h-5 text-gray-400"/>
-                    <span>{selectedAppointment.customerName || "Клиент"}</span>
+                    <span>{selectedAppointment.customerName || t("client")}</span>
                 </div>
                 {selectedAppointment.customerPhone && (
                     <div className="flex items-center gap-3">
@@ -487,21 +487,21 @@ export default function SalonSchedulePage() {
                 {employee && (
                     <div className="flex items-center gap-3">
                         <Scissors className="w-5 h-5 text-gray-400"/>
-                        <span>Мастер: {employee.displayName}</span>
+                        <span>{t("master")}: {employee.displayName}</span>
                     </div>
                 )}
                 {selectedAppointment.notes && (
                     <div className="flex items-start gap-3 pt-2">
                         <FileText className="w-5 h-5 text-gray-400 mt-1"/>
                         <div className="bg-gray-50 p-3 rounded-md border w-full">
-                            <p className="font-medium text-sm text-gray-600">Комментарий:</p>
+                            <p className="font-medium text-sm text-gray-600">{t("comment")}:</p>
                             <p>{selectedAppointment.notes}</p>
                         </div>
                     </div>
                 )}
             </div>
             <div>
-                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-1">Изменить статус</label>
+                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-1">{t("changeStatus")}</label>
                 <select
                     id="status-select"
                     value={selectedAppointment.status}
@@ -520,7 +520,7 @@ export default function SalonSchedulePage() {
                 <ChatButton
                   salonId={salonId}
                   customerUserId={selectedAppointment.customerUserId}
-                  customerName={selectedAppointment.customerName || "Клиент"}
+                  customerName={selectedAppointment.customerName || t("client")}
                   appointmentId={selectedAppointment.id}
                   serviceId={selectedAppointment.serviceId}
                   className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
@@ -547,7 +547,7 @@ export default function SalonSchedulePage() {
         <div className="flex items-center gap-2">
            {success && (
               <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
-                Расписание сохранено!
+                {t("scheduleSaved")}
               </div>
             )}
           <button
@@ -680,7 +680,7 @@ export default function SalonSchedulePage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-xl font-semibold">Настройка расписания</h2>
+                <h2 className="text-xl font-semibold">{t("scheduleSetup")}</h2>
                 <button onClick={() => setIsScheduleModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                   <X className="h-5 w-5" />
                 </button>
@@ -707,7 +707,7 @@ export default function SalonSchedulePage() {
                               checked={safeDay.isOpen}
                               onChange={e => handleOpenToggle(i, e.target.checked)}
                             />
-                            <span className="text-sm">Открыто</span>
+                            <span className="text-sm">{t("open")}</span>
                           </label>
                         </div>
                         {safeDay.isOpen && (
@@ -733,7 +733,7 @@ export default function SalonSchedulePage() {
                               </div>
                             ))}
                             <button onClick={() => handleAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
-                              + Добавить интервал
+                              {t("addInterval")}
                             </button>
                           </div>
                         )}
@@ -744,10 +744,10 @@ export default function SalonSchedulePage() {
               </div>
               <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
                 <button onClick={() => setIsScheduleModalOpen(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300">
-                  Отмена
+                  {t("cancel")}
                 </button>
                 <button onClick={handleSaveSchedule} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                  Сохранить
+                  {t("save")}
                 </button>
               </div>
             </div>

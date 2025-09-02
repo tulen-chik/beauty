@@ -1,0 +1,23 @@
+{
+  "salonSchedule": {
+    "title": "Расписание салона",
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "retry": "Повторить",
+    "setupSchedule": "Настроить расписание",
+    "showingAppointments": "Показано {count} записей",
+    "currentWeek": "Текущая неделя",
+    "week": "Неделя {weekNum}",
+    "filters": {
+      "allStatuses": "Все статусы",
+      "allServices": "Все услуги"
+    },
+    "status": {
+      "pending": "Ожидание",
+      "confirmed": "Подтверждено",
+      "completed": "Завершено",
+      "cancelled": "Отменено",
+      "no_show": "Неявка"
+    }
+  }
+}

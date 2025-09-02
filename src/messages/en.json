@@ -713,332 +713,6 @@
       "tasks": "Tasks"
     }
   },
-  "dashboard": {
-    "title": "Dashboard",
-    "description": "Overview of your workspace activities and performance",
-    "welcome": "Welcome back",
-    "recentActivity": "Recent Activity",
-    "noRecentActivity": "No recent activity",
-    "quickActions": "Quick Actions",
-    "createContentPlan": "Create Content Plan",
-    "workspaceSettings": "Workspace Settings",
-    "viewAll": "View All",
-    "stats": {
-      "totalMembers": "Total Members",
-      "activeContentPlans": "Active Content Plans",
-      "totalViews": "Total Views",
-      "totalEngagement": "Total Engagement",
-      "conversionRate": "Conversion Rate"
-    }
-  },
-  "Workspace": {
-    "settings": {
-      "members": {
-        "title": "Workspace Members",
-        "description": "Manage who has access to this workspace",
-        "invite": "Invite Member",
-        "inviteTitle": "Invite a Member",
-        "inviteDescription": "Search for a user by email to invite them to your workspace",
-        "search": "Search",
-        "searching": "Searching...",
-        "searchPlaceholder": "Enter email address",
-        "searchError": "Failed to search for user",
-        "inviteError": "Failed to invite user",
-        "noUsersFound": "No users found",
-        "empty": "No members yet",
-        "roles": {
-          "admin": "Admin",
-          "member": "Member"
-        }
-      },
-      "general": {
-        "title": "General Settings",
-        "description": "Manage your workspace basic information",
-        "name": "Workspace Name",
-        "description": "Description",
-        "industry": "Industry",
-        "save": "Save Changes",
-        "aiSuggestionTitle": "AI suggestion for general settings",
-        "aiSuggests": "AI suggests",
-        "apply": "Apply",
-        "reject": "Reject",
-        "applyAll": "Apply all",
-        "rejectAll": "Reject all",
-        "changed": "Changed",
-        "current": "Current"
-      },
-      "notifications": {
-        "title": "Notifications",
-        "description": "Manage your notification preferences",
-        "enable": "Enable Notifications",
-        "enableDescription": "Receive notifications about workspace activities"
-      },
-      "ai": {
-        "title": "AI Preferences",
-        "description": "Customize how AI generates content for your workspace",
-        "tone": "Content Tone",
-        "style": "Writing Style",
-        "contentLength": "Content Length",
-        "tones": {
-          "professional": "Professional",
-          "casual": "Casual",
-          "friendly": "Friendly"
-        },
-        "styles": {
-          "formal": "Formal",
-          "informal": "Informal"
-        },
-        "lengths": {
-          "short": "Short",
-          "medium": "Medium",
-          "long": "Long"
-        }
-      },
-      "danger": {
-        "title": "Danger Zone",
-        "description": "Irreversible and destructive actions",
-        "deleteTitle": "Delete Workspace",
-        "deleteDescription": "Once you delete a workspace, there is no going back. Please be certain.",
-        "delete": "Delete Workspace",
-        "confirmLabel": "Please type {name} to confirm",
-        "confirm": "Yes, delete workspace",
-        "cancel": "Cancel"
-      },
-      "targetAudience": {
-        "title": "Target Audience",
-        "description": "Define your target audience demographics and characteristics",
-        "ageRange": "Age Range",
-        "gender": "Gender",
-        "genders": {
-          "male": "Male",
-          "female": "Female",
-          "other": "Other"
-        },
-        "location": "Location",
-        "locationPlaceholder": "Enter locations separated by commas",
-        "interests": "Interests",
-        "interestsPlaceholder": "Enter interests separated by commas",
-        "painPoints": "Pain Points",
-        "painPointsPlaceholder": "Enter each pain point on a new line",
-        "goals": "Goals",
-        "goalsPlaceholder": "Enter each goal on a new line",
-        "aiSuggestionTitle": "AI suggestion for target audience",
-        "aiSuggests": "AI suggests",
-        "apply": "Apply",
-        "reject": "Reject",
-        "applyAll": "Apply all",
-        "rejectAll": "Reject all",
-        "changed": "Changed",
-        "current": "Current"
-      }
-    },
-    "navigation": {
-      "dashboard": "Dashboard",
-      "content": "Content",
-      "contacts": "Contacts",
-      "companies": "Companies",
-      "analytics": "Analytics",
-      "instagram": "Instagram",
-      "tiktok": "TikTok",
-      "settings": "Settings"
-    }
-  },
-  "Companies": {
-    "title": "Companies",
-    "description": "Manage your company contacts and relationships",
-    "createButton": "Create Company",
-    "searchPlaceholder": "Search companies...",
-    "deleteConfirm": "Are you sure you want to delete this company?",
-    "empty": {
-      "title": "No companies yet",
-      "description": "Create your first company to start managing your business relationships."
-    },
-    "filters": {
-      "allStatuses": "All Statuses"
-    },
-    "status": {
-      "prospect": "Prospect",
-      "lead": "Lead",
-      "customer": "Customer",
-      "partner": "Partner",
-      "inactive": "Inactive"
-    },
-    "priority": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "urgent": "Urgent"
-    },
-    "size": {
-      "startup": "Startup",
-      "small": "Small",
-      "medium": "Medium",
-      "large": "Large",
-      "enterprise": "Enterprise"
-    },
-    "stats": {
-      "contacts": "Contacts",
-      "opportunities": "Opportunities",
-      "activities": "Activities"
-    },
-    "actions": {
-      "view": "View Details",
-      "edit": "Edit",
-      "delete": "Delete",
-      "addContact": "Add Contact"
-    },
-    "addContact": {
-      "title": "Add Contact to Company",
-      "searchPlaceholder": "Search contacts...",
-      "noContacts": "No available contacts found",
-      "add": "Add"
-    },
-    "create": {
-      "title": "Create New Company",
-      "companyName": "Company Name",
-      "industry": "Industry",
-      "website": "Website",
-      "phone": "Phone",
-      "email": "Email",
-      "description": "Description",
-      "size": "Company Size",
-      "status": "Status",
-      "priority": "Priority",
-      "notes": "Notes",
-      "cancel": "Cancel",
-      "submit": "Create Company"
-    },
-    "edit": {
-      "title": "Edit Company",
-      "submit": "Save Changes"
-    },
-    "details": {
-      "companyInfo": "Company Information",
-      "industry": "Industry",
-      "website": "Website",
-      "email": "Email",
-      "phone": "Phone",
-      "description": "Description",
-      "contacts": "Contacts",
-      "noContacts": "No contacts added yet",
-      "primary": "Primary",
-      "opportunities": "Opportunities",
-      "activities": "Activities",
-      "value": "Value"
-    },
-    "activityType": {
-      "call": "Call",
-      "email": "Email",
-      "meeting": "Meeting",
-      "note": "Note",
-      "task": "Task"
-    }
-  },
-  "Tasks": {
-    "title": "Tasks",
-    "description": "Manage tasks and projects in Agile style",
-    "createTask": "Create Task",
-    "createBoard": "Create Board",
-    "board": "Board",
-    "searchPlaceholder": "Search tasks...",
-    "deleteConfirm": "Are you sure you want to delete this task?",
-    "unassigned": "Unassigned",
-    "overdue": "Overdue",
-    "estimatedHours": "Estimated Hours",
-    "loading": "Loading tasks...",
-    "noTasks": "No tasks in this column",
-    "stats": {
-      "total": "Total",
-      "my": "My",
-      "unassigned": "Unassigned",
-      "overdue": "Overdue",
-      "inProgress": "In Progress",
-      "done": "Done"
-    },
-    "filters": {
-      "all": "All Tasks",
-      "my": "My Tasks",
-      "unassigned": "Unassigned",
-      "overdue": "Overdue"
-    },
-    "status": {
-      "backlog": "Backlog",
-      "todo": "To Do",
-      "inProgress": "In Progress",
-      "review": "Review",
-      "done": "Done"
-    },
-    "priority": {
-      "low": "Low",
-      "medium": "Medium",
-      "high": "High",
-      "urgent": "Urgent"
-    },
-    "type": {
-      "feature": "Feature",
-      "bug": "Bug",
-      "improvement": "Improvement",
-      "task": "Task",
-      "story": "Story"
-    },
-    "actions": {
-      "edit": "Edit",
-      "delete": "Delete",
-      "assign": "Assign",
-      "move": "Move"
-    },
-    "create": {
-      "title": "Title",
-      "titlePlaceholder": "Enter task title",
-      "description": "Description",
-      "descriptionPlaceholder": "Enter task description",
-      "priority": "Priority",
-      "type": "Type",
-      "assignee": "Assignee",
-      "estimatedHours": "Estimated Hours",
-      "dueDate": "Due Date",
-      "tags": "Tags",
-      "addTag": "Add tag",
-      "add": "Add",
-      "status": "Status",
-      "cancel": "Cancel",
-      "submit": "Create Task"
-    },
-    "edit": {
-      "title": "Edit Task",
-      "submit": "Save Changes"
-    },
-    "createBoard": {
-      "title": "Create Board",
-      "name": "Name",
-      "namePlaceholder": "Enter board name",
-      "description": "Description",
-      "descriptionPlaceholder": "Enter board description",
-      "cancel": "Cancel",
-      "submit": "Create Board"
-    },
-    "list": {
-      "title": "Task List",
-      "subtitle": "{count} tasks found",
-      "empty": "No tasks found",
-      "emptyTitle": "No tasks yet"
-    },
-    "assignee": {
-      "placeholder": "Select assignee",
-      "loading": "Loading members...",
-      "noMembers": "No workspace members found",
-      "workspaceMembers": "Workspace Members"
-    },
-    "dragAndDrop": {
-      "dragToMove": "Drag to move task",
-      "dropHere": "Drop here to move task",
-      "movingTask": "Moving task...",
-      "taskMoved": "Task moved successfully"
-    },
-    "error": {
-      "title": "Error Loading Tasks"
-    }
-  },
   "searchPage": {
     "title": "Search salons and services",
     "placeholder": "Type a query (e.g., manicure, haircut, address...)",
@@ -1086,5 +760,61 @@
     "filesSent": "Sent {count} file(s): {names}",
     "errorMarkRead": "Failed to mark messages as read",
     "errorNoUser": "User not authenticated"
-  }
+  },
+
+    "salonSchedule": {
+      "title": "Salon Schedule",
+      "service": "Service",
+      "scheduleSetup": "Schedule Setup",
+      "client": "Client",
+      "master": "Master",
+      "comment": "Comment",
+      "changeStatus": "Change Status",
+      "scheduleSaved": "Schedule saved!",
+      "open": "Open",
+      "addInterval": "+ Add interval",
+      "cancel": "Cancel",
+      "save": "Save",
+      "loading": "Loading...",
+      "error": "An error occurred",
+      "retry": "Retry",
+      "setupSchedule": "Set up schedule",
+      "currentWeek": "Current week",
+      "week": "Week {weekNum}",
+      "showingAppointments": "Showing {count} appointments",
+      "filters": {
+        "allStatuses": "All statuses",
+        "allServices": "All services"
+      },
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No-show"
+      },
+      "appointmentDetails": {
+        "title": "Appointment Details",
+        "date": "Date",
+        "time": "Time",
+        "customer": "Customer",
+        "phone": "Phone",
+        "master": "Master",
+        "notes": "Notes",
+        "changeStatus": "Change status",
+        "chatWithCustomer": "Chat with customer"
+      },
+      "noAppointments": "No appointments for this day"
+    },
+    "salons": {
+"pageTitle": "My Salons",
+"createButton": "+ New Salon",
+"loading": "Loading...",
+"noSalons": "You don't have any salons yet.",
+"role": "Your role: {role}",
+"joined": "Joined: {date}",
+"goToCRM": "Go to CRM",
+"failedToLoadName": "Failed to load name"
+}
+
 }

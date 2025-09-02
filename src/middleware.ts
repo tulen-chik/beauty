@@ -30,11 +30,15 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Handle public pages and localization
-  const isPublicPage = publicPages.some(page => 
+  const isPublicPage = publicPages.some(page =>
     pathname === `/${locale}${page}`
   );
 
-  return intlMiddleware(request);
+  // Добавляем заголовок с путем для i18n конфигурации
+  const response = intlMiddleware(request);
+  response.headers.set('x-next-pathname', pathname);
+  
+  return response;
 }
 
 export const config = {

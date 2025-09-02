@@ -21,7 +21,6 @@ const MapSelector = ({
   const t = useTranslations('mapSelector');
 
   useEffect(() => {
-    // Load Google Maps script if not already loaded
     const loadGoogleMaps = () => {
       if (window.google?.maps) return Promise.resolve();
       
