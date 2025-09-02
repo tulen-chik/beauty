@@ -9,3 +9,4 @@ export { SalonScheduleProvider,useSalonSchedule } from './SalonScheduleContext';
 export { AppointmentProvider,useAppointment } from './AppointmentContext';
 export { ChatProvider,useChat } from './ChatContext';
 export { SalonRatingProvider,useSalonRating } from './SalonRatingContext';
+export { AdminProvider,useAdmin } from './AdminContext';
