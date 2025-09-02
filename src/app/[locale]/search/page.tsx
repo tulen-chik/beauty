@@ -27,6 +27,7 @@ type AnyService = {
   description?: string
   price: number
   durationMinutes: number
+  isActive: boolean
 }
 
 type ProcessedService = AnyService & {
@@ -334,6 +335,7 @@ export default function SearchPage() {
     if (qLower) filtered = filtered.filter(s => s.name.toLowerCase().includes(qLower) || s.description?.toLowerCase().includes(qLower));
     if (currentCity) filtered = filtered.filter(s => s.salon?.address.toLowerCase().includes(currentCity.toLowerCase()));
     if (selectedSalonId) filtered = filtered.filter(s => s.salon?.id === selectedSalonId);
+    filtered = filtered.filter(s => s.isActive)
     return filtered;
   }, [processedServices, debouncedQuery, currentCity, selectedSalonId]);
 

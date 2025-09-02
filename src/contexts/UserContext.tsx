@@ -36,24 +36,104 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<Error | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Ключи для localStorage
+  const USER_CACHE_KEY = 'user_cache';
+  const USER_CACHE_TIMESTAMP_KEY = 'user_cache_timestamp';
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 минут в миллисекундах
+
+  // Функция для сохранения пользователя в кеш
+  const saveUserToCache = useCallback((userData: (User & { userId: string }) | null) => {
+    try {
+      if (userData) {
+        localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userData));
+        localStorage.setItem(USER_CACHE_TIMESTAMP_KEY, Date.now().toString());
+      } else {
+        localStorage.removeItem(USER_CACHE_KEY);
+        localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+      }
+    } catch (error) {
+      console.warn('Failed to save user to cache:', error);
+    }
+  }, []);
+
+  // Функция для загрузки пользователя из кеша
+  const loadUserFromCache = useCallback((): (User & { userId: string }) | null => {
+    try {
+      const cachedUser = localStorage.getItem(USER_CACHE_KEY);
+      const cachedTimestamp = localStorage.getItem(USER_CACHE_TIMESTAMP_KEY);
+      
+      if (!cachedUser || !cachedTimestamp) {
+        return null;
+      }
+
+      const timestamp = parseInt(cachedTimestamp);
+      const now = Date.now();
+      
+      // Проверяем, не устарел ли кеш
+      if (now - timestamp > CACHE_DURATION) {
+        localStorage.removeItem(USER_CACHE_KEY);
+        localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+        return null;
+      }
+
+      return JSON.parse(cachedUser);
+    } catch (error) {
+      console.warn('Failed to load user from cache:', error);
+      return null;
+    }
+  }, []);
+
+  // Очистка кеша
+  const clearUserCache = useCallback(() => {
+    try {
+      localStorage.removeItem(USER_CACHE_KEY);
+      localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
+    } catch (error) {
+      console.warn('Failed to clear user cache:', error);
+    }
+  }, []);
+
   const refreshUser = useCallback(async (uid: string) => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Сначала проверяем кеш
+      const cachedUser = loadUserFromCache();
+      if (cachedUser && cachedUser.userId === uid) {
+        setCurrentUser(cachedUser);
+        setLoading(false);
+        return;
+      }
+
       const userData = await user.read(uid);
       if (userData) {
-        setCurrentUser({ userId: uid, ...userData });
+        const userWithId = { userId: uid, ...userData };
+        setCurrentUser(userWithId);
+        saveUserToCache(userWithId);
       } else {
         setCurrentUser(null);
+        clearUserCache();
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch user'));
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
+  }, [user, loadUserFromCache, saveUserToCache, clearUserCache]);
+    
   useEffect(() => {
+    // При монтировании проверяем кеш
+    const checkCacheOnMount = async () => {
+      const cachedUser = loadUserFromCache();
+      if (cachedUser) {
+        setCurrentUser(cachedUser);
+        setLoading(false);
+      }
+    };
+
+    checkCacheOnMount();
+
     const unsubscribe = authService.onAuthStateChange(async (firebaseUser) => {
       console.log('Auth state changed:', firebaseUser ? 'User logged in' : 'No user');
       setFirebaseUser(firebaseUser);
@@ -61,6 +141,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         await refreshUser(firebaseUser.uid);
       } else {
         setCurrentUser(null);
+        clearUserCache();
       }
       setLoading(false);
     });
@@ -151,6 +232,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setError(null);
       await authService.logout();
+      clearUserCache();
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to logout'));
       throw err;
@@ -207,6 +289,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       setError(null);
       await authService.deleteAccount();
+      clearUserCache();
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete account'));
       throw err;

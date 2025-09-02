@@ -34,7 +34,7 @@ export default function Home() {
     },
     {
       question: "Безопасно ли бронировать онлайн?",
-      answer: "Да, все салоны и мастера на нашей платформе проверены и сертифицированы. Мы используем безопасные методы оплаты и защищаем ваши личные данные."
+      answer: "Да, все салоны и мастера на нашей платформе проверены и сертифицированы. Мы защищаем ваши личные данные."
     },
     {
       question: "Могу ли я отменить или перенести запись?",
@@ -299,7 +299,7 @@ export default function Home() {
             <div className="w-24 h-1 bg-rose-600 mx-auto rounded-full"></div>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {steps.map((step: string, i: number) => {
               const Icon = stepIcons[i] || CheckCircle
               return (

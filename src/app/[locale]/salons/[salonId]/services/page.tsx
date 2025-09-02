@@ -578,7 +578,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-white h-10 px-4 flex-1"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
                   >
                     {loading ? "Сохранение..." : (editingService ? "Сохранить изменения" : "Добавить услугу")}
                   </button>

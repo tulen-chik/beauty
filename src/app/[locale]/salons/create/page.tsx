@@ -51,8 +51,8 @@ const MapSelector = ({
           return;
         }
 
-        const initialLat = initialCoordinates?.lat || 55.7558;
-        const initialLng = initialCoordinates?.lng || 37.6176;
+        const initialLat = initialCoordinates?.lat || 53.895042;
+        const initialLng = initialCoordinates?.lng || 27.571326;
 
         const newMap = new (window as any).google.maps.Map(mapRef.current, {
           center: { lat: initialLat, lng: initialLng },
