@@ -291,3 +291,50 @@ export interface SalonRatingStats {
     value?: number;
   };
 }
+
+// Blog types
+export interface BlogAuthor {
+  id: string;
+  name: string;
+  avatar?: string;
+  role?: string;
+  bio?: string;
+  social?: {
+    instagram?: string;
+    telegram?: string;
+    website?: string;
+  };
+}
+
+export interface BlogCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+}
+
+export type BlogPostStatus = 'published' | 'draft';
+
+export interface BlogPostSEO {
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+}
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: any[];
+  authorId: string;
+  publishedAt: string;
+  updatedAt?: string;
+  readTime: number;
+  categoryId: string;
+  tags: string[];
+  image: string;
+  featured: boolean;
+  status: BlogPostStatus;
+  seo?: BlogPostSEO;
+}

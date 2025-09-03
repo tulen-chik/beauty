@@ -22,27 +22,15 @@ import {
   X
 } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
-import { blogPosts, authors, categories, getPostById } from "@/app/[locale]/blog/BlogData"
+import { useBlogAdmin } from "@/contexts/BlogAdminContext"
 import Link from "next/link"
 
-interface BlogPost {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  authorId: string
-  publishedAt: string
-  readTime: number
-  categoryId: string
-  tags: string[]
-  image: string
-  featured: boolean
-  status: "published" | "draft"
-}
+import type { BlogPost } from '@/types/database'
 
 export default function AdminContentPage() {
   const t = useTranslations('admin')
   const { currentUser } = useUser()
+  const { posts, authors, categories, loadAll, createPost, updatePost, deletePost, loading } = useBlogAdmin()
 
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -50,10 +38,26 @@ export default function AdminContentPage() {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null)
   const [showPostModal, setShowPostModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showEditorModal, setShowEditorModal] = useState(false)
+  const [formData, setFormData] = useState<Partial<BlogPost>>({
+    title: '',
+    slug: '',
+    excerpt: '',
+    authorId: '',
+    publishedAt: new Date().toISOString(),
+    readTime: 5,
+    categoryId: '',
+    tags: [],
+    image: '',
+    featured: false,
+    status: 'draft'
+  })
+
+  useEffect(() => { loadAll() }, [loadAll])
 
 
 
-  const filteredPosts = blogPosts.filter(post => {
+  const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -94,15 +98,66 @@ export default function AdminContentPage() {
     })
   }
 
-  const handleTogglePostStatus = (postId: string) => {
-    // In a real app, this would update the post status in the database
-    console.log('Toggle post status:', postId)
+  const handleTogglePostStatus = async (postId: string) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post) return
+    const newStatus = post.status === 'published' ? 'draft' : 'published'
+    await updatePost(postId, { status: newStatus, updatedAt: new Date().toISOString() })
   }
 
-  const handleDeletePost = (postId: string) => {
-    // In a real app, this would delete the post from the database
-    console.log('Delete post:', postId)
+  const handleDeletePost = async (postId: string) => {
+    await deletePost(postId)
     setShowDeleteModal(false)
+    setSelectedPost(null)
+  }
+
+  const openCreate = () => {
+    setFormData({
+      title: '',
+      slug: '',
+      excerpt: '',
+      authorId: authors[0]?.id || '',
+      publishedAt: new Date().toISOString(),
+      readTime: 5,
+      categoryId: categories[0]?.id || '',
+      tags: [],
+      image: '',
+      featured: false,
+      status: 'draft'
+    })
+    setShowEditorModal(true)
+  }
+
+  const openEdit = (post: BlogPost) => {
+    setSelectedPost(post)
+    setFormData({ ...post })
+    setShowEditorModal(true)
+  }
+
+  const handleSave = async () => {
+    if (!formData.title || !formData.slug || !formData.authorId || !formData.categoryId) return
+    const base = {
+      title: formData.title!,
+      slug: formData.slug!,
+      excerpt: formData.excerpt || '',
+      content: [],
+      authorId: formData.authorId!,
+      publishedAt: formData.publishedAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      readTime: formData.readTime || 5,
+      categoryId: formData.categoryId!,
+      tags: formData.tags || [],
+      image: formData.image || '/images/cat.jpg',
+      featured: !!formData.featured,
+      status: (formData.status || 'draft') as BlogPost['status'],
+    }
+    if (selectedPost) {
+      await updatePost(selectedPost.id, base)
+    } else {
+      const id = `post_${Date.now()}`
+      await createPost(id, base)
+    }
+    setShowEditorModal(false)
     setSelectedPost(null)
   }
 
@@ -115,7 +170,7 @@ export default function AdminContentPage() {
             <h1 className="text-3xl font-bold text-gray-900">Управление контентом</h1>
             <p className="text-gray-600 mt-1">Управление статьями блога и контентом</p>
           </div>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+          <button onClick={openCreate} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
             <Plus className="h-4 w-4 mr-2" />
             Создать статью
           </button>
@@ -130,7 +185,7 @@ export default function AdminContentPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Всего статей</p>
-                <p className="text-2xl font-bold text-gray-900">{blogPosts.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{posts.length}</p>
               </div>
             </div>
           </div>
@@ -143,7 +198,7 @@ export default function AdminContentPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Опубликовано</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {blogPosts.filter(p => p.status === 'published').length}
+                  {posts.filter(p => p.status === 'published').length}
                 </p>
               </div>
             </div>
@@ -157,7 +212,7 @@ export default function AdminContentPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Черновики</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {blogPosts.filter(p => p.status === 'draft').length}
+                  {posts.filter(p => p.status === 'draft').length}
                 </p>
               </div>
             </div>
@@ -170,9 +225,7 @@ export default function AdminContentPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Рекомендуемые</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {blogPosts.filter(p => p.featured).length}
-                </p>
+                <p className="text-2xl font-bold text-gray-900">{posts.filter((p) => p.featured).length}</p>
               </div>
             </div>
           </div>
@@ -322,13 +375,7 @@ export default function AdminContentPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <button
-                          onClick={() => {
-                            setSelectedPost(post)
-                            setShowPostModal(true)
-                          }}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
+                        <button onClick={() => openEdit(post)} className="text-gray-600 hover:text-gray-900">
                           <Edit className="h-4 w-4" />
                         </button>
                         <button
@@ -493,6 +540,75 @@ export default function AdminContentPage() {
                 >
                   Удалить
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editor Modal */}
+      {showEditorModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">{selectedPost ? 'Редактировать статью' : 'Создать статью'}</h3>
+                <button onClick={() => { setShowEditorModal(false); setSelectedPost(null) }} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
+                  <input value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Слаг</label>
+                  <input value={formData.slug || ''} onChange={e => setFormData({ ...formData, slug: e.target.value })} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Краткое описание</label>
+                  <textarea value={formData.excerpt || ''} onChange={e => setFormData({ ...formData, excerpt: e.target.value })} rows={3} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Автор</label>
+                  <select value={formData.authorId || ''} onChange={e => setFormData({ ...formData, authorId: e.target.value })} className="w-full px-3 py-2 border rounded">
+                    {authors.map(a => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Категория</label>
+                  <select value={formData.categoryId || ''} onChange={e => setFormData({ ...formData, categoryId: e.target.value })} className="w-full px-3 py-2 border rounded">
+                    {categories.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Время чтения (мин)</label>
+                  <input type="number" value={formData.readTime || 5} onChange={e => setFormData({ ...formData, readTime: Number(e.target.value) })} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+                  <select value={formData.status || 'draft'} onChange={e => setFormData({ ...formData, status: e.target.value as BlogPost['status'] })} className="w-full px-3 py-2 border rounded">
+                    <option value="draft">Черновик</option>
+                    <option value="published">Опубликовано</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Теги (через запятую)</label>
+                  <input value={(formData.tags || []).join(', ')} onChange={e => setFormData({ ...formData, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">URL изображения</label>
+                  <input value={formData.image || ''} onChange={e => setFormData({ ...formData, image: e.target.value })} className="w-full px-3 py-2 border rounded" />
+                </div>
+                <div className="flex items-center space-x-2 md:col-span-2">
+                  <input id="featured" type="checkbox" checked={!!formData.featured} onChange={e => setFormData({ ...formData, featured: e.target.checked })} className="h-4 w-4" />
+                  <label htmlFor="featured" className="text-sm text-gray-700">Рекомендуемая</label>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button onClick={() => { setShowEditorModal(false); setSelectedPost(null) }} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Отмена</button>
+                <button onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Сохранить</button>
               </div>
             </div>
           </div>

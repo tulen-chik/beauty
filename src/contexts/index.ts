@@ -10,3 +10,4 @@ export { AppointmentProvider,useAppointment } from './AppointmentContext';
 export { ChatProvider,useChat } from './ChatContext';
 export { SalonRatingProvider,useSalonRating } from './SalonRatingContext';
 export { AdminProvider,useAdmin } from './AdminContext';
+export { BlogAdminProvider,useBlogAdmin } from './BlogAdminContext';

@@ -137,8 +137,6 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      // Note: This would need to be implemented in database.ts
-      // For now, we'll use a placeholder
       setUsers([]);
       setLoading(false);
     } catch (e: any) {

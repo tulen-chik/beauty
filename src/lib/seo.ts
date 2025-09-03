@@ -1,72 +1,35 @@
-// SEO Configuration
-export const seoConfig = {
-  siteName: 'Beauty Platform',
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://beauty-platform.com',
-  description: 'Find the best beauty salons near you. Book appointments online with verified beauty professionals.',
-  keywords: [
-    'beauty salon',
-    'beauty services',
-    'hair salon',
-    'nail salon',
-    'spa',
-    'massage',
-    'beauty booking',
-    'online booking',
-    'beauty appointments',
-    'salon management',
-    'beauty professionals',
-    'cosmetology',
-    'beauty platform'
-  ],
-  author: 'Beauty Platform Team',
-  creator: 'Beauty Platform',
-  publisher: 'Beauty Platform',
-  openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    siteName: 'Beauty Platform',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Beauty Platform - Find the best beauty salons near you',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    creator: '@beautyplatform',
-    images: ['/og-image.jpg'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || 'your-google-verification-code',
-    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || 'your-yandex-verification-code',
-  },
-}
+import { seoConfig } from './config/seo';
+import type {
+  WebSiteSchema,
+  OrganizationSchema,
+  LocalBusinessSchema,
+  ServiceSchema,
+  BreadcrumbListSchema,
+  StructuredData,
+  Review, // Импортируем тип Review
+  BreadcrumbListItem // Импортируем тип BreadcrumbListItem
+} from '../types/seo';
+export function generateStructuredData(type: 'WebSite', data: Partial<Omit<WebSiteSchema, '@type' | '@context'>>): WebSiteSchema;
+export function generateStructuredData(type: 'Organization', data: Partial<Omit<OrganizationSchema, '@type' | '@context'>>): OrganizationSchema;
+export function generateStructuredData(type: 'BeautySalon' | 'HairSalon' | 'NailSalon' | 'DaySpa', data: Omit<LocalBusinessSchema, '@type' | '@context'>): LocalBusinessSchema;
+export function generateStructuredData(type: 'Service', data: Omit<ServiceSchema, '@type' | '@context'>): ServiceSchema;
+export function generateStructuredData(type: 'BreadcrumbList', data: Omit<BreadcrumbListSchema, '@type' | '@context'>): BreadcrumbListSchema;
 
-// Generate structured data for different page types
-export const generateStructuredData = (type: string, data: Record<string, any>) => {
+// Основная реализация функции
+export function generateStructuredData(
+  type: StructuredData['@type'],
+  data: any
+): StructuredData {
+  // Убираем '@type' из базового объекта
   const baseData = {
-    '@context': 'https://schema.org',
-    '@type': type,
-  }
+    '@context': 'https://schema.org' as const,
+  };
 
   switch (type) {
     case 'WebSite':
       return {
         ...baseData,
+        '@type': 'WebSite', // Указываем тип здесь
         name: data.name || seoConfig.siteName,
         description: data.description || seoConfig.description,
         url: data.url || seoConfig.siteUrl,
@@ -74,68 +37,71 @@ export const generateStructuredData = (type: string, data: Record<string, any>) 
           '@type': 'SearchAction',
           target: {
             '@type': 'EntryPoint',
-            urlTemplate: `${seoConfig.siteUrl}/search?q={search_term_string}`
+            urlTemplate: `${seoConfig.siteUrl}/search?q={search_term_string}`,
           },
-          'query-input': 'required name=search_term_string'
-        }
-      }
+          'query-input': 'required name=search_term_string',
+        },
+      };
 
     case 'Organization':
       return {
         ...baseData,
+        '@type': 'Organization', // Указываем тип здесь
         name: data.name || seoConfig.siteName,
         url: data.url || seoConfig.siteUrl,
         logo: data.logo || `${seoConfig.siteUrl}/logo.png`,
         sameAs: [
           'https://facebook.com/beautyplatform',
           'https://instagram.com/beautyplatform',
-          'https://twitter.com/beautyplatform'
-        ]
-      }
+          'https://twitter.com/beautyplatform',
+        ],
+      };
 
-    case 'LocalBusiness':
+    case 'BeautySalon':
+    case 'HairSalon':
+    case 'NailSalon':
+    case 'DaySpa':
       return {
         ...baseData,
-        name: data.name,
-        description: data.description,
-        address: {
-          '@type': 'PostalAddress',
-          streetAddress: data.address?.streetAddress,
-          addressLocality: data.address?.addressLocality,
-          addressRegion: data.address?.addressRegion,
-          postalCode: data.address?.postalCode,
-          addressCountry: data.address?.addressCountry
-        },
-        geo: {
-          '@type': 'GeoCoordinates',
-          latitude: data.geo?.latitude,
-          longitude: data.geo?.longitude
-        },
-        telephone: data.telephone,
-        email: data.email,
-        url: data.url,
-        openingHours: data.openingHours,
-        priceRange: data.priceRange
-      }
+        '@type': type, // Указываем тип здесь (он будет 'BeautySalon', 'HairSalon' и т.д.)
+        ...data,
+        // Добавим явную типизацию для map, чтобы избежать неявного 'any'
+        review: data.reviews?.map((review: Omit<Review, '@type'>) => ({
+          '@type': 'Review' as const,
+          author: {
+            '@type': 'Person' as const,
+            name: review.author.name,
+          },
+          reviewRating: {
+            '@type': 'Rating' as const,
+            ratingValue: review.reviewRating.ratingValue,
+          },
+          reviewBody: review.reviewBody,
+        })),
+      };
 
     case 'Service':
       return {
         ...baseData,
-        name: data.name,
-        description: data.description,
-        provider: {
-          '@type': 'LocalBusiness',
-          name: data.provider?.name
-        },
-        areaServed: {
-          '@type': 'City',
-          name: data.areaServed?.name
-        },
-        priceRange: data.priceRange,
-        serviceType: data.serviceType
-      }
+        '@type': 'Service', // Указываем тип здесь
+        ...data,
+      };
+
+    case 'BreadcrumbList':
+      return {
+        ...baseData,
+        '@type': 'BreadcrumbList', // Указываем тип здесь
+        itemListElement: data.items?.map((item: { name: string; path: string }, index: number): BreadcrumbListItem => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          item: `${seoConfig.siteUrl}${item.path}`,
+        })),
+      };
 
     default:
-      return baseData
+      // Эта проверка гарантирует, что все возможные типы были обработаны
+      const exhaustiveCheck: never = type;
+      return exhaustiveCheck;
   }
 }

@@ -13,7 +13,8 @@ import {
    AppointmentProvider,
    ChatProvider,
    SalonRatingProvider,
-   AdminProvider
+   AdminProvider,
+   BlogAdminProvider
    } from '@/contexts';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -29,8 +30,10 @@ export function Providers({ children }: { children: ReactNode }) {
                     <AppointmentProvider>
                       <ChatProvider>
                         <SalonRatingProvider>
-                        <AdminProvider>
-                          {children}
+                          <AdminProvider>
+                            <BlogAdminProvider>
+                              {children}
+                            </BlogAdminProvider>
                           </AdminProvider>
                         </SalonRatingProvider>
                       </ChatProvider>

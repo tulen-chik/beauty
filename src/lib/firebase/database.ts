@@ -1,9 +1,9 @@
 import { db } from './init';
 import { equalTo, get, orderByChild, query, ref, remove, set, update, startAt as fbStartAt, endAt as fbEndAt } from 'firebase/database';
-import { salonSchema, userSchema, userSalonsSchema, salonInvitationSchema, serviceCategorySchema, salonServiceSchema, salonScheduleSchema, appointmentSchema, chatSchema, chatNotificationSchema, chatMessageSchema, chatParticipantSchema, salonRatingSchema, salonRatingResponseSchema, salonRatingHelpfulSchema } from './schemas';
+import { salonSchema, userSchema, userSalonsSchema, salonInvitationSchema, serviceCategorySchema, salonServiceSchema, salonScheduleSchema, appointmentSchema, chatSchema, chatNotificationSchema, chatMessageSchema, chatParticipantSchema, salonRatingSchema, salonRatingResponseSchema, salonRatingHelpfulSchema, blogAuthorSchema, blogCategorySchema, blogPostSchema } from './schemas';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 
-import type { Salon, User, UserSalons, SalonInvitation, ServiceCategory, SalonService, SalonSchedule, Appointment, AppointmentStatus, Chat, ChatNotification, ChatMessage, ChatMessageType, ChatParticipant, SalonRating, SalonRatingResponse, SalonRatingHelpful, SalonRatingStats } from '@/types/database';
+import type { Salon, User, UserSalons, SalonInvitation, ServiceCategory, SalonService, SalonSchedule, Appointment, AppointmentStatus, Chat, ChatNotification, ChatMessage, ChatMessageType, ChatParticipant, SalonRating, SalonRatingResponse, SalonRatingHelpful, SalonRatingStats, BlogAuthor, BlogCategory, BlogPost } from '@/types/database';
 
 // Базовые операции CRUD
 const createOperation = async <T>(
@@ -40,6 +40,12 @@ export const userOperations = {
   update: (userId: string, data: Partial<User>) =>
     updateOperation(`users/${userId}`, data, userSchema),
   delete: (userId: string) => deleteOperation(`users/${userId}`),
+  list: async (): Promise<(User & { id: string })[]> => {
+    const snapshot = await get(ref(db, 'users'));
+    if (!snapshot.exists()) return [];
+    const raw = snapshot.val() as Record<string, Omit<User, 'id'>>;
+    return Object.entries(raw).map(([id, u]) => ({ id, ...(u as any) }));
+  },
   getByEmail: async (email: string) => {
     const usersRef = query(ref(db, 'users'), orderByChild('email'), equalTo(email));
     const snapshot = await get(usersRef);
@@ -358,6 +364,71 @@ export const getAllSalonServices = async () => {
 export const getAllSalons = async () => {
   const snapshot = await get(ref(db, 'salons'));
   return snapshot.exists() ? snapshot.val() : {};
+};
+
+// Blog operations
+export const blogAuthorOperations = {
+  create: (authorId: string, data: Omit<BlogAuthor, 'id'>) =>
+    createOperation(`blog/authors/${authorId}`, data, blogAuthorSchema),
+  read: (authorId: string) => readOperation<BlogAuthor>(`blog/authors/${authorId}`),
+  update: (authorId: string, data: Partial<BlogAuthor>) =>
+    updateOperation(`blog/authors/${authorId}`, data, blogAuthorSchema),
+  delete: (authorId: string) => deleteOperation(`blog/authors/${authorId}`),
+  list: async (): Promise<BlogAuthor[]> => {
+    const snapshot = await get(ref(db, 'blog/authors'));
+    if (!snapshot.exists()) return [];
+    const raw = snapshot.val() as Record<string, Omit<BlogAuthor, 'id'>>;
+    return Object.entries(raw).map(([id, a]) => ({ id, ...(a as any) }));
+  }
+};
+
+export const blogCategoryOperations = {
+  create: (categoryId: string, data: Omit<BlogCategory, 'id'>) =>
+    createOperation(`blog/categories/${categoryId}`, data, blogCategorySchema),
+  read: (categoryId: string) => readOperation<BlogCategory>(`blog/categories/${categoryId}`),
+  update: (categoryId: string, data: Partial<BlogCategory>) =>
+    updateOperation(`blog/categories/${categoryId}`, data, blogCategorySchema),
+  delete: (categoryId: string) => deleteOperation(`blog/categories/${categoryId}`),
+  list: async (): Promise<BlogCategory[]> => {
+    const snapshot = await get(ref(db, 'blog/categories'));
+    if (!snapshot.exists()) return [];
+    const raw = snapshot.val() as Record<string, Omit<BlogCategory, 'id'>>;
+    return Object.entries(raw).map(([id, c]) => ({ id, ...(c as any) }));
+  }
+};
+
+export const blogPostOperations = {
+  create: (postId: string, data: Omit<BlogPost, 'id'>) =>
+    createOperation(`blog/posts/${postId}`, data, blogPostSchema),
+  read: (postId: string) => readOperation<BlogPost>(`blog/posts/${postId}`),
+  update: (postId: string, data: Partial<BlogPost>) =>
+    updateOperation(`blog/posts/${postId}`, data, blogPostSchema),
+  delete: (postId: string) => deleteOperation(`blog/posts/${postId}`),
+  list: async (): Promise<BlogPost[]> => {
+    const snapshot = await get(ref(db, 'blog/posts'));
+    if (!snapshot.exists()) return [];
+    const raw = snapshot.val() as Record<string, Omit<BlogPost, 'id'>>;
+    return Object.entries(raw)
+      .map(([id, p]) => ({ id, ...(p as any) }))
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  }
+};
+
+// Blog images (storage)
+export const uploadBlogImage = async (postId: string, file: File) => {
+  const storage = getStorage();
+  const id = `${Date.now()}-${file.name}`;
+  const path = `blog/images/${postId}/${id}`;
+  const sref = storageRef(storage, path);
+  await uploadBytes(sref, file);
+  const url = await getDownloadURL(sref);
+  return { id, postId, url, storagePath: path, uploadedAt: new Date().toISOString() };
+};
+
+export const deleteBlogImage = async (storagePath: string) => {
+  const storage = getStorage();
+  const sref = storageRef(storage, storagePath);
+  await deleteObject(sref);
 };
 
 // Chat operations
