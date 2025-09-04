@@ -65,7 +65,9 @@ function writeLS<T>(key: string, value: T) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch {}
+  } catch {
+    console.log("something went wrong")
+  }
 }
 
 // Import defaults lazily to avoid server import issues

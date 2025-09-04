@@ -1,26 +1,39 @@
+// Импорты отсортированы для исправления предупреждения simple-import-sort/imports
 import { seoConfig } from './config/seo';
 import type {
-  WebSiteSchema,
-  OrganizationSchema,
-  LocalBusinessSchema,
-  ServiceSchema,
+  BreadcrumbListItem,
   BreadcrumbListSchema,
+  LocalBusinessSchema,
+  OrganizationSchema,
+  Review,
+  ServiceSchema,
   StructuredData,
-  Review, // Импортируем тип Review
-  BreadcrumbListItem // Импортируем тип BreadcrumbListItem
+  WebSiteSchema,
 } from '../types/seo';
+
+// Определяем объединенный тип для всех возможных форм входных данных,
+// чтобы избежать использования 'any'.
+export type StructuredDataInput =
+  | Partial<Omit<WebSiteSchema, '@type' | '@context'>>
+  | Partial<Omit<OrganizationSchema, '@type' | '@context'>>
+  | Omit<LocalBusinessSchema, '@type' | '@context'>
+  | Omit<ServiceSchema, '@type' | '@context'>
+  // Тип для данных BreadcrumbList был скорректирован, чтобы соответствовать реализации.
+  | { items: { name: string; path: string }[] };
+
+// Перегрузки функций для обеспечения строгой типизации
 export function generateStructuredData(type: 'WebSite', data: Partial<Omit<WebSiteSchema, '@type' | '@context'>>): WebSiteSchema;
 export function generateStructuredData(type: 'Organization', data: Partial<Omit<OrganizationSchema, '@type' | '@context'>>): OrganizationSchema;
 export function generateStructuredData(type: 'BeautySalon' | 'HairSalon' | 'NailSalon' | 'DaySpa', data: Omit<LocalBusinessSchema, '@type' | '@context'>): LocalBusinessSchema;
 export function generateStructuredData(type: 'Service', data: Omit<ServiceSchema, '@type' | '@context'>): ServiceSchema;
-export function generateStructuredData(type: 'BreadcrumbList', data: Omit<BreadcrumbListSchema, '@type' | '@context'>): BreadcrumbListSchema;
+// Тип 'data' был исправлен, чтобы отражать фактические ожидаемые входные данные (объект с массивом 'items').
+export function generateStructuredData(type: 'BreadcrumbList', data: { items: { name: string; path: string }[] }): BreadcrumbListSchema;
 
 // Основная реализация функции
 export function generateStructuredData(
   type: StructuredData['@type'],
-  data: any
+  data: StructuredDataInput
 ): StructuredData {
-  // Убираем '@type' из базового объекта
   const baseData = {
     '@context': 'https://schema.org' as const,
   };
@@ -29,10 +42,10 @@ export function generateStructuredData(
     case 'WebSite':
       return {
         ...baseData,
-        '@type': 'WebSite', // Указываем тип здесь
-        name: data.name || seoConfig.siteName,
-        description: data.description || seoConfig.description,
-        url: data.url || seoConfig.siteUrl,
+        '@type': 'WebSite',
+        name: (data as Partial<WebSiteSchema>).name || seoConfig.siteName,
+        description: (data as Partial<WebSiteSchema>).description || seoConfig.description,
+        url: (data as Partial<WebSiteSchema>).url || seoConfig.siteUrl,
         potentialAction: {
           '@type': 'SearchAction',
           target: {
@@ -46,10 +59,10 @@ export function generateStructuredData(
     case 'Organization':
       return {
         ...baseData,
-        '@type': 'Organization', // Указываем тип здесь
-        name: data.name || seoConfig.siteName,
-        url: data.url || seoConfig.siteUrl,
-        logo: data.logo || `${seoConfig.siteUrl}/logo.png`,
+        '@type': 'Organization',
+        name: (data as Partial<OrganizationSchema>).name || seoConfig.siteName,
+        url: (data as Partial<OrganizationSchema>).url || seoConfig.siteUrl,
+        logo: (data as Partial<OrganizationSchema>).logo || `${seoConfig.siteUrl}/logo.png`,
         sameAs: [
           'https://facebook.com/beautyplatform',
           'https://instagram.com/beautyplatform',
@@ -60,38 +73,46 @@ export function generateStructuredData(
     case 'BeautySalon':
     case 'HairSalon':
     case 'NailSalon':
-    case 'DaySpa':
+    case 'DaySpa': {
+      // ИСПРАВЛЕНИЕ: Деструктурируем 'review', чтобы обработать его отдельно и избежать ошибки перезаписи.
+      // Также исправлено 'reviews' на 'review' в соответствии со схемой.
+      const { review, ...restOfData } = data as Omit<LocalBusinessSchema, '@type' | '@context'>;
       return {
         ...baseData,
-        '@type': type, // Указываем тип здесь (он будет 'BeautySalon', 'HairSalon' и т.д.)
-        ...data,
-        // Добавим явную типизацию для map, чтобы избежать неявного 'any'
-        review: data.reviews?.map((review: Omit<Review, '@type'>) => ({
+        '@type': type,
+        ...restOfData, // Распространяем остальные данные.
+        // Проходим по деструктурированному свойству 'review'.
+        review: review?.map((reviewItem: Omit<Review, '@type'>) => ({
           '@type': 'Review' as const,
           author: {
             '@type': 'Person' as const,
-            name: review.author.name,
+            name: reviewItem.author.name,
           },
           reviewRating: {
             '@type': 'Rating' as const,
-            ratingValue: review.reviewRating.ratingValue,
+            ratingValue: reviewItem.reviewRating.ratingValue,
           },
-          reviewBody: review.reviewBody,
+          reviewBody: reviewItem.reviewBody,
         })),
       };
+    }
 
-    case 'Service':
+    case 'Service': {
+      // ИСПРАВЛЕНИЕ: Деструктурируем, чтобы явно исключить свойства, которые могут быть перезаписаны.
+      const { '@type': ignoredType, ...restOfData } = data as ServiceSchema;
       return {
         ...baseData,
-        '@type': 'Service', // Указываем тип здесь
-        ...data,
+        '@type': 'Service',
+        ...restOfData, // Безопасно распространяем остальные данные.
       };
+    }
 
     case 'BreadcrumbList':
       return {
         ...baseData,
-        '@type': 'BreadcrumbList', // Указываем тип здесь
-        itemListElement: data.items?.map((item: { name: string; path: string }, index: number): BreadcrumbListItem => ({
+        '@type': 'BreadcrumbList',
+        // ИСПРАВЛЕНИЕ: Теперь объект 'data' корректно имеет свойство 'items' благодаря исправленному типу.
+        itemListElement: (data as { items: { name: string; path: string }[] }).items?.map((item: { name: string; path: string }, index: number): BreadcrumbListItem => ({
           '@type': 'ListItem',
           position: index + 1,
           name: item.name,
@@ -99,9 +120,10 @@ export function generateStructuredData(
         })),
       };
 
-    default:
-      // Эта проверка гарантирует, что все возможные типы были обработаны
+    default: {
+      // ИСПРАВЛЕНИЕ: Оборачиваем в фигурные скобки, чтобы исправить ошибку no-case-declarations.
       const exhaustiveCheck: never = type;
       return exhaustiveCheck;
+    }
   }
 }

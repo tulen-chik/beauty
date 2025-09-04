@@ -2,31 +2,85 @@
 
 import { useEffect } from 'react'
 import { generateStructuredData } from '@/lib/seo'
+// Вам все еще нужны эти типы для определения пропсов
+import type {
+  WebSiteSchema,
+  OrganizationSchema,
+  LocalBusinessSchema,
+  ServiceSchema,
+} from '@/types/seo'
 
-interface StructuredDataProps {
-  type: 'WebSite' | 'Organization' | 'LocalBusiness' | 'Service'
-  data: Record<string, any>
+// Эта карта типов остается здесь, в компоненте, так как она нужна для создания
+// правильного типа пропсов.
+type StructuredDataMap = {
+  'WebSite': Partial<Omit<WebSiteSchema, '@type' | '@context'>>;
+  'Organization': Partial<Omit<OrganizationSchema, '@type' | '@context'>>;
+  'BeautySalon': Omit<LocalBusinessSchema, '@type' | '@context'>;
+  'HairSalon': Omit<LocalBusinessSchema, '@type' | '@context'>;
+  'NailSalon': Omit<LocalBusinessSchema, '@type' | '@context'>;
+  'DaySpa': Omit<LocalBusinessSchema, '@type' | '@context'>;
+  'Service': Omit<ServiceSchema, '@type' | '@context'>;
+  'BreadcrumbList': { items: { name: string; path: string }[] };
 }
+
+// Тип для пропсов, который связывает 'type' и 'data'. Он остается без изменений.
+type StructuredDataProps = {
+  [K in keyof StructuredDataMap]: {
+    type: K;
+    data: StructuredDataMap[K];
+  }
+}[keyof StructuredDataMap];
+
 
 export default function StructuredData({ type, data }: StructuredDataProps) {
   useEffect(() => {
-    // Удаляем существующие structured data
     const existingScripts = document.querySelectorAll('script[type="application/ld+json"]')
     existingScripts.forEach(script => script.remove())
 
-    // Генерируем structured data используя централизованную конфигурацию
-    const structuredData = generateStructuredData(type, data)
+    // ИСПРАВЛЕНИЕ: Используем switch для сужения типов перед вызовом.
+    // Это позволяет TypeScript выбрать правильную перегрузку функции.
+    let structuredData;
 
-    // Создаем и добавляем script тег
-    const script = document.createElement('script')
-    script.type = 'application/ld+json'
-    script.text = JSON.stringify(structuredData)
-    document.head.appendChild(script)
+    switch (type) {
+      case 'WebSite':
+        // Внутри этого блока type === 'WebSite', и data имеет правильный тип.
+        structuredData = generateStructuredData(type, data);
+        break;
 
-    // Cleanup при размонтировании
-    return () => {
-      const scripts = document.querySelectorAll('script[type="application/ld+json"]')
-      scripts.forEach(script => script.remove())
+      case 'Organization':
+        structuredData = generateStructuredData(type, data);
+        break;
+
+      // Для этих типов используется одна и та же перегрузка.
+      case 'BeautySalon':
+      case 'HairSalon':
+      case 'NailSalon':
+      case 'DaySpa':
+        structuredData = generateStructuredData(type, data);
+        break;
+
+      case 'Service':
+        structuredData = generateStructuredData(type, data);
+        break;
+
+      case 'BreadcrumbList':
+        structuredData = generateStructuredData(type, data);
+        break;
+    }
+
+    // Если structuredData была успешно сгенерирована, добавляем ее на страницу.
+    if (structuredData) {
+      const script = document.createElement('script')
+      script.type = 'application/ld+json'
+      script.text = JSON.stringify(structuredData)
+      document.head.appendChild(script)
+
+      // Функция очистки, которая удалит именно этот скрипт.
+      return () => {
+        if (document.head.contains(script)) {
+          document.head.removeChild(script)
+        }
+      }
     }
   }, [type, data])
 
