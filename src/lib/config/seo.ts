@@ -28,7 +28,7 @@ export const seoConfig: SeoConfig = {
     siteName: 'Beauty Platform',
     images: [
       {
-        url: '/og-image.jpg',
+        url: '/images/logo.jpg',
         width: 1200,
         height: 630,
         alt: 'Beauty Platform - Find the best beauty salons near you',

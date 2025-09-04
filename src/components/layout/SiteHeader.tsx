@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { MapPin, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
@@ -143,8 +144,16 @@ export default function SiteHeader({ locale }: Props) {
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href={`/${locale}`} className="text-xl font-bold text-gray-900">
-                {t('brand.name')}
+              <Link href={`/${locale}`} className="flex items-center">
+                {/* Использование Image вместо текста */}
+                <Image 
+                  src="/images/logo.png" 
+                  alt={t('brand.name')} 
+                  width={120} 
+                  height={40} 
+                  priority 
+                  style={{ objectFit: 'contain' }}
+                />
               </Link>
               <nav className="hidden md:flex items-center gap-1 ml-2">
                 {nav.map((item) => (
@@ -203,7 +212,14 @@ export default function SiteHeader({ locale }: Props) {
           >
             {/* Шапка меню */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <span className="font-bold text-lg">{t('brand.name')}</span>
+              {/* Использование Image в мобильном меню */}
+              <Image 
+                src="/images/logo.png" 
+                alt={t('brand.name')} 
+                width={120} 
+                height={40} 
+                style={{ objectFit: 'contain' }}
+              />
               <button 
                 onClick={() => setIsMenuOpen(false)} 
                 className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"

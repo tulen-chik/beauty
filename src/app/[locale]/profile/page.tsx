@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, Search, MessageCircle, AlertCircle, MessageSquare } from "lucide-react"
+// ИЗМЕНЕНИЕ: Импортируем useRouter
+import { useRouter } from "next/navigation" 
+// ИЗМЕНЕНИЕ: Импортируем иконку LogOut
+import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, Search, MessageCircle, AlertCircle, MessageSquare, LogOut } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
 import { useSalonRating } from "@/contexts"
 import { getAllSalons, getAllSalonServices, appointmentOperations, userOperations } from "@/lib/firebase/database"
@@ -13,7 +16,6 @@ import RatingForm from "@/components/RatingForm"
 type AnySalon = { id: string; name: string; address?: string }
 type AnyService = { id: string; salonId: string; name: string; durationMinutes: number }
 
-// Определяем тип для ошибок формы для лучшей типизации
 type FormErrors = {
   displayName?: string;
   general?: string;
@@ -21,35 +23,32 @@ type FormErrors = {
 
 export default function ProfilePage() {
   const t = useTranslations('profilePage')
-  const { currentUser, loading: userLoading, updateProfile } = useUser()
+  const router = useRouter() // ИЗМЕНЕНИЕ: Инициализируем роутер
+  // ИЗМЕНЕНИЕ: Получаем функцию logout из контекста
+  const { currentUser, loading: userLoading, updateProfile, logout } = useUser()
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
   
-  // Состояния для данных
+  // ... состояния остаются без изменений ...
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<AnySalon[]>([])
   const [services, setServices] = useState<AnyService[]>([])
   const [appointments, setAppointments] = useState<any[]>([])
   const [userRatings, setUserRatings] = useState<any[]>([])
-  
-  // Состояния для UI
   const [showRatingForm, setShowRatingForm] = useState<string | null>(null)
   const [ratingLoading, setRatingLoading] = useState(false)
-
-  // Состояния для формы настроек
   const [displayName, setDisplayName] = useState("")
   const [language, setLanguage] = useState("en")
   const [notifications, setNotifications] = useState(true)
   const [saving, setSaving] = useState(false)
-  
-  // Улучшенные состояния для сообщений и ошибок
   const [msg, setMsg] = useState<string | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // ... useEffect и другие функции остаются без изменений ...
   useEffect(() => {
     const load = async () => {
       if (!currentUser) return
       setLoading(true)
-      setErrors({}); // Сбрасываем ошибки при каждой загрузке
+      setErrors({});
       try {
         const [rawSalons, rawServices] = await Promise.all([
           getAllSalons(),
@@ -60,18 +59,15 @@ export default function ProfilePage() {
         setSalons(salonsList)
         setServices(servicesList)
 
-        // Загрузка записей для всех салонов, где customerUserId равен текущему пользователю
         const allSalonIds = salonsList.map(s => s.id)
         const chunks = await Promise.all(allSalonIds.map(async (salonId) => {
           const appts = await appointmentOperations.listBySalon(salonId, { customerUserId: currentUser.userId })
           return appts.map(a => ({ ...a, salonId }))
         }))
         const flat = chunks.flat()
-        // Сортировка по дате начала DESC (предстоящие первыми)
         flat.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
         setAppointments(flat)
 
-        // Загрузка отзывов пользователя
         if (currentUser) {
           const ratings = await getRatingsByCustomer(currentUser.userId)
           setUserRatings(ratings)
@@ -89,7 +85,6 @@ export default function ProfilePage() {
   const salonsById = useMemo(() => Object.fromEntries(salons.map(s => [s.id, s])), [salons])
   const servicesById = useMemo(() => Object.fromEntries(services.map(s => [s.id, s])), [services])
 
-  // Инициализация формы настроек при загрузке пользователя
   useEffect(() => {
     if (currentUser) {
       setDisplayName(currentUser.displayName || "")
@@ -98,7 +93,6 @@ export default function ProfilePage() {
     }
   }, [currentUser])
 
-  // Валидация формы профиля
   const validateProfile = (): boolean => {
     const newErrors: FormErrors = {};
     if (!displayName.trim()) {
@@ -150,13 +144,12 @@ export default function ProfilePage() {
     if (!currentUser) return
     
     setRatingLoading(true)
-    setErrors({}) // Сбрасываем общие ошибки
+    setErrors({})
     try {
       const existingRating = await getRatingByAppointment(appointmentId)
       if (existingRating) {
-        // Устанавливаем ошибку в модальном окне или как общее уведомление
         setErrors({ general: "Вы уже оставили отзыв для этой записи" })
-        setShowRatingForm(null) // Закрываем форму
+        setShowRatingForm(null)
         return
       }
 
@@ -169,7 +162,6 @@ export default function ProfilePage() {
         appointmentId, serviceId, data.isAnonymous
       )
 
-      // Обновляем отзывы
       const ratings = await getRatingsByCustomer(currentUser.userId)
       setUserRatings(ratings)
       
@@ -177,12 +169,23 @@ export default function ProfilePage() {
       setShowRatingForm(null)
     } catch (error: any) {
       console.error("Rating creation error:", error)
-      // Отображаем ошибку в форме или как общее уведомление
       setErrors({ general: error.message || "Не удалось отправить отзыв. Пожалуйста, попробуйте еще раз." })
     } finally {
       setRatingLoading(false)
     }
   }
+
+  // ИЗМЕНЕНИЕ: Новая функция для обработки выхода из аккаунта
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Перенаправляем на главную страницу после успешного выхода
+      router.push('/');
+    } catch (error) {
+      console.error("Failed to log out:", error);
+      setErrors({ general: "Не удалось выйти из аккаунта. Попробуйте еще раз." });
+    }
+  };
 
   const hasRatingForAppointment = (appointmentId: string) => {
     return userRatings.some(rating => rating.appointmentId === appointmentId)
@@ -209,12 +212,12 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-3 sm:p-4">
+        {/* ... остальная разметка без изменений ... */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{t('title')}</h1>
           <div className="text-sm sm:text-base text-gray-600 mt-1">{currentUser.displayName} • {currentUser.email}</div>
         </div>
 
-        {/* Quick Actions */}
         <div className="bg-white border border-gray-200 rounded-2xl mb-4 sm:mb-6">
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('quickActions.title')}</h2>
@@ -252,7 +255,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Account settings */}
         <div className="bg-white border border-gray-200 rounded-2xl mb-4 sm:mb-6">
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('settings.title')}</h2>
@@ -305,10 +307,21 @@ export default function ProfilePage() {
                 {saving ? 'Сохранение...' : t('settings.saveProfile')}
               </button>
             </div>
+
+            {/* ИЗМЕНЕНИЕ: Добавлен блок с кнопкой выхода */}
+            <div className="pt-4 mt-4 border-t border-gray-200">
+              <button
+                onClick={handleLogout}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-800 font-medium transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Выйти из аккаунта</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Appointments */}
+        {/* ... остальная разметка без изменений ... */}
         <div className="bg-white border border-gray-200 rounded-2xl">
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('appointments.title')}</h2>
@@ -386,7 +399,6 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* User Ratings */}
         {userRatings.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-2xl mt-4 sm:mt-6">
             <div className="p-3 sm:p-4 border-b border-gray-200">
@@ -405,7 +417,6 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Rating Form Modal */}
         {showRatingForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="max-w-md w-full">

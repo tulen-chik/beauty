@@ -37,7 +37,7 @@ type ProcessedService = AnyService & {
 
 // --- КОНСТАНТЫ ---
 const POPULAR_CITIES = [
-  { name: "Москва", value: "Москва" },
+  // { name: "Москва", value: "Москва" },
   { name: "Минск", value: "Минск" },
   { name: "Гомель", value: "Гомель" },
   { name: "Гродно", value: "Гродно" },
@@ -45,7 +45,7 @@ const POPULAR_CITIES = [
   { name: "Витебск", value: "Витебск" },
 ]
 const POPULAR_CITIES_EN = [
-  { name: "Moscow", value: "Moscow" },
+  // { name: "Moscow", value: "Moscow" },
   { name: "Minsk", value: "Minsk" },
   { name: "Gomel", value: "Gomel" },
   { name: "Grodno", value: "Grodno" },

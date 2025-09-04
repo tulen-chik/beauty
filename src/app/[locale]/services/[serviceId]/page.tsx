@@ -194,7 +194,7 @@ export default function ServicePublicPage() {
                 <div className="flex flex-wrap items-center gap-4 text-gray-600">
                   <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span className="font-medium">{service.durationMinutes} мин</span></div>
                   {typeof service.price === "number" && (
-                    <div className="font-bold text-rose-600 text-lg">{service.price} Br</div>
+                    <div className="font-bold text-rose-600 text-lg">{service.price} ₽</div>
                   )}
                 </div>
               </div>
@@ -349,10 +349,10 @@ export default function ServicePublicPage() {
                 {/* show only booking button when service.isApp === true,
                     only chat button when service.isApp === false.
                     if isApp is undefined (legacy), show both */}
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 gap-3">
                   <Link
                     href={`/${locale}/s/${salon?.id || service.salonId}`}
-                    className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                    className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
                   >
                     {t('aboutSalon')}
                   </Link>
@@ -360,7 +360,7 @@ export default function ServicePublicPage() {
                   {service?.isApp === true && (
                     <Link
                       href={`/${locale}/book/${service.id}`}
-                      className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"
+                      className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
                     >
                       {t('book')}
                     </Link>
@@ -372,7 +372,7 @@ export default function ServicePublicPage() {
                       customerUserId={currentUser.userId}
                       customerName={currentUser.displayName}
                       serviceId={service.id}
-                      className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                      className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
                       variant="button"
                     />
                   )}
@@ -386,13 +386,13 @@ export default function ServicePublicPage() {
                           customerUserId={currentUser.userId}
                           customerName={currentUser.displayName}
                           serviceId={service.id}
-                          className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
+                          className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
                           variant="button"
                         />
                       )}
                       <Link
                         href={`/${locale}/book/${service.id}`}
-                        className="w-full py-2.5 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700"
+                        className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
                       >
                         {t('book')}
                       </Link>

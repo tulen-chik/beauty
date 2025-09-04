@@ -913,7 +913,7 @@
       "noSalons": "У вас пока нет салонов.",
       "role": "Ваша роль: {role}",
       "joined": "Присоединились: {date}",
-      "goToCRM": "Перейти в CRM",
+      "goToCRM": "Перейти к управлению",
       "failedToLoadName": "Не удалось загрузить название"
     },
     "SalonServicesPage": {

@@ -813,7 +813,7 @@
 "noSalons": "You don't have any salons yet.",
 "role": "Your role: {role}",
 "joined": "Joined: {date}",
-"goToCRM": "Go to CRM",
+"goToCRM": "Go to Management",
 "failedToLoadName": "Failed to load name"
 },
 "SalonServicesPage": {

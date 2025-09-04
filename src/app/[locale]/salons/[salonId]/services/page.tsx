@@ -13,7 +13,8 @@ import {
   XCircle,
   Smartphone,
   Camera,
-  Loader2
+  Loader2,
+  Check
 } from "lucide-react";
 
 interface ServiceFormData {
@@ -30,8 +31,8 @@ interface ServiceFormData {
 export default function SalonServicesPage({ params }: { params: { salonId: string } }) {
   const t = useTranslations("SalonServicesPage");
   const { salonId } = params;
-  const { getServicesBySalon, createService, loading, error, getImages, uploadImage, deleteImage } = useSalonService();
-  const { getAllCategories } = useServiceCategory();
+  const { getServicesBySalon, createService, loading: serviceLoading, error: serviceError, getImages, uploadImage, deleteImage } = useSalonService();
+  const { getCategoriesBySalon, createCategory, loading: categoryLoading, error: categoryError } = useServiceCategory();
   
   const [categories, setCategories] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -40,7 +41,6 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   const [imagesMap, setImagesMap] = useState<Record<string, any[]>>({});
   const [imagesLoading, setImagesLoading] = useState<Record<string, boolean>>({});
   
-  // Modal form state
   const [form, setForm] = useState<ServiceFormData>({
     id: "",
     name: "",
@@ -52,6 +52,11 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     categoryIds: [],
   });
   const [formError, setFormError] = useState<string | null>(null);
+  const [displayPrice, setDisplayPrice] = useState("0");
+
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -74,24 +79,26 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       }
       setImagesMap(map);
       
-      const cats = await getAllCategories();
+      const cats = await getCategoriesBySalon(salonId);
       setCategories(cats || []);
     };
     loadAll();
-  }, [salonId, getServicesBySalon, getImages, getAllCategories]);
+  }, [salonId, getServicesBySalon, getImages, getCategoriesBySalon]);
 
   useEffect(() => {
     if (editingService) {
+      const price = editingService.price ?? 0;
       setForm({
         id: editingService.id,
         name: editingService.name ?? "",
         description: editingService.description ?? "",
-        price: editingService.price ?? 0,
+        price: price,
         durationMinutes: editingService.durationMinutes ?? 30,
         isActive: !!editingService.isActive,
         isApp: !!editingService.isApp,
         categoryIds: editingService.categoryIds ?? []
       });
+      setDisplayPrice(String(price));
     } else {
       setForm({
         id: "",
@@ -103,8 +110,11 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         isApp: false,
         categoryIds: []
       });
+      setDisplayPrice("0");
     }
     setFormError(null);
+    setShowNewCategoryInput(false);
+    setNewCategoryName("");
   }, [editingService, showModal]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -121,7 +131,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     }
 
     try {
-      const idToUse = editingService ? editingService.id : Date.now().toString();
+      const idToUse = editingService ? editingService.id : `service_${Date.now()}`;
       
       await createService(idToUse, {
         salonId,
@@ -197,9 +207,70 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       .map(cat => cat.name);
   };
 
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*\.?\d*$/.test(value)) {
+      setDisplayPrice(value);
+      const numericValue = parseFloat(value);
+      setForm(f => ({
+        ...f,
+        price: isNaN(numericValue) ? 0 : numericValue
+      }));
+    }
+  };
+
+  const handlePriceFocus = () => {
+    if (displayPrice === '0') {
+      setDisplayPrice('');
+    }
+  };
+
+  const handlePriceBlur = () => {
+    if (displayPrice.trim() === '' || displayPrice.trim() === '.') {
+      setDisplayPrice('0');
+      setForm(f => ({ ...f, price: 0 }));
+    } else {
+      setDisplayPrice(String(parseFloat(displayPrice)));
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    
+    setIsCreatingCategory(true);
+    setFormError(null);
+    try {
+      const newCategoryId = `cat_${Date.now()}`;
+      
+      // ИЗМЕНЕНИЕ: Добавлено обязательное поле 'createdAt'
+      const categoryData = {
+        salonId: salonId,
+        name: newCategoryName.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const newCategory = await createCategory(newCategoryId, categoryData);
+      
+      const updatedCats = await getCategoriesBySalon(salonId);
+      setCategories(updatedCats || []);
+      
+      if (newCategory && newCategory.id) {
+        toggleCategory(newCategory.id);
+      }
+      
+      setNewCategoryName("");
+      setShowNewCategoryInput(false);
+    } catch (error: any) {
+      console.error("Failed to create category:", error);
+      setFormError(error.message || "Не удалось создать категорию");
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
   const selectedCategories = categories.filter(cat => form.categoryIds?.includes(cat.id));
 
-  if (loading && services.length === 0) {
+  if (serviceLoading && services.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -235,9 +306,9 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
           </button>
         </div>
 
-        {error && (
+        {(serviceError || categoryError) && (
           <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg mb-6">
-            {error}
+            {serviceError || categoryError}
           </div>
         )}
 
@@ -470,10 +541,13 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       </label>
                       <input
                         id="price"
-                        type="number"
-                        min={0}
-                        value={form.price}
-                        onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))}
+                        type="text"
+                        inputMode="decimal"
+                        value={displayPrice}
+                        onChange={handlePriceChange}
+                        onFocus={handlePriceFocus}
+                        onBlur={handlePriceBlur}
+                        placeholder="0"
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                       />
                     </div>
@@ -493,24 +567,73 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t("modal.form.categoriesLabel")}</label>
-                    <div className="border rounded-lg p-4 bg-muted/30">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-                        {categories.map((cat) => (
-                          <label
-                            key={cat.id}
-                            className="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={form.categoryIds.includes(cat.id)}
-                              onChange={() => toggleCategory(cat.id)}
-                              className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                            />
-                            <span className="text-sm">{cat.name}</span>
-                          </label>
-                        ))}
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium leading-none">
+                        {t("modal.form.categoriesLabel")}
+                      </label>
+                      {!showNewCategoryInput && (
+                        <button
+                          type="button"
+                          onClick={() => setShowNewCategoryInput(true)}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Добавить
+                        </button>
+                      )}
+                    </div>
+
+                    {showNewCategoryInput && (
+                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                        <input
+                          type="text"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          placeholder="Название новой категории"
+                          className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateCategory}
+                          disabled={!newCategoryName.trim() || isCreatingCategory}
+                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewCategoryInput(false)}
+                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-background border hover:bg-accent"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
                       </div>
+                    )}
+
+                    <div className="border rounded-lg p-4 bg-muted/30">
+                      {categories.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+                          {categories.map((cat) => (
+                            <label
+                              key={cat.id}
+                              className="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={form.categoryIds.includes(cat.id)}
+                                onChange={() => toggleCategory(cat.id)}
+                                className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              />
+                              <span className="text-sm">{cat.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">
+                          {t("modal.form.noCategories")}
+                        </p>
+                      )}
+                      
                       {selectedCategories.length > 0 && (
                         <div className="pt-3 border-t">
                           <div className="flex flex-wrap gap-2">
@@ -576,10 +699,10 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   </button>
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={serviceLoading || categoryLoading}
                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 flex-1 sm:flex-none"
                   >
-                    {loading ? t("modal.form.savingButton") : (editingService ? t("modal.form.saveButton") : t("modal.form.addButton"))}
+                    {(serviceLoading || categoryLoading) ? t("modal.form.savingButton") : (editingService ? t("modal.form.saveButton") : t("modal.form.addButton"))}
                   </button>
                 </div>
               </form>

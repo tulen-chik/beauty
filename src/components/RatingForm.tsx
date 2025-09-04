@@ -27,6 +27,11 @@ export default function RatingForm({
   const [categories, setCategories] = useState<SalonRatingCategories>({});
   const [showCategories, setShowCategories] = useState(false);
 
+  // ИЗМЕНЕНИЕ: Состояние для хранения ошибок валидации
+  const [errors, setErrors] = useState<{ rating?: string; review?: string }>({});
+  // ИЗМЕНЕНИЕ: Состояние, чтобы отслеживать, пытался ли пользователь отправить форму
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
   const categoryLabels = {
     service: 'Качество услуг',
     cleanliness: 'Чистота',
@@ -35,24 +40,38 @@ export default function RatingForm({
     value: 'Соотношение цена/качество'
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // ИЗМЕНЕНИЕ: Функция валидации, которую можно будет переиспользовать
+  const validateForm = () => {
+    const newErrors: { rating?: string; review?: string } = {};
+
     if (rating === 0) {
-      alert('Пожалуйста, поставьте оценку');
-      return;
+      newErrors.rating = 'Пожалуйста, поставьте общую оценку.';
     }
     if (review.trim().length < 10) {
-      alert('Отзыв должен содержать минимум 10 символов');
-      return;
+      newErrors.review = 'Отзыв должен содержать минимум 10 символов.';
+    }
+    if (review.length > 1000) {
+      newErrors.review = 'Отзыв не должен превышать 1000 символов.';
     }
 
-    const hasCategories = Object.keys(categories).length > 0;
-    onSubmit({
-      rating,
-      review: review.trim(),
-      categories: hasCategories ? categories : undefined,
-      isAnonymous
-    });
+    setErrors(newErrors);
+    // Возвращает true, если ошибок нет
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setHasAttemptedSubmit(true); // Отмечаем, что была попытка отправки
+
+    if (validateForm()) {
+      const hasCategories = Object.keys(categories).length > 0;
+      onSubmit({
+        rating,
+        review: review.trim(),
+        categories: hasCategories ? categories : undefined,
+        isAnonymous
+      });
+    }
   };
 
   const handleCategoryChange = (category: keyof SalonRatingCategories, value: number) => {
@@ -62,7 +81,8 @@ export default function RatingForm({
     }));
   };
 
-  const isFormValid = rating > 0 && review.trim().length >= 10;
+  // Эта переменная все еще полезна для блокировки кнопки
+  const isFormValid = rating > 0 && review.trim().length >= 10 && review.length <= 1000;
 
   return (
     <form onSubmit={handleSubmit} className={`bg-white rounded-lg border border-gray-200 p-6 space-y-6 ${className}`}>
@@ -86,12 +106,22 @@ export default function RatingForm({
         </label>
         <RatingInput
           value={rating}
-          onChange={setRating}
+          onChange={(newRating) => {
+            setRating(newRating);
+            // ИЗМЕНЕНИЕ: Сбрасываем ошибку при изменении поля, если была попытка отправки
+            if (hasAttemptedSubmit) {
+              setErrors(prev => ({ ...prev, rating: undefined }));
+            }
+          }}
           size="lg"
         />
+        {/* ИЗМЕНЕНИЕ: Отображение ошибки для рейтинга */}
+        {hasAttemptedSubmit && errors.rating && (
+          <p className="text-sm text-red-600">{errors.rating}</p>
+        )}
       </div>
 
-      {/* Категориальные оценки */}
+      {/* Категориальные оценки (без изменений) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-gray-700">
@@ -129,20 +159,32 @@ export default function RatingForm({
         </label>
         <textarea
           value={review}
-          onChange={(e) => setReview(e.target.value)}
+          onChange={(e) => {
+            setReview(e.target.value);
+            // ИЗМЕНЕНИЕ: Сбрасываем ошибку при изменении поля, если была попытка отправки
+            if (hasAttemptedSubmit) {
+              setErrors(prev => ({ ...prev, review: undefined }));
+            }
+          }}
           placeholder="Поделитесь своими впечатлениями о салоне..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+          // ИЗМЕНЕНИЕ: Динамические классы для подсветки ошибки
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-colors ${
+            hasAttemptedSubmit && errors.review 
+              ? 'border-red-500 focus:ring-red-500' 
+              : 'border-gray-300 focus:ring-blue-500 focus:border-transparent'
+          }`}
           rows={4}
           maxLength={1000}
           required
         />
-        <div className="flex justify-between text-sm text-gray-500">
-          <span>Минимум 10 символов</span>
+        {/* ИЗМЕНЕНИЕ: Динамический текст-подсказка/ошибка */}
+        <div className={`flex justify-between text-sm ${hasAttemptedSubmit && errors.review ? 'text-red-600' : 'text-gray-500'}`}>
+          <span>{hasAttemptedSubmit && errors.review ? errors.review : 'Минимум 10 символов'}</span>
           <span>{review.length}/1000</span>
         </div>
       </div>
 
-      {/* Анонимность */}
+      {/* Анонимность (без изменений) */}
       <div className="flex items-center">
         <input
           type="checkbox"
@@ -156,7 +198,7 @@ export default function RatingForm({
         </label>
       </div>
 
-      {/* Кнопки */}
+      {/* Кнопки (без изменений) */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
         {onCancel && (
           <button

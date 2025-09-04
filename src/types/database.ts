@@ -111,6 +111,7 @@ export interface ServiceCategory {
   name: string;
   description?: string;
   createdAt: string;
+  salonId: string;
 }
 
 export interface ServiceImage {
@@ -121,20 +122,6 @@ export interface ServiceImage {
   uploadedAt: string;
 }
 
-export interface SalonService {
-  id: string;
-  salonId: string;
-  categoryIds?: string[];
-  name: string;
-  description?: string;
-  price: number;
-  durationMinutes: number;
-  isApp: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  images?: ServiceImage[];
-}
 
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
 
@@ -428,3 +415,93 @@ export type BlogContent =
   | TipBlock
   | InfoBoxBlock
   | ProductRatingBlock;
+
+export interface PromotionPlan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  // Длительность плана в днях
+  durationDays: number;
+  // Уровень приоритета в поиске (чем выше, тем лучше)
+  searchPriority: number;
+  // Дополнительные возможности, включенные в план
+  features: string[];
+  isActive: boolean;
+  createdAt: string;
+}
+
+/**
+ * Представляет подписку салона на определенный план продвижения.
+ */
+export interface SalonSubscription {
+  id: string;
+  salonId: string;
+  planId: string;
+  status: 'active' | 'cancelled' | 'expired' | 'pending_payment';
+  startDate: string;
+  endDate: string;
+  // Дата следующего платежа для возобновления подписки
+  nextPaymentDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Отслеживает продвижение конкретной услуги салона.
+ * Создается, когда салон решает использовать свою активную подписку для продвижения услуги.
+ */
+export interface ServicePromotion {
+  id: string;
+  serviceId: string;
+  salonId: string;
+  // Ссылка на активную подписку салона
+  subscriptionId: string;
+  status: 'active' | 'paused' | 'expired' | 'inactive';
+  // Дата начала и окончания конкретного периода продвижения
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Содержит статистику эффективности продвижения услуги.
+ * Записи могут создаваться ежедневно для отслеживания динамики.
+ */
+export interface PromotionAnalytics {
+  id: string;
+  promotionId: string;
+  // Дата, за которую собрана статистика
+  date: string;
+  // Количество показов в результатах поиска
+  impressions: number;
+  // Количество кликов или переходов на страницу услуги
+  clicks: number;
+  // Средняя позиция в поисковой выдаче за день
+  averageRank: number;
+  // Количество записей на услугу, полученных благодаря продвижению
+  bookingsCount: number;
+}
+
+/**
+ * Опциональное дополнение к интерфейсу SalonService.
+ * Позволяет быстро определить, продвигается ли услуга в данный момент.
+ */
+export interface SalonService {
+  id: string;
+  salonId: string;
+  categoryIds?: string[];
+  name: string;
+  description?: string;
+  price: number;
+  durationMinutes: number;
+  isApp: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  images?: ServiceImage[];
+  // Добавлено поле для отслеживания статуса продвижения
+  promotionStatus?: 'active' | 'paused' | 'inactive';
+}

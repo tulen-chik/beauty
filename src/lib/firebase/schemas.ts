@@ -105,6 +105,7 @@ export const serviceCategorySchema = z.object({
   name: z.string().min(2),
   description: z.string().optional(),
   createdAt: z.string(),
+  salonId: z.string(),
 });
 
 export const salonServiceSchema = z.object({
@@ -280,4 +281,56 @@ export const blogPostSchema = z.object({
     metaDescription: z.string().optional(),
     keywords: z.array(z.string()).optional(),
   }).optional(),
+});
+
+export const promotionPlanSchema = z.object({
+  name: z.string().min(3),
+  description: z.string().min(10),
+  price: z.number().nonnegative(),
+  currency: z.string().length(3),
+  durationDays: z.number().int().positive(),
+  searchPriority: z.number().int().positive(),
+  features: z.array(z.string()),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+});
+
+/**
+ * Схема для подписки салона на план продвижения.
+ */
+export const salonSubscriptionSchema = z.object({
+  salonId: z.string(),
+  planId: z.string(),
+  status: z.enum(['active', 'cancelled', 'expired', 'pending_payment']),
+  startDate: z.string(),
+  endDate: z.string(),
+  nextPaymentDate: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+/**
+ * Схема для отслеживания продвижения конкретной услуги.
+ */
+export const servicePromotionSchema = z.object({
+  serviceId: z.string(),
+  salonId: z.string(),
+  subscriptionId: z.string(),
+  status: z.enum(['active', 'paused', 'expired', 'inactive']),
+  startDate: z.string(),
+  endDate: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+/**
+ * Схема для аналитики эффективности продвижения.
+ */
+export const promotionAnalyticsSchema = z.object({
+  promotionId: z.string(),
+  date: z.string(), // Ожидается формат 'YYYY-MM-DD'
+  impressions: z.number().int().nonnegative(),
+  clicks: z.number().int().nonnegative(),
+  averageRank: z.number().positive(),
+  bookingsCount: z.number().int().nonnegative(),
 });
