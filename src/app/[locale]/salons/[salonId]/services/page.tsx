@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
 import { 
@@ -27,9 +28,10 @@ interface ServiceFormData {
 }
 
 export default function SalonServicesPage({ params }: { params: { salonId: string } }) {
+  const t = useTranslations("SalonServicesPage");
   const { salonId } = params;
   const { getServicesBySalon, createService, loading, error, getImages, uploadImage, deleteImage } = useSalonService();
-  const { getCategoriesBySalon } = useServiceCategory();
+  const { getAllCategories } = useServiceCategory();
   
   const [categories, setCategories] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -72,11 +74,11 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       }
       setImagesMap(map);
       
-      const cats = await getCategoriesBySalon(salonId);
+      const cats = await getAllCategories();
       setCategories(cats || []);
     };
     loadAll();
-  }, [salonId, getServicesBySalon, getImages, getCategoriesBySalon]);
+  }, [salonId, getServicesBySalon, getImages, getAllCategories]);
 
   useEffect(() => {
     if (editingService) {
@@ -110,11 +112,11 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     setFormError(null);
 
     if (!form.name.trim()) {
-      setFormError("Название обязательно");
+      setFormError(t("modal.errors.nameRequired"));
       return;
     }
     if (!form.durationMinutes || form.durationMinutes <= 0) {
-      setFormError("Длительность должна быть больше 0");
+      setFormError(t("modal.errors.durationInvalid"));
       return;
     }
 
@@ -134,21 +136,18 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         updatedAt: new Date().toISOString(),
       });
       
-      // Refresh services
       const svc = await getServicesBySalon(salonId);
       setServices(svc || []);
       
-      // Refresh images if editing
       if (editingService) {
         const imgs = await getImages(editingService.id);
         setImagesMap(prev => ({ ...prev, [editingService.id]: imgs }));
       }
       
-      
       setShowModal(false);
       setEditingService(null);
     } catch (e: any) {
-      setFormError(e?.message ?? "Ошибка при сохранении услуги");
+      setFormError(e?.message ?? t("modal.errors.genericSaveError"));
     }
   };
 
@@ -205,7 +204,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Загрузка услуг...</span>
+          <span>{t("loading")}</span>
         </div>
       </div>
     );
@@ -218,10 +217,10 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              Управление услугами
+              {t("header.title")}
             </h1>
             <p className="text-muted-foreground">
-              Добавляйте и редактируйте услуги вашего салона
+              {t("header.subtitle")}
             </p>
           </div>
           <button
@@ -232,7 +231,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
             className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary h-12 px-6 shadow-medium"
           >
             <Plus className="h-5 w-5 mr-2" />
-            Добавить услугу
+            {t("header.addServiceButton")}
           </button>
         </div>
 
@@ -247,9 +246,9 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center py-12">
             <div className="max-w-md mx-auto p-6">
               <Camera className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Нет услуг</h3>
+              <h3 className="text-xl font-semibold mb-2">{t("emptyState.title")}</h3>
               <p className="text-muted-foreground mb-6">
-                Начните с добавления первой услуги для вашего салона
+                {t("emptyState.description")}
               </p>
               <button
                 onClick={() => {
@@ -259,7 +258,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-white h-10 px-4"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Добавить первую услугу
+                {t("emptyState.addFirstServiceButton")}
               </button>
             </div>
           </div>
@@ -292,7 +291,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       ) : (
                         <div className="text-center text-muted-foreground">
                           <Camera className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm">Нет фото</p>
+                          <p className="text-sm">{t("serviceCard.noPhoto")}</p>
                         </div>
                       )}
                       
@@ -315,12 +314,12 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />
-                              {service.durationMinutes} мин
+                              {service.durationMinutes} {t("serviceCard.minutes")}
                             </div>
                             {service.isApp && (
                               <div className="flex items-center gap-1 text-primary">
                                 <Smartphone className="h-4 w-4" />
-                                <span>Приложение</span>
+                                <span>{t("serviceCard.inApp")}</span>
                               </div>
                             )}
                           </div>
@@ -333,12 +332,12 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                             {service.isActive ? (
                               <>
                                 <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span className="text-success">Активна</span>
+                                <span className="text-success">{t("serviceCard.active")}</span>
                               </>
                             ) : (
                               <>
                                 <XCircle className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">Неактивна</span>
+                                <span className="text-muted-foreground">{t("serviceCard.inactive")}</span>
                               </>
                             )}
                           </div>
@@ -368,7 +367,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       {/* Image Management */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Фотографии</span>
+                          <span className="text-sm font-medium">{t("serviceCard.photosTitle")}</span>
                           <label className="cursor-pointer">
                             <input
                               type="file"
@@ -382,7 +381,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                             />
                             <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer">
                               <Upload className="h-4 w-4 mr-1" />
-                              Добавить
+                              {t("serviceCard.addPhotoButton")}
                             </span>
                           </label>
                         </div>
@@ -430,7 +429,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
             >
               <div className="flex flex-col space-y-1.5 text-center sm:text-left">
                 <h2 className="text-lg font-semibold leading-none tracking-tight">
-                  {editingService ? "Редактировать услугу" : "Добавить услугу"}
+                  {editingService ? t("modal.titleEdit") : t("modal.titleAdd")}
                 </h2>
               </div>
 
@@ -438,27 +437,27 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-2">
                     <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Название услуги *
+                      {t("modal.form.nameLabel")}
                     </label>
                     <input
                       id="name"
                       type="text"
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder="Например: Мужская стрижка"
+                      placeholder={t("modal.form.namePlaceholder")}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Описание
+                      {t("modal.form.descriptionLabel")}
                     </label>
                     <textarea
                       id="description"
                       value={form.description}
                       onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                      placeholder="Краткое описание услуги..."
+                      placeholder={t("modal.form.descriptionPlaceholder")}
                       className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
                       rows={3}
                     />
@@ -467,7 +466,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label htmlFor="price" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Цена (₽) *
+                        {t("modal.form.priceLabel", { currency: "₽" })}
                       </label>
                       <input
                         id="price"
@@ -480,7 +479,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                     </div>
                     <div className="space-y-2">
                       <label htmlFor="duration" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Длительность (мин) *
+                        {t("modal.form.durationLabel")}
                       </label>
                       <input
                         id="duration"
@@ -494,7 +493,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   </div>
 
                   <div className="space-y-3">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Категории</label>
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{t("modal.form.categoriesLabel")}</label>
                     <div className="border rounded-lg p-4 bg-muted/30">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                         {categories.map((cat) => (
@@ -518,8 +517,8 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                             {selectedCategories.map((cat) => (
                               <span key={cat.id} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1">
                                 {cat.name}
-                                <X 
-                                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                                <X
+                                  className="h-3 w-3 cursor-pointer hover:text-destructive"
                                   onClick={() => toggleCategory(cat.id)}
                                 />
                               </span>
@@ -540,7 +539,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                         className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       />
                       <label htmlFor="isActive" className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Услуга активна
+                        {t("modal.form.isActiveLabel")}
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -552,7 +551,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                         className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       />
                       <label htmlFor="isApp" className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        Отображать в приложении
+                        {t("modal.form.isAppLabel")}
                       </label>
                     </div>
                   </div>
@@ -573,20 +572,21 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                     }}
                     className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
                   >
-                    Отмена
+                    {t("modal.form.cancelButton")}
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 flex-1 sm:flex-none"
                   >
-                    {loading ? "Сохранение..." : (editingService ? "Сохранить изменения" : "Добавить услугу")}
+                    {loading ? t("modal.form.savingButton") : (editingService ? t("modal.form.saveButton") : t("modal.form.addButton"))}
                   </button>
                 </div>
               </form>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

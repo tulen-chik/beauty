@@ -815,6 +815,52 @@
 "joined": "Joined: {date}",
 "goToCRM": "Go to CRM",
 "failedToLoadName": "Failed to load name"
-}
+},
+"SalonServicesPage": {
+    "header": {
+      "title": "Service Management",
+      "subtitle": "Add and edit your salon's services",
+      "addServiceButton": "Add Service"
+    },
+    "loading": "Loading services...",
+    "emptyState": {
+      "title": "No Services",
+      "description": "Get started by adding the first service for your salon",
+      "addFirstServiceButton": "Add First Service"
+    },
+    "serviceCard": {
+      "noPhoto": "No photo",
+      "minutes": "min",
+      "inApp": "In-App",
+      "active": "Active",
+      "inactive": "Inactive",
+      "photosTitle": "Photos",
+      "addPhotoButton": "Add"
+    },
+    "modal": {
+      "titleEdit": "Edit Service",
+      "titleAdd": "Add Service",
+      "form": {
+        "nameLabel": "Service Name *",
+        "namePlaceholder": "E.g., Men's Haircut",
+        "descriptionLabel": "Description",
+        "descriptionPlaceholder": "A brief description of the service...",
+        "priceLabel": "Price ({currency}) *",
+        "durationLabel": "Duration (min) *",
+        "categoriesLabel": "Categories",
+        "isActiveLabel": "Service is active",
+        "isAppLabel": "Booking via app",
+        "cancelButton": "Cancel",
+        "saveButton": "Save Changes",
+        "addButton": "Add Service",
+        "savingButton": "Saving..."
+      },
+      "errors": {
+        "nameRequired": "Name is required",
+        "durationInvalid": "Duration must be greater than 0",
+        "genericSaveError": "Error saving the service"
+      }
+    }
+  }
 
 }

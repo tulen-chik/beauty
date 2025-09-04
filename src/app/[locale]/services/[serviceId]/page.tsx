@@ -194,7 +194,7 @@ export default function ServicePublicPage() {
                 <div className="flex flex-wrap items-center gap-4 text-gray-600">
                   <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span className="font-medium">{service.durationMinutes} мин</span></div>
                   {typeof service.price === "number" && (
-                    <div className="font-bold text-rose-600 text-lg">{service.price} ₽</div>
+                    <div className="font-bold text-rose-600 text-lg">{service.price} Br</div>
                   )}
                 </div>
               </div>

@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
-import { 
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import {
   blogAuthorOperations,
   blogCategoryOperations,
-  blogPostOperations
+  blogPostOperations,
+  uploadBlogImage,
+  deleteBlogImage
 } from '@/lib/firebase/database';
 import type { BlogAuthor, BlogCategory, BlogPost } from '@/types/database';
 
@@ -27,6 +30,16 @@ interface BlogAdminContextType {
   createPost: (postId: string, data: Omit<BlogPost, 'id'>) => Promise<BlogPost>;
   updatePost: (postId: string, data: Partial<BlogPost>) => Promise<BlogPost>;
   deletePost: (postId: string) => Promise<void>;
+
+  // Blog Images
+  uploadImage: (postId: string, file: File) => Promise<{
+    id: string;
+    postId: string;
+    url: string;
+    storagePath: string;
+    uploadedAt: string;
+}>;
+  deleteImage: (storagePath: string) => Promise<void>;
 
   // UI state
   loading: boolean;
@@ -60,9 +73,9 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
       setAuthors(a);
       setCategories(c);
       setPosts(p);
-      setLoading(false);
     } catch (e: any) {
       setError(e.message);
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -70,8 +83,9 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
   // Authors
   const createAuthor = useCallback(async (authorId: string, data: Omit<BlogAuthor, 'id'>) => {
     const created = await blogAuthorOperations.create(authorId, data);
-    setAuthors(prev => [{ ...created, id: authorId }, ...prev]);
-    return { ...created, id: authorId } as BlogAuthor;
+    const newAuthor = { ...created, id: authorId } as BlogAuthor;
+    setAuthors(prev => [newAuthor, ...prev]);
+    return newAuthor;
   }, []);
 
   const updateAuthor = useCallback(async (authorId: string, data: Partial<BlogAuthor>) => {
@@ -88,8 +102,9 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
   // Categories
   const createCategory = useCallback(async (categoryId: string, data: Omit<BlogCategory, 'id'>) => {
     const created = await blogCategoryOperations.create(categoryId, data);
-    setCategories(prev => [{ ...created, id: categoryId }, ...prev]);
-    return { ...created, id: categoryId } as BlogCategory;
+    const newCategory = { ...created, id: categoryId } as BlogCategory;
+    setCategories(prev => [newCategory, ...prev]);
+    return newCategory;
   }, []);
 
   const updateCategory = useCallback(async (categoryId: string, data: Partial<BlogCategory>) => {
@@ -106,8 +121,9 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
   // Posts
   const createPost = useCallback(async (postId: string, data: Omit<BlogPost, 'id'>) => {
     const created = await blogPostOperations.create(postId, data);
-    setPosts(prev => [{ ...created, id: postId }, ...prev]);
-    return { ...created, id: postId } as BlogPost;
+    const newPost = { ...created, id: postId } as BlogPost;
+    setPosts(prev => [newPost, ...prev]);
+    return newPost;
   }, []);
 
   const updatePost = useCallback(async (postId: string, data: Partial<BlogPost>) => {
@@ -119,6 +135,32 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
   const deletePost = useCallback(async (postId: string) => {
     await blogPostOperations.delete(postId);
     setPosts(prev => prev.filter(p => p.id !== postId));
+  }, []);
+
+  // Blog Images
+  const uploadImage = useCallback(async (postId: string, file: File) => {
+    setLoading(true);
+    try {
+      const imageData = await uploadBlogImage(postId, file);
+      setLoading(false);
+      return imageData;
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+      throw e;
+    }
+  }, []);
+
+  const deleteImage = useCallback(async (storagePath: string) => {
+    setLoading(true);
+    try {
+      await deleteBlogImage(storagePath);
+      setLoading(false);
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+      throw e;
+    }
   }, []);
 
   const value: BlogAdminContextType = useMemo(() => ({
@@ -135,6 +177,8 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
     createPost,
     updatePost,
     deletePost,
+    uploadImage,
+    deleteImage,
     loading,
     error,
   }), [
@@ -151,6 +195,8 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
     createPost,
     updatePost,
     deletePost,
+    uploadImage,
+    deleteImage,
     loading,
     error,
   ]);

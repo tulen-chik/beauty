@@ -258,7 +258,7 @@ const ServiceCard = React.memo(({ service, locale, salonRating }: { service: Pro
             </div>
           )}
           <div className="flex items-center justify-between">
-            <div className="text-base font-bold text-gray-800">{service.price} ₽</div>
+            <div className="text-base font-bold text-gray-800">{service.price} Br</div>
             <div className="text-sm text-gray-500">{service.durationMinutes} мин</div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
-import { MessageCircle, ArrowLeft, Clock, CheckCircle, User } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Clock, CheckCircle, User, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { Chat } from '@/types/database';
 import { useTranslations } from 'next-intl';
@@ -14,29 +14,44 @@ export default function SalonChatsPage() {
   const salonId = params.salonId as string;
   const { currentUser } = useUser();
   const { getChatsBySalon, loading: ctxLoading, error: ctxError } = useChat();
+  
   const [chats, setChats] = useState<Chat[]>([]);
-  const [localError, setLocalError] = useState<string | null>(null);
+  // Единое состояние для всех ошибок, связанных с загрузкой
+  const [error, setError] = useState<string | null>(null);
   const t = useTranslations('salonChats');
 
   const loadChats = useCallback(async () => {
-    setLocalError(null);
-    if (!salonId) return;
+    // Сбрасываем ошибку перед каждой попыткой загрузки
+    setError(null);
+    if (!salonId) {
+      setError(t('errorNoSalonId')); // Устанавливаем ошибку, если ID салона отсутствует
+      return;
+    }
+
     try {
       const salonChats = await getChatsBySalon(salonId);
+      // Убедимся, что получили массив, прежде чем обновлять состояние
       setChats(Array.isArray(salonChats) ? salonChats : []);
-    } catch (err: any) {
-      console.error('Error loading chats:', err);
-      const msg = err?.message ?? t('errorDescription');
-      setLocalError(msg);
+    } catch (err: unknown) {
+      // Логируем полную ошибку для отладки
+      console.error('Не удалось загрузить чаты:', err);
+      // Показываем пользователю понятное сообщение
+      const msg = err instanceof Error ? err.message : t('errorDescription');
+      setError(msg);
     }
   }, [salonId, getChatsBySalon, t]);
 
   useEffect(() => {
+    // Сначала проверяем ошибку из контекста
+    if (ctxError) {
+      setError(String(ctxError));
+      return;
+    }
+    // Если ошибок нет, загружаем чаты
     loadChats();
-  }, [loadChats]);
+  }, [loadChats, ctxError]);
 
   const isLoading = !!ctxLoading;
-  const error = localError ?? (ctxError ? String(ctxError) : null);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -53,6 +68,7 @@ export default function SalonChatsPage() {
         return date.toLocaleDateString();
       }
     } catch (e) {
+      console.warn("Неверный формат даты:", dateString);
       return '';
     }
   };
@@ -70,9 +86,10 @@ export default function SalonChatsPage() {
 
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-gray-600 mb-4">{t('needLogin')}</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white p-8 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('authRequiredTitle')}</h3>
+          <p className="text-gray-600 mb-4">{t('needLogin')}</p>
           <Link
             href="/login"
             className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
@@ -97,20 +114,21 @@ export default function SalonChatsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 font-semibold mb-2">{t('error')}</div>
-          <div className="text-gray-700 mb-4">{error}</div>
-          <div className="flex gap-2 justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+          <h3 className="text-lg font-semibold text-red-700 mb-2">{t('error')}</h3>
+          <p className="text-gray-700 mb-6">{error}</p>
+          <div className="flex gap-4 justify-center">
             <button
               onClick={loadChats}
-              className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+              className="px-5 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-medium"
             >
               {t('retry')}
             </button>
             <Link
               href={`/salons/${salonId}`}
-              className="px-4 py-2 border rounded-lg text-rose-600 hover:bg-rose-50"
+              className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium"
             >
               {t('backToSalon')}
             </Link>
@@ -134,20 +152,17 @@ export default function SalonChatsPage() {
           </Link>
           
           <div className="bg-white rounded-lg p-4 shadow-sm">
-            <h1 className="text-xl font-bold text-gray-900 mb-2">{t('title')}</h1>
-            {/* <div className="text-sm text-gray-600">
-              {t('subtitle')}
-            </div> */}
+            <h1 className="text-xl font-bold text-gray-900">{t('title')}</h1>
           </div>
         </div>
 
         {/* Chats List */}
         <div className="bg-white rounded-lg shadow-sm">
-          {(!chats || chats.length === 0) ? (
+          {chats.length === 0 ? (
             <div className="p-8 text-center">
               <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('noChatsTitle')}</h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600">
                 {t('noChatsDesc')}
               </p>
             </div>
@@ -176,33 +191,26 @@ export default function SalonChatsPage() {
                         </p>
 
                         {/* Chat metadata tags */}
-                        {chat.appointmentId && (
-                          <span className="inline-block mt-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                            {t('chatByAppointment')}
-                          </span>
-                        )}
-                        {chat.serviceId && (
-                          <span className="inline-block mt-1 ml-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
-                            {t('linkedToService')}
-                          </span>
-                        )}
-
-                        {/* 
-                          Закомментированный блок: здесь мог бы быть UI для загрузки/прикрепления файлов в чате.
-                          Комментарий оставлен намеренно, чтобы убрать все упоминания загрузки файлов.
-                          Пример:
-                          {/*
-                            <div className="mt-2 text-xs text-gray-500">File upload UI (disabled)</div>
-                          *\/}
-                        */}
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {chat.appointmentId && (
+                            <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                              {t('chatByAppointment')}
+                            </span>
+                          )}
+                          {chat.serviceId && (
+                            <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">
+                              {t('linkedToService')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <div className="text-sm text-gray-500 mb-1">
                         {formatDate(chat.lastMessageAt)}
                       </div>
                       {(chat.unreadCount?.salon > 0) && (
-                        <div className="mt-1 w-5 h-5 bg-rose-600 text-white text-xs rounded-full flex items-center justify-center">
+                        <div className="ml-auto w-6 h-6 bg-rose-600 text-white text-xs font-bold rounded-full flex items-center justify-center">
                           {chat.unreadCount.salon}
                         </div>
                       )}

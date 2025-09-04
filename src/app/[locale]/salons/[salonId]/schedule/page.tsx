@@ -16,6 +16,7 @@ import {
   User,
   X,
   MessageCircle,
+  AlertCircle, // Импортируем иконку для ошибок
 } from "lucide-react";
 
 import { useAppointment } from "@/contexts/AppointmentContext";
@@ -114,8 +115,11 @@ export default function SalonSchedulePage() {
   const [users, setUsers] = useState<Record<string, User>>({});
   
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  
+  // Улучшенная обработка ошибок
+  const [error, setError] = useState<string | null>(null); // Для ошибок на уровне страницы
+  const [modalError, setModalError] = useState<string | null>(null); // Для ошибок в модальных окнах
 
   const [currentWeek, setCurrentWeek] = useState(0);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -177,8 +181,9 @@ export default function SalonSchedulePage() {
         }
         setUsers(userData);
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
-        setError(errorMessage);
+        console.error("Ошибка загрузки данных расписания:", err);
+        const errorMessage = err instanceof Error ? err.message : "Произошла неизвестная ошибка";
+        setError(`Не удалось загрузить данные: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
@@ -254,17 +259,21 @@ export default function SalonSchedulePage() {
 
   // --- EVENT HANDLERS ---
   const handleSaveSchedule = async () => {
+    setModalError(null); // Очищаем предыдущие ошибки
     try {
       await updateSchedule(salonId, { salonId, weeks, updatedAt: new Date().toISOString() });
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-      setIsScheduleModalOpen(false);
-    } catch (e) {
-      setError("Failed to save schedule");
+      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setIsScheduleModalOpen(false), 500);
+    } catch (e: unknown) {
+      console.error("Ошибка сохранения расписания:", e);
+      const errorMessage = e instanceof Error ? e.message : "Не удалось сохранить расписание. Пожалуйста, попробуйте еще раз.";
+      setModalError(errorMessage);
     }
   };
 
   const handleStatusChange = async (appointmentId: string, newStatus: Appointment["status"]) => {
+    setModalError(null); // Очищаем предыдущие ошибки
     try {
       await updateAppointment(salonId, appointmentId, { status: newStatus });
       const updatedAppointments = appointments.map((apt) => 
@@ -275,7 +284,9 @@ export default function SalonSchedulePage() {
         setSelectedAppointment(prev => prev ? { ...prev, status: newStatus } : null);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update status");
+      console.error("Ошибка обновления статуса записи:", err);
+      const errorMessage = err instanceof Error ? err.message : "Не удалось обновить статус. Пожалуйста, проверьте ваше соединение и попробуйте снова.";
+      setModalError(errorMessage);
     }
   };
 
@@ -332,8 +343,10 @@ export default function SalonSchedulePage() {
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{t("error")}</div>
+      <div className="text-center py-8 bg-red-50 border border-red-200 rounded-lg">
+        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+        <h3 className="text-lg font-semibold text-red-800">{t("error")}</h3>
+        <p className="text-red-700 mb-4">{error}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
@@ -357,7 +370,7 @@ export default function SalonSchedulePage() {
 
     return (
       <button
-        onClick={() => setSelectedAppointment(appointment)}
+        onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
         style={{ 
           top: `${top}px`, 
           height: `calc(${height}px - 2px)` // Subtract 2px for top/bottom borders
@@ -381,7 +394,7 @@ export default function SalonSchedulePage() {
     return (
       <div className="w-full text-left p-3 rounded-lg border bg-white">
         <button 
-          onClick={() => setSelectedAppointment(appointment)} 
+          onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
           className={`w-full text-left ${getStatusColor(appointment.status)}`}
         >
           <div className="flex justify-between items-start">
@@ -465,6 +478,12 @@ export default function SalonSchedulePage() {
             </button>
           </div>
           <div className="p-6 space-y-4">
+            {modalError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span>{modalError}</span>
+              </div>
+            )}
             <div className="space-y-3 text-gray-700">
                 <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-gray-400"/>
@@ -551,7 +570,7 @@ export default function SalonSchedulePage() {
               </div>
             )}
           <button
-            onClick={() => setIsScheduleModalOpen(true)}
+            onClick={() => { setIsScheduleModalOpen(true); setModalError(null); }}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
@@ -686,6 +705,12 @@ export default function SalonSchedulePage() {
                 </button>
               </div>
               <div className="p-6 overflow-y-auto">
+                {modalError && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-center gap-2 mb-4">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <span>{modalError}</span>
+                  </div>
+                )}
                 <div className="space-y-6">
                   {weeks[currentWeek]?.map((d, i) => {
                     const safeDay = {

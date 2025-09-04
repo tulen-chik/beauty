@@ -338,3 +338,93 @@ export interface BlogPost {
   status: BlogPostStatus;
   seo?: BlogPostSEO;
 }
+
+export type BlockColor = 
+  | 'gray' 
+  | 'rose' 
+  | 'pink' 
+  | 'purple' 
+  | 'indigo' 
+  | 'blue' 
+  | 'green' 
+  | 'yellow';
+
+// --- Определения для каждого типа контентного блока ---
+
+/**
+ * Блок для обычного текстового абзаца.
+ */
+export interface ParagraphBlock {
+  type: 'paragraph';
+  content: string;
+}
+
+/**
+ * Блок для заголовков разных уровней (H2, H3, H4).
+ */
+export interface HeadingBlock {
+  type: 'heading';
+  level: 2 | 3 | 4;
+  content: string;
+}
+
+/**
+ * Блок для маркированного списка.
+ */
+export interface ListBlock {
+  type: 'list';
+  items: string[];
+}
+
+/**
+ * Блок для пошаговых инструкций.
+ */
+export interface StepsBlock {
+  type: 'steps';
+  steps: string[];
+}
+
+/**
+ * Блок для выделения советов или важных заметок.
+ */
+export interface TipBlock {
+  type: 'tip';
+  title: string;
+  content: string;
+  color: BlockColor;
+}
+
+/**
+ * Информационный блок с заголовком и списком пунктов.
+ */
+export interface InfoBoxBlock {
+  type: 'infoBox';
+  title: string;
+  items: string[];
+  color: BlockColor;
+}
+
+/**
+ * Блок для обзора продукта с рейтингом.
+ */
+export interface ProductRatingBlock {
+  type: 'productRating';
+  name: string;
+  rating: string; // Например, "9/10"
+  description: string;
+  color: BlockColor;
+}
+
+/**
+ * Дискриминированное объединение (discriminated union) для всех возможных типов контентных блоков.
+ * Свойство `type` служит дискриминантом, позволяя TypeScript точно определять
+ * структуру объекта внутри условных конструкций (например, switch-case).
+ */
+export type BlogContent =
+  | ParagraphBlock
+  | HeadingBlock
+  | ListBlock
+  | StepsBlock
+  | TipBlock
+  | InfoBoxBlock
+  | ProductRatingBlock;

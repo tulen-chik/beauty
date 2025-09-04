@@ -7,7 +7,6 @@ import { useSalonRating } from '@/contexts';
 import { useUser } from '@/contexts';
 import RatingStats from '@/components/RatingStats';
 import RatingCard from '@/components/RatingCard';
-import RatingForm from '@/components/RatingForm';
 import type { SalonRating } from '@/types/database';
 
 export default function SalonRatingsPage() {
@@ -23,13 +22,11 @@ export default function SalonRatingsPage() {
     createRating,
     ratings,
     ratingStats,
-    loading,
-    error 
+    loading
   } = useSalonRating();
   
   const { currentUser } = useUser();
   
-  const [showRatingForm, setShowRatingForm] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [selectedRating, setSelectedRating] = useState<string | null>(null);
   const [responses, setResponses] = useState<Record<string, any[]>>({});
@@ -57,36 +54,6 @@ export default function SalonRatingsPage() {
     await getRatingStats(salonId);
   };
 
-  const handleCreateRating = async (data: {
-    rating: number;
-    review: string;
-    categories?: any;
-    isAnonymous: boolean;
-  }) => {
-    if (!currentUser) return;
-
-    try {
-      const ratingId = `rating_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await createRating(
-        ratingId,
-        salonId,
-        currentUser.userId,
-        currentUser.displayName,
-        data.rating,
-        data.review,
-        data.categories,
-        undefined, // appointmentId
-        undefined, // serviceId
-        data.isAnonymous
-      );
-      
-      setShowRatingForm(false);
-      await loadRatings();
-      await loadStats();
-    } catch (error) {
-      console.error('Ошибка при создании отзыва:', error);
-    }
-  };
 
   const handleApproveRating = async (ratingId: string) => {
     try {
@@ -151,18 +118,9 @@ export default function SalonRatingsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Заголовок */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Отзывы о салоне</h1>
-            <p className="text-gray-600 mt-2">Управление отзывами и рейтингами</p>
-          </div>
-          <button
-            onClick={() => setShowRatingForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Star className="w-4 h-4" />
-            Оставить отзыв
-          </button>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Отзывы о салоне</h1>
+          <p className="text-gray-600 mt-2">Управление отзывами и рейтингами</p>
         </div>
 
         {/* Статистика */}
@@ -224,20 +182,6 @@ export default function SalonRatingsPage() {
             ))
           )}
         </div>
-
-        {/* Модальное окно создания отзыва */}
-        {showRatingForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <RatingForm
-                onSubmit={handleCreateRating}
-                onCancel={() => setShowRatingForm(false)}
-                loading={loading}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Панель модерации */}
         {selectedRating && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

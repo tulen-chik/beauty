@@ -915,6 +915,51 @@
       "joined": "Присоединились: {date}",
       "goToCRM": "Перейти в CRM",
       "failedToLoadName": "Не удалось загрузить название"
+    },
+    "SalonServicesPage": {
+      "header": {
+        "title": "Управление услугами",
+        "subtitle": "Добавляйте и редактируйте услуги вашего салона",
+        "addServiceButton": "Добавить услугу"
+      },
+      "loading": "Загрузка услуг...",
+      "emptyState": {
+        "title": "Нет услуг",
+        "description": "Начните с добавления первой услуги для вашего салона",
+        "addFirstServiceButton": "Добавить первую услугу"
+      },
+      "serviceCard": {
+        "noPhoto": "Нет фото",
+        "minutes": "мин",
+        "inApp": "Приложение",
+        "active": "Активна",
+        "inactive": "Неактивна",
+        "photosTitle": "Фотографии",
+        "addPhotoButton": "Добавить"
+      },
+      "modal": {
+        "titleEdit": "Редактировать услугу",
+        "titleAdd": "Добавить услугу",
+        "form": {
+          "nameLabel": "Название услуги *",
+          "namePlaceholder": "Например: Мужская стрижка",
+          "descriptionLabel": "Описание",
+          "descriptionPlaceholder": "Краткое описание услуги...",
+          "priceLabel": "Цена ({currency}) *",
+          "durationLabel": "Длительность (мин) *",
+          "categoriesLabel": "Категории",
+          "isActiveLabel": "Услуга активна",
+          "isAppLabel": "Запись через приложение",
+          "cancelButton": "Отмена",
+          "saveButton": "Сохранить изменения",
+          "addButton": "Добавить услугу",
+          "savingButton": "Сохранение..."
+        },
+        "errors": {
+          "nameRequired": "Название обязательно",
+          "durationInvalid": "Длительность должна быть больше 0",
+          "genericSaveError": "Ошибка при сохранении услуги"
+        }
+      }
     }
-  
 }

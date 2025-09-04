@@ -8,6 +8,7 @@ interface ServiceCategoryContextType {
   updateCategory: (categoryId: string, data: Partial<ServiceCategory>) => Promise<ServiceCategory>;
   deleteCategory: (categoryId: string) => Promise<void>;
   getCategoriesBySalon: (salonId: string) => Promise<ServiceCategory[]>;
+  getAllCategories: () => Promise<ServiceCategory[]>;
   loading: boolean;
   error: string | null;
 }
@@ -97,12 +98,30 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     }
   }, []);
 
+  // Получить все категории без фильтрации
+  const getAllCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const all = await getAllServiceCategories();
+      const result = Object.entries(all)
+        .map(([id, data]) => ({ ...(data as any), id }));
+      setLoading(false);
+      return result;
+    } catch (e: any) {
+      setError(e.message);
+      setLoading(false);
+      return [];
+    }
+  }, []);
+
   const value: ServiceCategoryContextType = useMemo(() => ({
     getCategory,
     createCategory,
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
+    getAllCategories,
     loading,
     error,
   }), [
@@ -111,6 +130,7 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
+    getAllCategories,
     loading,
     error,
   ]);
