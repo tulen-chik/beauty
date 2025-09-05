@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSalon } from "@/contexts/SalonContext";
 import type { SalonMember, SalonRole } from "@/types/database";
 import { useSalonInvitation } from "@/contexts/SalonInvitationContext";
+import { useTranslations } from "next-intl";
 
 const ROLES: { value: SalonRole; label: string }[] = [
   { value: "owner", label: "Владелец" },

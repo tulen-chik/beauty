@@ -23,10 +23,11 @@ export default function SalonCrmLayout({
     // { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
     { key: "services", label: t('menu.services'), path: "/services" },
     { key: "schedule", label: t('menu.schedule'), path: "/schedule" },
-    { key: "chats", label: "Чаты", path: "/chats" },
-    { key: "ratings", label: "Отзывы", path: "/ratings" },
+    { key: "chats", label: t('menu.chats'), path: "/chats" },
+    { key: "ratings", label: t('menu.ratings'), path: "/ratings" },
     // { key: "staff", label: t('menu.staff'), path: "/staff" },
     { key: "settings", label: t('menu.settings'), path: "/settings" },
+    { key: "promotion", label: t('menu.promotion'), path: "/promotion" },
   ];
 
   const handleMenuClick = (path: string) => {
@@ -49,7 +50,7 @@ export default function SalonCrmLayout({
               </button>
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-rose-600" />
-                <span className="font-semibold text-gray-900">Салон</span>
+                <span className="font-semibold text-gray-900">{t('menu.salon')}</span>
               </div>
             </div>
           </div>
@@ -63,7 +64,7 @@ export default function SalonCrmLayout({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-rose-600" />
-                    <span className="font-semibold text-gray-900">Меню</span>
+                    <span className="font-semibold text-gray-900">{t('menu.title')}</span>
                   </div>
                   <button
                     onClick={() => setMobileMenuOpen(false)}

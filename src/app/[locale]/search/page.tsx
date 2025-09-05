@@ -2,13 +2,16 @@
 
 import React from "react"
 import { useEffect, useMemo, useState, useRef, useCallback } from "react"
-import { Search, MapPin, Scissors, Map as MapIcon, X, ChevronDown, Globe, Store, List } from "lucide-react"
+import { Search, MapPin, Scissors, Map as MapIcon, X, ChevronDown, Globe, Store, List, Star, Filter, Tag } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useParams } from "next/navigation"
 import { getAllSalons, getAllSalonServices, getServiceImages } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
 import { useSalonRating } from "@/contexts"
+import { usePromotion } from "@/contexts/PromotionContext"
+import { useServiceCategory } from "@/contexts/ServiceCategoryContext"
+import { useSalonService } from "@/contexts/SalonServiceContext"
 import RatingDisplay from "@/components/RatingDisplay"
 
 // --- ТИПЫ ДАННЫХ ---
@@ -33,6 +36,10 @@ type AnyService = {
 type ProcessedService = AnyService & {
   salon: { id: string; name: string; address: string } | null
   imageUrl: string
+  isPromoted?: boolean
+  promotionEndDate?: string
+  categoryName?: string
+  categoryId?: string
 }
 
 // --- КОНСТАНТЫ ---
@@ -239,13 +246,25 @@ const ServiceCard = React.memo(({ service, locale, salonRating }: { service: Pro
   const formatAddress = (fullAddress: string) => { if (!fullAddress) return ""; return fullAddress.split(",").slice(0, 2).join(",").trim() };
 
   return (
-    <div className="border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group">
+    <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-400' : ''}`}>
+      {/* {service.isPromoted && (
+        <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+          <Star className="w-3 h-3 fill-current" />
+          Продвигается
+        </div>
+      )} */}
       <div className="flex items-start gap-4">
         <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
           <Image src={service.imageUrl || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <Link href={`/${locale}/services/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
+          {service.categoryName && (
+            <div className="flex items-center gap-1 mb-1">
+              <Tag className="w-3 h-3 text-gray-400" />
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{service.categoryName}</span>
+            </div>
+          )}
           {service.salon && (
             <div className="mb-2">
               <p className="text-sm text-gray-600">{service.salon.name}・{formatAddress(service.salon.address)}</p>
@@ -275,11 +294,17 @@ export default function SearchPage() {
   const locale = useParams().locale as string;
 
   const { getRatingStats } = useSalonRating();
+  const { findServicePromotionsBySalon, findActiveServicePromotion } = usePromotion();
+  const { getAllCategories } = useServiceCategory();
 
   const [loading, setLoading] = useState(true);
   const [processedServices, setProcessedServices] = useState<ProcessedService[]>([]);
   const [allSalons, setAllSalons] = useState<AnySalon[]>([]);
   const [salonRatings, setSalonRatings] = useState<Record<string, any>>({});
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'relevance' | 'price' | 'duration' | 'promoted'>('promoted');
+  const [showFilters, setShowFilters] = useState(false);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -293,51 +318,129 @@ export default function SearchPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      const [rawSalons, rawServices] = await Promise.all([getAllSalons(), getAllSalonServices()]);
-      const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }));
-      const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }));
-      const salonsById = Object.fromEntries(salonsList.map(s => [s.id, s]));
-      
-      const servicesWithDetails = await Promise.all(
-        servicesList.map(async (service) => {
-          const salon = salonsById[service.salonId];
-          let imageUrl = "";
+      try {
+        const [rawSalons, rawServices, categoriesData] = await Promise.all([
+          getAllSalons(), 
+          getAllSalonServices(),
+          getAllCategories()
+        ]);
+        
+        const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }));
+        const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }));
+        const salonsById = Object.fromEntries(salonsList.map(s => [s.id, s]));
+        const categoriesById = Object.fromEntries(categoriesData.map(c => [c.id, c]));
+        
+        const servicesWithDetails = await Promise.all(
+          servicesList.map(async (service: any) => {
+            const salon = salonsById[service.salonId];
+            const category = categoriesById[service.categoryId];
+            let imageUrl = "";
+            let isPromoted = false;
+            let promotionEndDate = "";
+            
+            try {
+              const imgs = await getServiceImages(service.id);
+              if (imgs && imgs.length > 0) imageUrl = imgs[0].url;
+            } catch (e) { console.warn(`Failed to load images for service ${service.id}`, e) }
+            
+            try {
+              const promotion = await findActiveServicePromotion(service.id);
+              if (promotion && promotion.status === 'active') {
+                isPromoted = true;
+                promotionEndDate = promotion.endDate;
+              }
+            } catch (e) { console.warn(`Failed to load promotion for service ${service.id}`, e) }
+            
+            return { 
+              ...service, 
+              salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, 
+              imageUrl,
+              isPromoted,
+              promotionEndDate,
+              categoryName: category?.name || '',
+              categoryId: service.categoryId
+            };
+          })
+        );
+        
+        setAllSalons(salonsList);
+        setProcessedServices(servicesWithDetails);
+        setCategories(categoriesData);
+        
+        // Загружаем рейтинги для всех салонов
+        const ratingsData: Record<string, any> = {};
+        for (const salon of salonsList) {
           try {
-            const imgs = await getServiceImages(service.id);
-            if (imgs && imgs.length > 0) imageUrl = imgs[0].url;
-          } catch (e) { console.warn(`Failed to load images for service ${service.id}`, e) }
-          return { ...service, salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, imageUrl };
-        })
-      );
-      
-      setAllSalons(salonsList);
-      setProcessedServices(servicesWithDetails);
-      
-      // Загружаем рейтинги для всех салонов
-      const ratingsData: Record<string, any> = {};
-      for (const salon of salonsList) {
-        try {
-          const stats = await getRatingStats(salon.id);
-          ratingsData[salon.id] = stats;
-        } catch (error) {
-          console.warn(`Failed to load ratings for salon ${salon.id}`, error);
+            const stats = await getRatingStats(salon.id);
+            ratingsData[salon.id] = stats;
+          } catch (error) {
+            console.warn(`Failed to load ratings for salon ${salon.id}`, error);
+          }
         }
+        setSalonRatings(ratingsData);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
       }
-      setSalonRatings(ratingsData);
-      setLoading(false);
     };
     loadData();
-  }, []);
+  }, [getRatingStats, findActiveServicePromotion, getAllCategories]);
 
   const filteredServices = useMemo(() => {
     let filtered = processedServices;
     const qLower = debouncedQuery.trim().toLowerCase();
-    if (qLower) filtered = filtered.filter(s => s.name.toLowerCase().includes(qLower) || s.description?.toLowerCase().includes(qLower));
-    if (currentCity) filtered = filtered.filter(s => s.salon?.address.toLowerCase().includes(currentCity.toLowerCase()));
-    if (selectedSalonId) filtered = filtered.filter(s => s.salon?.id === selectedSalonId);
-    filtered = filtered.filter(s => s.isActive)
+    
+    // Фильтрация по поисковому запросу
+    if (qLower) {
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(qLower) || 
+        s.description?.toLowerCase().includes(qLower) ||
+        s.categoryName?.toLowerCase().includes(qLower)
+      );
+    }
+    
+    // Фильтрация по городу
+    if (currentCity) {
+      filtered = filtered.filter(s => s.salon?.address.toLowerCase().includes(currentCity.toLowerCase()));
+    }
+    
+    // Фильтрация по салону
+    if (selectedSalonId) {
+      filtered = filtered.filter(s => s.salon?.id === selectedSalonId);
+    }
+    
+    // Фильтрация по категории
+    if (selectedCategory) {
+      filtered = filtered.filter(s => s.categoryId === selectedCategory);
+    }
+    
+    // Только активные услуги
+    filtered = filtered.filter(s => s.isActive);
+    
+    // Сортировка с приоритизацией продвигаемых услуг
+    filtered.sort((a, b) => {
+      // Сначала продвигаемые услуги
+      if (a.isPromoted && !b.isPromoted) return -1;
+      if (!a.isPromoted && b.isPromoted) return 1;
+      
+      // Затем по выбранному критерию сортировки
+      switch (sortBy) {
+        case 'promoted':
+          return 0; // Уже отсортировано по продвижению выше
+        case 'price':
+          return a.price - b.price;
+        case 'duration':
+          return a.durationMinutes - b.durationMinutes;
+        case 'relevance':
+        default:
+          // Сортировка по релевантности (по названию)
+          return a.name.localeCompare(b.name);
+      }
+    });
+    
     return filtered;
-  }, [processedServices, debouncedQuery, currentCity, selectedSalonId]);
+  }, [processedServices, debouncedQuery, currentCity, selectedSalonId, selectedCategory, sortBy]);
 
   const salonsForMap = useMemo(() => {
     if (!currentCity) return allSalons;
@@ -368,7 +471,14 @@ export default function SearchPage() {
 
   const handleCityChange = useCallback((city: string) => { setManualCity(city); setSelectedSalonId(null); }, []);
   const handleSalonClick = useCallback((salonId: string) => { setSelectedSalonId(salonId); setMobileView('list'); }, []);
-  const clearAllFilters = useCallback(() => { setManualCity(null); setSelectedSalonId(null); setSearchQuery(""); }, []);
+  const clearAllFilters = useCallback(() => { 
+    setManualCity(null); 
+    setSelectedSalonId(null); 
+    setSearchQuery(""); 
+    setSelectedCategory(null);
+    setSortBy('promoted');
+    setShowFilters(false);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
@@ -379,16 +489,116 @@ export default function SearchPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" />
           </div>
-          <div className="mt-3">
+          <div className="mt-3 flex gap-2">
             <CitySelector currentCity={currentCity} onCityChange={handleCityChange} locale={locale} />
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-3 border rounded-xl text-sm font-medium transition-all duration-200 shadow-sm ${
+                showFilters || selectedCategory
+                  ? 'bg-rose-50 border-rose-200 text-rose-700'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400'
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              {t('filters')}
+              {selectedCategory && (
+                <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full text-xs">
+                  1
+                </span>
+              )}
+            </button>
           </div>
+          
+          {/* Панель фильтров */}
+          {showFilters && (
+            <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="space-y-3">
+                {/* Фильтр по категориям */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('category')}
+                  </label>
+                  <select
+                    value={selectedCategory || ''}
+                    onChange={(e) => setSelectedCategory(e.target.value || null)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  >
+                    <option value="">{t('allCategories')}</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {/* Сортировка */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('sortBy')}
+                  </label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  >
+                    <option value="promoted">{t('promoted')}</option>
+                    <option value="relevance">{t('relevance')}</option>
+                    <option value="price">{t('priceAsc')}</option>
+                    <option value="duration">{t('durationAsc')}</option>
+                  </select>
+                </div>
+                
+                {/* Кнопка очистки фильтров */}
+                {(selectedCategory || sortBy !== 'promoted') && (
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(null);
+                      setSortBy('promoted');
+                    }}
+                    className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    {t('clearFilters')}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         
-        {selectedSalonId && (
-          <div className="p-3 bg-rose-50 border-b border-rose-200 flex items-center gap-2 text-sm">
-            <Store className="w-4 h-4 text-rose-600 flex-shrink-0" />
-            <span className="font-medium flex-1 text-rose-800">{t("showingSalonServices", { salonName: allSalons.find(s => s.id === selectedSalonId)?.name || '' })}</span>
-            <button onClick={() => setSelectedSalonId(null)} className="p-1 hover:bg-rose-100 rounded-full" title={t("clearSalonFilter")}><X className="w-4 h-4 text-rose-600" /></button>
+        {/* Активные фильтры */}
+        {(selectedSalonId || selectedCategory) && (
+          <div className="p-3 bg-rose-50 border-b border-rose-200">
+            <div className="flex flex-wrap gap-2">
+              {selectedSalonId && (
+                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm border border-rose-200">
+                  <Store className="w-3 h-3 text-rose-600" />
+                  <span className="text-rose-800 font-medium">
+                    {allSalons.find(s => s.id === selectedSalonId)?.name || ''}
+                  </span>
+                  <button 
+                    onClick={() => setSelectedSalonId(null)} 
+                    className="p-0.5 hover:bg-rose-100 rounded-full"
+                  >
+                    <X className="w-3 h-3 text-rose-600" />
+                  </button>
+                </div>
+              )}
+              {selectedCategory && (
+                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm border border-rose-200">
+                  <Tag className="w-3 h-3 text-rose-600" />
+                  <span className="text-rose-800 font-medium">
+                    {categories.find(c => c.id === selectedCategory)?.name || ''}
+                  </span>
+                  <button 
+                    onClick={() => setSelectedCategory(null)} 
+                    className="p-0.5 hover:bg-rose-100 rounded-full"
+                  >
+                    <X className="w-3 h-3 text-rose-600" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -402,14 +612,26 @@ export default function SearchPage() {
                 <p className="text-sm mt-1">{currentCity ? t("noServicesInCityMessage", { city: currentCity }) : ""}</p>
               </div>
             ) : (
-              <div>{filteredServices.map((service) => (
-                <ServiceCard 
-                  key={service.id} 
-                  service={service} 
-                  locale={locale} 
-                  salonRating={service.salon ? salonRatings[service.salon.id] : undefined}
-                />
-              ))}</div>
+              <div>
+                {/* Показываем количество результатов */}
+                <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-sm text-gray-600">
+                  {t('resultsCount', { count: filteredServices.length })}
+                  {sortBy === 'promoted' && filteredServices.some(s => s.isPromoted) && (
+                    <span className="ml-2 text-yellow-600 font-medium">
+                      • {t('promotedFirst')}
+                    </span>
+                  )}
+                </div>
+                
+                {filteredServices.map((service) => (
+                  <ServiceCard 
+                    key={service.id} 
+                    service={service} 
+                    locale={locale} 
+                    salonRating={service.salon ? salonRatings[service.salon.id] : undefined}
+                  />
+                ))}
+              </div>
             )
           )}
         </div>

@@ -283,54 +283,59 @@ export const blogPostSchema = z.object({
   }).optional(),
 });
 
-export const promotionPlanSchema = z.object({
-  name: z.string().min(3),
-  description: z.string().min(10),
-  price: z.number().nonnegative(),
-  currency: z.string().length(3),
-  durationDays: z.number().int().positive(),
-  searchPriority: z.number().int().positive(),
+export const servicePromotionPlanSchema = z.object({
+  name: z.string().min(3, "Название должно содержать минимум 3 символа"),
+  description: z.string().min(10, "Описание должно содержать минимум 10 символов"),
+  price: z.number().nonnegative("Цена не может быть отрицательной"),
+  currency: z.string().length(3, "Код валюты должен состоять из 3 символов"),
+  durationDays: z.number().int().positive("Длительность должна быть положительным целым числом"),
+  searchPriority: z.number().int().positive("Приоритет должен быть положительным целым числом"),
   features: z.array(z.string()),
   isActive: z.boolean(),
-  createdAt: z.string(),
+  createdAt: z.string().datetime("Неверный формат даты создания"),
 });
 
 /**
- * Схема для подписки салона на план продвижения.
+ * Схема salonSubscriptionSchema была УДАЛЕНА,
+ * так как соответствующий тип данных больше не используется.
  */
-export const salonSubscriptionSchema = z.object({
-  salonId: z.string(),
-  planId: z.string(),
-  status: z.enum(['active', 'cancelled', 'expired', 'pending_payment']),
-  startDate: z.string(),
-  endDate: z.string(),
-  nextPaymentDate: z.string().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
 
 /**
- * Схема для отслеживания продвижения конкретной услуги.
+ * Схема для отслеживания покупки и статуса продвижения конкретной услуги.
+ * Эта схема объединяет в себе логику старых salonSubscriptionSchema и servicePromotionSchema.
  */
 export const servicePromotionSchema = z.object({
-  serviceId: z.string(),
-  salonId: z.string(),
-  subscriptionId: z.string(),
-  status: z.enum(['active', 'paused', 'expired', 'inactive']),
-  startDate: z.string(),
-  endDate: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  // ID услуги, которая продвигается
+  serviceId: z.string().min(1, "ID услуги обязателен"),
+  // ID салона, которому принадлежит услуга
+  salonId: z.string().min(1, "ID салона обязателен"),
+  // ID купленного плана продвижения
+  planId: z.string().min(1, "ID плана обязателен"),
+  // Статус конкретно этого продвижения
+  status: z.enum(['active', 'cancelled', 'expired', 'pending_payment', 'paused']),
+  // Даты начала и окончания периода продвижения
+  startDate: z.string().datetime("Неверный формат даты начала"),
+  endDate: z.string().datetime("Неверный формат даты окончания"),
+  // Дата следующего платежа (опционально)
+  nextPaymentDate: z.string().datetime("Неверный формат даты следующего платежа").optional(),
+  createdAt: z.string().datetime("Неверный формат даты создания"),
+  updatedAt: z.string().datetime("Неверный формат даты обновления"),
 });
 
 /**
- * Схема для аналитики эффективности продвижения.
+ * Схема для аналитики эффективности продвижения услуги.
  */
 export const promotionAnalyticsSchema = z.object({
-  promotionId: z.string(),
-  date: z.string(), // Ожидается формат 'YYYY-MM-DD'
-  impressions: z.number().int().nonnegative(),
-  clicks: z.number().int().nonnegative(),
-  averageRank: z.number().positive(),
-  bookingsCount: z.number().int().nonnegative(),
+  // Ссылка на конкретное продвижение услуги
+  servicePromotionId: z.string().min(1, "ID продвижения услуги обязателен"),
+  // Дата, за которую собрана статистика
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Дата должна быть в формате YYYY-MM-DD"),
+  // Количество показов
+  impressions: z.number().int().nonnegative("Количество показов не может быть отрицательным"),
+  // Количество кликов
+  clicks: z.number().int().nonnegative("Количество кликов не может быть отрицательным"),
+  // Средняя позиция
+  averageRank: z.number().positive("Средний ранг должен быть положительным числом"),
+  // Количество записей
+  bookingsCount: z.number().int().nonnegative("Количество записей не может быть отрицательным"),
 });

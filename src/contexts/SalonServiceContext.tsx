@@ -13,10 +13,6 @@ import {
   uploadServiceImage, 
   deleteServiceImage, 
   getServiceImages,
-  // Добавляем прямые импорты для операций с подписками и продвижением
-  salonSubscriptionOperations,
-  servicePromotionOperations,
-  promotionAnalyticsOperations,
 } from '@/lib/firebase/database';
 import type { 
   SalonService, 
@@ -41,12 +37,6 @@ interface SalonServiceContextType {
   uploadImage: (serviceId: string, file: File) => Promise<ServiceImage>;
   deleteImage: (storagePath: string) => Promise<void>;
   getImages: (serviceId: string) => Promise<ServiceImage[]>;
-
-  // --- Методы для управления продвижением услуги ---
-  promoteService: (salonId: string, serviceId: string) => Promise<ServicePromotion | null>;
-  pauseServicePromotion: (promotionId: string, serviceId: string) => Promise<ServicePromotion | null>;
-  getPromotedServices: (salonId: string) => Promise<ServicePromotion[]>;
-  getPromotionAnalytics: (promotionId: string) => Promise<PromotionAnalytics[] | null>;
 
   // --- Состояния контекста ---
   loading: boolean;
@@ -187,85 +177,7 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // --- Новые методы, реализованные независимо ---
-
-  const promoteService = useCallback(async (salonId: string, serviceId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Напрямую запрашиваем активную подписку салона из базы данных.
-      const activeSubscription = await salonSubscriptionOperations.findBySalonId(salonId);
-      if (!activeSubscription || activeSubscription.status !== 'active') {
-        throw new Error('Для продвижения услуги требуется активная подписка.');
-      }
-
-      // 2. Создаем запись о продвижении.
-      const now = new Date().toISOString();
-      const newPromotionData: Omit<ServicePromotion, 'id'> = {
-        salonId, serviceId, subscriptionId: activeSubscription.id, status: 'active',
-        startDate: now, endDate: activeSubscription.endDate, createdAt: now, updatedAt: now,
-      };
-      const promotionId = `promo_${Date.now()}`;
-      const newPromotion = await servicePromotionOperations.create(promotionId, newPromotionData);
-
-      // 3. Обновляем статус самой услуги.
-      await salonServiceOperations.update(serviceId, { promotionStatus: 'active' });
-      
-      setLoading(false);
-      return { ...newPromotion, id: promotionId };
-    } catch (e: any) {
-      setError(e.message);
-      setLoading(false);
-      return null;
-    }
-  }, []);
-
-  const pauseServicePromotion = useCallback(async (promotionId: string, serviceId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Обновляем статус продвижения.
-      const promotion = await servicePromotionOperations.update(promotionId, { status: 'paused' });
-
-      // 2. Обновляем статус услуги.
-      await salonServiceOperations.update(serviceId, { promotionStatus: 'paused' });
-
-      setLoading(false);
-      return promotion;
-    } catch (e: any) {
-      setError(e.message);
-      setLoading(false);
-      return null;
-    }
-  }, []);
-
-  const getPromotedServices = useCallback(async (salonId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const services = await servicePromotionOperations.findBySalonId(salonId);
-      setLoading(false);
-      return services;
-    } catch (e: any) {
-      setError(e.message);
-      setLoading(false);
-      return [];
-    }
-  }, []);
-
-  const getPromotionAnalytics = useCallback(async (promotionId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const analytics = await promotionAnalyticsOperations.findByPromotionId(promotionId);
-      setLoading(false);
-      return analytics;
-    } catch (e: any) {
-      setError(e.message);
-      setLoading(false);
-      return null;
-    }
-  }, []);
+  
 
   // --- Сборка значения контекста ---
 
@@ -280,10 +192,6 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     getImages,
     loading,
     error,
-    promoteService,
-    pauseServicePromotion,
-    getPromotedServices,
-    getPromotionAnalytics,
   }), [
     getService,
     createService,
@@ -295,10 +203,6 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     getImages,
     loading,
     error,
-    promoteService,
-    pauseServicePromotion,
-    getPromotedServices,
-    getPromotionAnalytics,
   ]);
 
   return (

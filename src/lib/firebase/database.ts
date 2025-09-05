@@ -19,11 +19,9 @@ import {
   blogAuthorSchema, 
   blogCategorySchema, 
   blogPostSchema,
-  // Добавляем импорты для новых схем
-  promotionPlanSchema,
-  salonSubscriptionSchema,
+  servicePromotionPlanSchema,
   servicePromotionSchema,
-  promotionAnalyticsSchema,
+  promotionAnalyticsSchema
 } from './schemas';
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll } from 'firebase/storage';
 
@@ -49,9 +47,7 @@ import type {
   BlogAuthor, 
   BlogCategory, 
   BlogPost,
-  // Добавляем импорты для новых типов
-  PromotionPlan,
-  SalonSubscription,
+  ServicePromotionPlan,
   ServicePromotion,
   PromotionAnalytics,
 } from '@/types/database';
@@ -83,7 +79,6 @@ const deleteOperation = async (path: string) => {
   await remove(ref(db, path));
 };
 
-// Операции с пользователями
 export const userOperations = {
   create: (userId: string, data: Omit<User, 'id'>) =>
     createOperation(`users/${userId}`, data, userSchema),
@@ -1111,65 +1106,41 @@ export const salonRatingHelpfulOperations = {
   },
 };
 
-export const promotionPlanOperations = {
-  create: (planId: string, data: Omit<PromotionPlan, 'id'>) =>
-    createOperation(`promotionPlans/${planId}`, data, promotionPlanSchema),
-  read: (planId: string) => readOperation<PromotionPlan>(`promotionPlans/${planId}`),
-  update: (planId: string, data: Partial<PromotionPlan>) =>
-    updateOperation(`promotionPlans/${planId}`, data, promotionPlanSchema),
-  delete: (planId: string) => deleteOperation(`promotionPlans/${planId}`),
-  readAll: async (): Promise<PromotionPlan[]> => {
-    const snapshot = await get(ref(db, 'promotionPlans'));
+export const servicePromotionPlanOperations = {
+  create: (planId: string, data: Omit<ServicePromotionPlan, 'id'>) =>
+    createOperation(`servicePromotionPlans/${planId}`, data, servicePromotionPlanSchema),
+
+  read: (planId: string) => readOperation<ServicePromotionPlan>(`servicePromotionPlans/${planId}`),
+
+  update: (planId: string, data: Partial<ServicePromotionPlan>) =>
+    updateOperation(`servicePromotionPlans/${planId}`, data, servicePromotionPlanSchema),
+
+  delete: (planId: string) => deleteOperation(`servicePromotionPlans/${planId}`),
+
+  readAll: async (): Promise<ServicePromotionPlan[]> => {
+    const snapshot = await get(ref(db, 'servicePromotionPlans'));
     if (!snapshot.exists()) return [];
-    const raw = snapshot.val() as Record<string, Omit<PromotionPlan, 'id'>>;
+    const raw = snapshot.val() as Record<string, Omit<ServicePromotionPlan, 'id'>>;
     return Object.entries(raw).map(([id, plan]) => ({ id, ...plan }));
   },
 };
 
-// Операции с подписками салонов
-export const salonSubscriptionOperations = {
-  create: (subscriptionId: string, data: Omit<SalonSubscription, 'id'>) =>
-    createOperation(`salonSubscriptions/${subscriptionId}`, data, salonSubscriptionSchema),
-  read: (subscriptionId: string) => readOperation<SalonSubscription>(`salonSubscriptions/${subscriptionId}`),
-  update: (subscriptionId: string, data: Partial<SalonSubscription>) =>
-    updateOperation(`salonSubscriptions/${subscriptionId}`, data, salonSubscriptionSchema),
-  delete: (subscriptionId: string) => deleteOperation(`salonSubscriptions/${subscriptionId}`),
-  
-  /**
-   * Находит активную подписку для салона.
-   * Firebase Realtime DB не поддерживает сложные запросы с несколькими фильтрами,
-   * поэтому мы запрашиваем по salonId и затем фильтруем активные на клиенте.
-   */
-  findBySalonId: async (salonId: string): Promise<SalonSubscription | null> => {
-    try {
-      const subscriptionsRef = query(ref(db, 'salonSubscriptions'), orderByChild('salonId'), equalTo(salonId));
-      const snapshot = await get(subscriptionsRef);
-      if (!snapshot.exists()) return null;
+// salonSubscriptionOperations был удален, так как он больше не нужен.
 
-      const subscriptions = snapshot.val() as Record<string, SalonSubscription>;
-      const activeSubscription = Object.entries(subscriptions)
-        .map(([id, sub]) => ({ ...sub, id }))
-        .find(sub => sub.status === 'active');
-      
-      return activeSubscription || null;
-    } catch (error) {
-      console.error('Error finding subscription by salon ID:', error);
-      return null;
-    }
-  },
-};
-
-// Операции с продвигаемыми услугами
+// Операции с продвижением конкретных услуг
 export const servicePromotionOperations = {
   create: (promotionId: string, data: Omit<ServicePromotion, 'id'>) =>
     createOperation(`servicePromotions/${promotionId}`, data, servicePromotionSchema),
+
   read: (promotionId: string) => readOperation<ServicePromotion>(`servicePromotions/${promotionId}`),
+
   update: (promotionId: string, data: Partial<ServicePromotion>) =>
     updateOperation(`servicePromotions/${promotionId}`, data, servicePromotionSchema),
+
   delete: (promotionId: string) => deleteOperation(`servicePromotions/${promotionId}`),
 
   /**
-   * Находит все продвигаемые услуги для конкретного салона.
+   * Находит все активные и прошлые продвижения для конкретного салона.
    */
   findBySalonId: async (salonId: string): Promise<ServicePromotion[]> => {
     try {
@@ -1186,23 +1157,48 @@ export const servicePromotionOperations = {
       return [];
     }
   },
+
+  /**
+   * Находит активное продвижение для конкретной услуги.
+   * Полезно, чтобы проверить, продвигается ли услуга в данный момент.
+   */
+  findActiveByServiceId: async (serviceId: string): Promise<ServicePromotion | null> => {
+    try {
+      const promotionsRef = query(ref(db, 'servicePromotions'), orderByChild('serviceId'), equalTo(serviceId));
+      const snapshot = await get(promotionsRef);
+      if (!snapshot.exists()) return null;
+
+      const promotions = snapshot.val() as Record<string, ServicePromotion>;
+      const activePromotion = Object.values(promotions)
+        .find(promo => promo.status === 'active');
+      
+      return activePromotion || null;
+    } catch (error) {
+      console.error('Error finding active promotion by service ID:', error);
+      return null;
+    }
+  },
 };
 
 // Операции с аналитикой продвижения
 export const promotionAnalyticsOperations = {
   create: (analyticsId: string, data: Omit<PromotionAnalytics, 'id'>) =>
     createOperation(`promotionAnalytics/${analyticsId}`, data, promotionAnalyticsSchema),
+
   read: (analyticsId: string) => readOperation<PromotionAnalytics>(`promotionAnalytics/${analyticsId}`),
+
   update: (analyticsId: string, data: Partial<PromotionAnalytics>) =>
     updateOperation(`promotionAnalytics/${analyticsId}`, data, promotionAnalyticsSchema),
+
   delete: (analyticsId: string) => deleteOperation(`promotionAnalytics/${analyticsId}`),
 
   /**
-   * Находит все записи аналитики для конкретного продвижения, отсортированные по дате.
+   * Находит все записи аналитики для конкретного продвижения услуги, отсортированные по дате.
    */
-  findByPromotionId: async (promotionId: string): Promise<PromotionAnalytics[]> => {
+  findByServicePromotionId: async (servicePromotionId: string): Promise<PromotionAnalytics[]> => {
     try {
-      const analyticsRef = query(ref(db, 'promotionAnalytics'), orderByChild('promotionId'), equalTo(promotionId));
+      // Запрос теперь выполняется по полю servicePromotionId
+      const analyticsRef = query(ref(db, 'promotionAnalytics'), orderByChild('servicePromotionId'), equalTo(servicePromotionId));
       const snapshot = await get(analyticsRef);
       if (!snapshot.exists()) return [];
 
@@ -1211,7 +1207,7 @@ export const promotionAnalyticsOperations = {
         .map(([id, record]) => ({ ...record, id }))
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     } catch (error) {
-      console.error('Error finding analytics by promotion ID:', error);
+      console.error('Error finding analytics by service promotion ID:', error);
       return [];
     }
   },

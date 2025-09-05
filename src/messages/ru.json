@@ -227,7 +227,16 @@
       "rating": "По рейтингу",
       "price": "По цене",
       "distance": "По расстоянию"
-    }
+    },
+    "category": "Категория",
+    "allCategories": "Все категории",
+    "promoted": "Продвигаемые",
+    "relevance": "По релевантности",
+    "priceAsc": "По цене (возрастание)",
+    "durationAsc": "По длительности (возрастание)",
+    "clearFilters": "Очистить фильтры",
+    "resultsCount": "Найдено {count} результатов",
+    "promotedFirst": "Продвигаемые услуги показаны первыми"
   },
   "home": {
     "title": "Beauty Platform",
@@ -552,7 +561,7 @@
     "title": "Задачи",
     "description": "Управляйте задачами и проектами в стиле Agile",
     "createTask": "Создать задачу",
-    "createBoard": "Создать доску",
+    "createBoardButton": "Создать доску",
     "board": "Доска",
     "searchPlaceholder": "Поиск задач...",
     "deleteConfirm": "Вы уверены, что хотите удалить эту задачу?",
@@ -715,7 +724,8 @@
     },
     "error": {
       "saveFailed": "Не удалось сохранить настройки",
-      "loadFailed": "Не удалось загрузить данные салона"
+      "loadFailed": "Не удалось загрузить данные салона",
+      "invalidEmail": "Пожалуйста, введите корректный email или оставьте поле пустым"
     },
     "sections": {
       "business": {
@@ -726,6 +736,9 @@
         "address": "Адрес",
         "timezone": "Часовой пояс",
         "currency": "Валюта",
+        "optional": "необязательно",
+        "emailPlaceholder": "Введите email или оставьте пустым",
+        "phonePlaceholder": "Введите телефон или оставьте пустым",
         "save": "Сохранить",
         "saved": "Информация о бизнесе сохранена"
       },
@@ -764,7 +777,8 @@
       "services": "Услуги",
       "schedule": "Расписание",
       "staff": "Сотрудники",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "promotion": "Продвижение"
     }
   },
   "salonAppointments": {
@@ -958,8 +972,44 @@
         "errors": {
           "nameRequired": "Название обязательно",
           "durationInvalid": "Длительность должна быть больше 0",
-          "genericSaveError": "Ошибка при сохранении услуги"
+          "genericSaveError": "Ошибка при сохранении услуги",
+          "categoryCreateFailed": "Не удалось создать категорию"
         }
+      }
+    },
+    "SalonPromotionsPage": {
+      "loading": "Загрузка данных...",
+      "header": {
+        "title": "Продвижение услуг",
+        "subtitle": "Увеличьте видимость ваших услуг и привлекайте больше клиентов."
+      },
+      "serviceCard": {
+        "minutes": "мин",
+        "promotionActive": "Продвижение активно",
+        "activeUntil": "Активно до {date}",
+        "viewAnalyticsButton": "Смотреть аналитику",
+        "viewPastAnalyticsButton": "Прошлая аналитика",
+        "promoteButton": "Продвигать"
+      },
+      "purchaseModal": {
+        "title": "Продвижение услуги",
+        "selectPlan": "Выберите план продвижения",
+        "duration": "{days, plural, =1 {# день} one {# день} few {# дня} many {# дней} other {# дней}}",
+        "cancelButton": "Отмена",
+        "confirmButton": "Купить и активировать"
+      },
+      "analyticsModal": {
+        "title": "Аналитика продвижения",
+        "totalImpressions": "Всего показов",
+        "totalClicks": "Всего кликов",
+        "totalBookings": "Всего записей",
+        "dailyStats": "Статистика по дням",
+        "date": "Дата",
+        "impressions": "Показы",
+        "clicks": "Клики",
+        "bookings": "Записи",
+        "noData": "Данные по аналитике еще не собраны.",
+        "closeButton": "Закрыть"
       }
     }
 }

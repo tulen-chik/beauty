@@ -15,7 +15,8 @@ import {
   Menu, 
   X,
   LogOut,
-  User
+  User,
+  DollarSign
 } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
 import { AdminProvider } from "@/contexts/AdminContext"
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Приглашения', href: '/admin/invitations', icon: UserPlus },
   { name: 'Контент', href: '/admin/content', icon: MessageCircle },
   { name: 'Настройки', href: '/admin/settings', icon: Settings },
+  { name: 'Продвижение', href: '/admin/promotion', icon: DollarSign },
 ]
 
 export default function AdminLayout({ 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from 'next/image'; // Import the Image component
 import { usePathname } from 'next/navigation';
 import { MapPin, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
@@ -21,29 +21,24 @@ export default function SiteHeader({ locale }: Props) {
   const [geoError, setGeoError] = useState<string | null>(null);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   useEffect(() => {
     if (isMenuOpen) {
-      // Если меню должно открыться, сразу делаем его видимым для анимации
       setIsMenuVisible(true);
     } else {
-      // Если меню должно закрыться, сначала запускаем анимацию скрытия
-      const timer = setTimeout(() => setIsMenuVisible(false), 300); // Длительность анимации
+      const timer = setTimeout(() => setIsMenuVisible(false), 300);
       return () => clearTimeout(timer);
     }
   }, [isMenuOpen]);
 
   useEffect(() => {
-    // Закрываем меню при изменении маршрута
     if (isMenuOpen) {
       setIsMenuOpen(false);
     }
   }, [pathname]);
 
   useEffect(() => {
-    // Блокируем прокрутку фона, когда меню открыто
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -145,15 +140,15 @@ export default function SiteHeader({ locale }: Props) {
           <div className="h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Link href={`/${locale}`} className="flex items-center">
-                {/* Использование Image вместо текста */}
-                <Image 
-                  src="/images/logo.png" 
-                  alt={t('brand.name')} 
-                  width={120} 
-                  height={40} 
-                  priority 
-                  style={{ objectFit: 'contain' }}
+                {/* --- MODIFICATION START --- */}
+                <Image
+                  src="/images/logo.png"
+                  alt={t('brand.name')}
+                  width={120} // Adjust width as needed
+                  height={32} // Adjust height as needed
+                  priority // Preload the logo image as it's important
                 />
+                {/* --- MODIFICATION END --- */}
               </Link>
               <nav className="hidden md:flex items-center gap-1 ml-2">
                 {nav.map((item) => (
@@ -194,32 +189,22 @@ export default function SiteHeader({ locale }: Props) {
         </div>
       </header>
 
-      {/* Мобильное меню (Drawer) с CSS-анимацией */}
       {isMenuVisible && (
         <div
-          // Фон-затемнение
           onClick={() => setIsMenuOpen(false)}
           className={`fixed inset-0 z-50 bg-black/40 transition-opacity duration-300 ${
             isMenuOpen ? 'opacity-100' : 'opacity-0'
           }`}
         >
           <div
-            // Само меню
             onClick={(e) => e.stopPropagation()}
             className={`fixed top-0 right-0 h-full w-full max-w-xs bg-white shadow-xl flex flex-col transition-transform duration-300 ease-in-out ${
               isMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            {/* Шапка меню */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              {/* Использование Image в мобильном меню */}
-              <Image 
-                src="/images/logo.png" 
-                alt={t('brand.name')} 
-                width={120} 
-                height={40} 
-                style={{ objectFit: 'contain' }}
-              />
+              {/* You can also use the logo here if you want */}
+              <span className="font-bold text-lg">{t('brand.name')}</span>
               <button 
                 onClick={() => setIsMenuOpen(false)} 
                 className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -229,7 +214,6 @@ export default function SiteHeader({ locale }: Props) {
               </button>
             </div>
 
-            {/* Навигация в меню */}
             <nav className="flex-grow p-4 space-y-2">
               {nav.map((item) => (
                 <Link
@@ -246,7 +230,6 @@ export default function SiteHeader({ locale }: Props) {
               ))}
             </nav>
 
-            {/* Футер меню: Гео и кнопки авторизации */}
             <div className="p-4 border-t border-gray-200 space-y-4">
               <div className="flex items-center gap-2 text-sm text-gray-600 p-2 rounded-lg bg-gray-50">
                 <MapPin className="w-4 h-4 text-rose-600 flex-shrink-0" />

@@ -333,12 +333,12 @@ export default function SalonSettingsPage() {
       if (section === 'business') {
         // Validate email format only if it's not empty
         if (settings.business.email && settings.business.email.trim() !== '' && !settings.business.email.includes('@')) {
-          setError('Пожалуйста, введите корректный email или оставьте поле пустым');
+          setError(t('error.invalidEmail'));
           setSaving(false);
           return;
         }
         
-        // Для бизнес-информации обновляем как настройки, так и основную информацию о салоне
+        // For business information, update both settings and main salon information
         updatedSalon = {
           ...salon!,
           name: settings.business.name,
@@ -502,26 +502,26 @@ export default function SalonSettingsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('sections.business.email')} <span className="text-gray-500 text-xs">(необязательно)</span>
+                    {t('sections.business.email')} <span className="text-gray-500 text-xs">({t('sections.business.optional')})</span>
                   </label>
                   <input
                     type="email"
                     value={settings.business.email}
                     onChange={(e) => updateSetting('business', 'email', e.target.value)}
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base"
-                    placeholder="Введите email или оставьте пустым"
+                    placeholder={t('sections.business.emailPlaceholder')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('sections.business.phone')} <span className="text-gray-500 text-xs">(необязательно)</span>
+                    {t('sections.business.phone')} <span className="text-gray-500 text-xs">({t('sections.business.optional')})</span>
                   </label>
                   <input
                     type="tel"
                     value={settings.business.phone}
                     onChange={(e) => updateSetting('business', 'phone', e.target.value)}
                     className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base"
-                    placeholder="Введите телефон или оставьте пустым"
+                    placeholder={t('sections.business.phonePlaceholder')}
                   />
                 </div>
                 {/* <div>

@@ -262,7 +262,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       setShowNewCategoryInput(false);
     } catch (error: any) {
       console.error("Failed to create category:", error);
-      setFormError(error.message || "Не удалось создать категорию");
+      setFormError(error.message || t("modal.errors.categoryCreateFailed"));
     } finally {
       setIsCreatingCategory(false);
     }
@@ -578,7 +578,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80"
                         >
                           <Plus className="h-4 w-4" />
-                          Добавить
+                          {t("modal.form.addCategory")}
                         </button>
                       )}
                     </div>
@@ -589,7 +589,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           type="text"
                           value={newCategoryName}
                           onChange={(e) => setNewCategoryName(e.target.value)}
-                          placeholder="Название новой категории"
+                          placeholder={t("modal.form.newCategoryPlaceholder")}
                           className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         />
                         <button

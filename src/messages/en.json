@@ -177,7 +177,8 @@
     },
     "error": {
       "saveFailed": "Failed to save settings",
-      "loadFailed": "Failed to load salon data"
+      "loadFailed": "Failed to load salon data",
+      "invalidEmail": "Please enter a valid email or leave empty"
     },
     "sections": {
       "business": {
@@ -188,6 +189,9 @@
         "address": "Address",
         "timezone": "Timezone",
         "currency": "Currency",
+        "optional": "optional",
+        "emailPlaceholder": "Enter email or leave empty",
+        "phonePlaceholder": "Enter phone or leave empty",
         "save": "Save",
         "saved": "Business information saved"
       },
@@ -226,7 +230,8 @@
       "services": "Services",
       "schedule": "Schedule",
       "staff": "Staff",
-      "settings": "Settings"
+      "settings": "Settings",
+      "promotion": "Promotion"
     }
   },
   "salonAppointments": {
@@ -539,7 +544,16 @@
       "rating": "By rating",
       "price": "By price",
       "distance": "By distance"
-    }
+    },
+    "category": "Category",
+    "allCategories": "All categories",
+    "promoted": "Promoted",
+    "relevance": "By relevance",
+    "priceAsc": "By price (ascending)",
+    "durationAsc": "By duration (ascending)",
+    "clearFilters": "Clear filters",
+    "resultsCount": "Found {count} results",
+    "promotedFirst": "Promoted services shown first"
   },
   "auth": {
     "signIn": "Sign In",
@@ -858,9 +872,44 @@
       "errors": {
         "nameRequired": "Name is required",
         "durationInvalid": "Duration must be greater than 0",
-        "genericSaveError": "Error saving the service"
+        "genericSaveError": "Error saving the service",
+        "categoryCreateFailed": "Failed to create category"
       }
     }
+  },
+"SalonPromotionsPage": {
+    "loading": "Loading data...",
+    "header": {
+      "title": "Service Promotions",
+      "subtitle": "Increase the visibility of your services and attract more clients."
+    },
+    "serviceCard": {
+      "minutes": "min",
+      "promotionActive": "Promotion Active",
+      "activeUntil": "Active until {date}",
+      "viewAnalyticsButton": "View Analytics",
+      "viewPastAnalyticsButton": "Past Analytics",
+      "promoteButton": "Promote"
+    },
+    "purchaseModal": {
+      "title": "Promote Service",
+      "selectPlan": "Select a promotion plan",
+      "duration": "{days, plural, =1 {# day} other {# days}}",
+      "cancelButton": "Cancel",
+      "confirmButton": "Purchase and Activate"
+    },
+    "analyticsModal": {
+      "title": "Promotion Analytics",
+      "totalImpressions": "Total Impressions",
+      "totalClicks": "Total Clicks",
+      "totalBookings": "Total Bookings",
+      "dailyStats": "Daily Statistics",
+      "date": "Date",
+      "impressions": "Impressions",
+      "clicks": "Clicks",
+      "bookings": "Bookings",
+      "noData": "Analytics data has not been collected yet.",
+      "closeButton": "Close"
+    }
   }
-
 }
