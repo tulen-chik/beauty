@@ -25,7 +25,7 @@ export default function SalonCrmLayout({
     { key: "schedule", label: t('menu.schedule'), path: "/schedule" },
     { key: "chats", label: t('menu.chats'), path: "/chats" },
     { key: "ratings", label: t('menu.ratings'), path: "/ratings" },
-    // { key: "staff", label: t('menu.staff'), path: "/staff" },
+    { key: "staff", label: t('menu.staff'), path: "/staff" },
     { key: "settings", label: t('menu.settings'), path: "/settings" },
     { key: "promotion", label: t('menu.promotion'), path: "/promotion" },
   ];

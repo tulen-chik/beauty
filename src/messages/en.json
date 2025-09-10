@@ -231,7 +231,9 @@
       "schedule": "Schedule",
       "staff": "Staff",
       "settings": "Settings",
-      "promotion": "Promotion"
+      "promotion": "Promotion",
+      "chats": "Chats",
+      "ratings": "Ratings"
     }
   },
   "salonAppointments": {
@@ -314,7 +316,7 @@
     "archived": "Archived"
   },
   "home": {
-    "title": "Beauty Platform",
+    "title": "charming",
     "subtitle": "Find the best beauty salons near you",
     "heroTitle": "Beauty starts here",
     "heroSubtitle": "Discover the best beauty salons and spas in your city",
@@ -873,7 +875,8 @@
         "nameRequired": "Name is required",
         "durationInvalid": "Duration must be greater than 0",
         "genericSaveError": "Error saving the service",
-        "categoryCreateFailed": "Failed to create category"
+        "categoryCreateFailed": "Failed to create category",
+        "maxCategories": "You can add a maximum of 6 categories per service"
       }
     }
   },

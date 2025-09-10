@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { 
-  Zap, // Иконка для продвижения
+  Zap,
   Search, 
   Plus, 
   Edit, 
   Trash2, 
   Eye, 
-  X
+  X,
+  CheckCircle,
+  XCircle,
+  Clock,
+  DollarSign,
+  Tag,
+  Star,
+  ArrowUpRight
 } from "lucide-react"
 import { usePromotion } from "@/contexts/PromotionContext" // Используем наш новый контекст
 import type { ServicePromotionPlan } from '@/types/database'
@@ -66,6 +73,16 @@ export default function AdminPromotionPlansPage() {
     
     return matchesName || matchesDescription || matchesFeatures;
   });
+
+  // Mock service images for demonstration
+  const getServiceImage = (index: number) => {
+    const images = [
+      '/images/cat.jpg',
+      '/images/logo.png',
+      '/images/log.png'
+    ];
+    return images[index % images.length];
+  }
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -198,62 +215,107 @@ export default function AdminPromotionPlansPage() {
         {/* Filters */}
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Поиск по названию, описанию или возможностям..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              Найдено: {filteredPlans.length} планов
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Поиск планов..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={formData.isActive ? "active" : "inactive"}
+                onChange={(e) => setFormData({...formData, isActive: e.target.value === "active"})}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Все статусы</option>
+                <option value="active">Активные</option>
+                <option value="inactive">Неактивные</option>
+              </select>
+
+              {/* Results count */}
+              <div className="flex items-center text-sm text-gray-500">
+                Найдено: {filteredPlans.length} планов
+              </div>
             </div>
           </div>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPlans.map((plan) => (
-            <div key={plan.id} className={`bg-white rounded-lg shadow hover:shadow-lg transition-shadow duration-200 flex flex-col border-t-4 ${plan.isActive ? 'border-blue-500' : 'border-gray-300'}`}>
-              <div className="p-6 flex-grow">
-                <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {plan.name}
-                    </h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${plan.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                        {plan.isActive ? 'Активен' : 'Неактивен'}
-                    </span>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPlans.map((plan, index) => (
+            <div key={plan.id} className="bg-white rounded-lg shadow hover:shadow-md transition-all duration-200 overflow-hidden group">
+              {/* Service Image */}
+              <div className="h-40 bg-gray-100 overflow-hidden relative">
+                <img 
+                  src={getServiceImage(index)} 
+                  alt={plan.name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                  <h3 className="text-xl font-bold text-white">{plan.name}</h3>
                 </div>
-                <p className="text-2xl font-bold text-gray-800 mb-2">
-                  {plan.price} {plan.currency}
-                  <span className="text-sm font-normal text-gray-500"> / {plan.durationDays} дней</span>
-                </p>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-grow">
-                  {plan.description || <span className="italic">Нет описания</span>}
-                </p>
+                <div className="absolute top-3 right-3">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                    plan.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {plan.isActive ? 'Активен' : 'Неактивен'}
+                  </span>
+                </div>
               </div>
-              <div className="border-t border-gray-200 p-4 flex items-center justify-between bg-gray-50 rounded-b-lg">
-                <button
-                  onClick={() => openDetailsModal(plan)}
-                  className="text-blue-600 hover:text-blue-900 text-sm font-medium flex items-center"
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Подробнее
-                </button>
-                <div className="flex items-center space-x-1">
+              
+              <div className="p-6">
+                {/* Price and Duration */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {plan.price} {plan.currency}
+                    </p>
+                    <p className="text-sm text-gray-500">за {plan.durationDays} дней</p>
+                  </div>
+                  <div className="flex items-center text-amber-500">
+                    <Star className="h-5 w-5 fill-current" />
+                    <span className="ml-1 font-medium">Приоритет: {plan.searchPriority}</span>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                      <span className="text-gray-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Actions */}
+                <div className="flex space-x-3">
                   <button
                     onClick={() => openEditModal(plan)}
-                    className="p-2 text-gray-600 hover:bg-gray-200 hover:text-blue-600 rounded-full"
-                    title="Редактировать"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 mr-2" />
+                    Изменить
+                  </button>
+                  <button
+                    onClick={() => openDetailsModal(plan)}
+                    className="p-2.5 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Подробнее"
+                  >
+                    <Eye className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => openDeleteModal(plan)}
-                    className="p-2 text-gray-600 hover:bg-gray-200 hover:text-red-600 rounded-full"
+                    className="p-2.5 border border-red-100 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                     title="Удалить"
                   >
                     <Trash2 className="h-4 w-4" />

@@ -95,7 +95,7 @@
       "blog": "Блог"
     },
     "brand": {
-      "name": "Beauty Platform"
+      "name": "charming"
     }
   },
   "salonCreation": {
@@ -778,7 +778,9 @@
       "schedule": "Расписание",
       "staff": "Сотрудники",
       "settings": "Настройки",
-      "promotion": "Продвижение"
+      "promotion": "Продвижение",
+      "chats": "Чаты",
+      "ratings": "Отзывы"
     }
   },
   "salonAppointments": {
@@ -971,9 +973,10 @@
         },
         "errors": {
           "nameRequired": "Название обязательно",
-          "durationInvalid": "Длительность должна быть больше 0",
+          "durationInvalid": "Продолжительность должна быть больше 0",
           "genericSaveError": "Ошибка при сохранении услуги",
-          "categoryCreateFailed": "Не удалось создать категорию"
+          "categoryCreateFailed": "Ошибка при создании категории",
+          "maxCategories": "Максимальное количество категорий для услуги - 6"
         }
       }
     },

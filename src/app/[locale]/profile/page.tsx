@@ -1,14 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-// ИЗМЕНЕНИЕ: Импортируем useRouter
-import { useRouter } from "next/navigation" 
-// ИЗМЕНЕНИЕ: Импортируем иконку LogOut
+import { useRouter } from "next/navigation"
 import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, Search, MessageCircle, AlertCircle, MessageSquare, LogOut } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
-import { useSalonRating } from "@/contexts"
-import { getAllSalons, getAllSalonServices, appointmentOperations, userOperations } from "@/lib/firebase/database"
+import { useSalonRating, useSalonInvitation } from "@/contexts"
+import { getAllSalons, getAllSalonServices, appointmentOperations, userOperations, salonInvitationOperations, getAllSalonInvitations } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
 import RatingCard from "@/components/RatingCard"
 import RatingForm from "@/components/RatingForm"
@@ -27,7 +25,8 @@ export default function ProfilePage() {
   // ИЗМЕНЕНИЕ: Получаем функцию logout из контекста
   const { currentUser, loading: userLoading, updateProfile, logout } = useUser()
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
-  
+  const { updateInvitation } = useSalonInvitation();
+
   // ... состояния остаются без изменений ...
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<AnySalon[]>([])
@@ -42,35 +41,81 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
+  const [invitations, setInvitations] = useState<any[]>([]);
 
   // ... useEffect и другие функции остаются без изменений ...
+  const loadInvitations = useCallback(async (userEmail: string) => {
+    try {
+      const allInvitations = await getAllSalonInvitations();
+      const userInvitations = Object.entries(allInvitations || {})
+        .map(([id, inv]: [string, any]) => ({ ...inv, id }))
+        .filter((inv) => inv.email === userEmail && inv.status === 'pending');
+      setInvitations(userInvitations);
+    } catch (error) {
+      console.error("Error loading invitations:", error);
+    }
+  }, []);
+
+  const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
+    try {
+      // Get the current invitation to update
+      const invitation = await salonInvitationOperations.read(invitationId);
+      if (!invitation) throw new Error('Приглашение не найдено');
+      
+      // Update the invitation status
+      await salonInvitationOperations.update(invitationId, {
+        ...invitation,
+        status: accept ? 'accepted' : 'declined'
+      });
+      
+      // If accepted, refresh the page to show the updated salon list
+      if (accept) {
+        window.location.reload();
+      } else {
+        // If declined, just remove from the list
+        setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      }
+      
+      setMsg(accept ? "Приглашение принято!" : "Приглашение отклонено.");
+      setTimeout(() => setMsg(null), 3000);
+    } catch (error) {
+      console.error("Error updating invitation:", error);
+      setErrors({ general: "Не удалось обновить приглашение. Пожалуйста, попробуйте снова." });
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
-      if (!currentUser) return
-      setLoading(true)
+      if (!currentUser) return;
+      setLoading(true);
       setErrors({});
       try {
+        // Load invitations if user is logged in
+        if (currentUser.email) {
+          await loadInvitations(currentUser.email);
+        }
+        
         const [rawSalons, rawServices] = await Promise.all([
           getAllSalons(),
           getAllSalonServices(),
-        ])
-        const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }))
-        const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }))
-        setSalons(salonsList)
-        setServices(servicesList)
+        ]);
+        const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }));
+        const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }));
+        setSalons(salonsList);
+        setServices(servicesList);
 
-        const allSalonIds = salonsList.map(s => s.id)
+        const allSalonIds = salonsList.map(s => s.id);
         const chunks = await Promise.all(allSalonIds.map(async (salonId) => {
-          const appts = await appointmentOperations.listBySalon(salonId, { customerUserId: currentUser.userId })
-          return appts.map(a => ({ ...a, salonId }))
-        }))
-        const flat = chunks.flat()
-        flat.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-        setAppointments(flat)
+          const appts = await appointmentOperations.listBySalon(salonId, { customerUserId: currentUser.userId });
+          return appts.map(a => ({ ...a, salonId }));
+        }));
+        const flat = chunks.flat();
+        flat.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+        setAppointments(flat);
 
         if (currentUser) {
-          const ratings = await getRatingsByCustomer(currentUser.userId)
-          setUserRatings(ratings)
+          const ratings = await getRatingsByCustomer(currentUser.userId);
+          setUserRatings(ratings);
         }
       } catch (e) {
         console.error("Failed to load profile data:", e);
@@ -191,18 +236,82 @@ export default function ProfilePage() {
     return userRatings.some(rating => rating.appointmentId === appointmentId)
   }
 
+  // Render Invitations Section
+  const renderInvitations = () => {
+    if (invitations.length === 0) return null;
+
+    return (
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <Building2 className="mr-2 h-5 w-5" />
+          Приглашения в салоны
+        </h2>
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          {invitations.map((invitation) => {
+            const salon = salons.find(s => s.id === invitation.salonId);
+            if (!salon) return null;
+            
+            return (
+              <div key={invitation.id} className="p-4 border-b border-gray-100 last:border-b-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{salon.name}</h3>
+                    <p className="text-sm text-gray-500">Роль: {getRoleLabel(invitation.role)}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Приглашение от: {new Date(invitation.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 mt-2 sm:mt-0">
+                    <button
+                      onClick={() => handleInvitationResponse(invitation.id, true)}
+                      className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Принять
+                    </button>
+                    <button
+                      onClick={() => handleInvitationResponse(invitation.id, false)}
+                      className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Отклонить
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to get role label
+  const getRoleLabel = (role: string) => {
+    const roles: Record<string, string> = {
+      owner: 'Владелец',
+      manager: 'Менеджер',
+      employee: 'Сотрудник',
+      viewer: 'Наблюдатель'
+    };
+    return roles[role] || role;
+  };
+
   if (userLoading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">{t('loading')}</div>
   }
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center max-w-md w-full">
-          <div className="text-lg font-semibold mb-2">{t('requireLogin.title')}</div>
-          <p className="text-gray-600 mb-4">{t('requireLogin.desc')}</p>
-          <div className="flex items-center justify-center gap-3">
-            <Link href="/login" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">{t('requireLogin.login')}</Link>
-            <Link href="/register" className="px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">{t('requireLogin.register')}</Link>
+      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {renderInvitations()}
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="text-lg font-semibold mb-2">{t('requireLogin.title')}</div>
+            <p className="text-gray-600 mb-4">{t('requireLogin.desc')}</p>
+            <div className="flex items-center justify-center gap-3">
+              <Link href="/login" className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">{t('requireLogin.login')}</Link>
+              <Link href="/register" className="px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">{t('requireLogin.register')}</Link>
+            </div>
           </div>
         </div>
       </div>

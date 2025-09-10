@@ -246,16 +246,21 @@ const ServiceCard = React.memo(({ service, locale, salonRating }: { service: Pro
   const formatAddress = (fullAddress: string) => { if (!fullAddress) return ""; return fullAddress.split(",").slice(0, 2).join(",").trim() };
 
   return (
-    <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-l-yellow-400' : ''}`}>
-      {/* {service.isPromoted && (
-        <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+    <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-rose-50 to-pink-50 border-l-4 border-l-rose-400' : ''}`}>
+      {service.isPromoted && (
+        <div className="absolute top-2 right-2 bg-rose-400 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
           <Star className="w-3 h-3 fill-current" />
-          Продвигается
+          Рекомендуем
         </div>
-      )} */}
+      )}
       <div className="flex items-start gap-4">
         <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-          <Image src={service.imageUrl || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
+          <Image 
+            src={service.imageUrl || "/service-placeholder.svg"} 
+            alt={service.name} 
+            fill 
+            className={service.imageUrl ? "object-cover" : "object-contain p-2"} 
+          />
         </div>
         <div className="flex-1 min-w-0">
           <Link href={`/${locale}/services/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
@@ -613,15 +618,7 @@ export default function SearchPage() {
               </div>
             ) : (
               <div>
-                {/* Показываем количество результатов */}
-                <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 text-sm text-gray-600">
-                  {t('resultsCount', { count: filteredServices.length })}
-                  {sortBy === 'promoted' && filteredServices.some(s => s.isPromoted) && (
-                    <span className="ml-2 text-yellow-600 font-medium">
-                      • {t('promotedFirst')}
-                    </span>
-                  )}
-                </div>
+                
                 
                 {filteredServices.map((service) => (
                   <ServiceCard 
@@ -637,8 +634,6 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* --- ПРАВАЯ КОЛОНКА (КАРТА) --- */}
-      {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
       <div className={`flex-1 h-full min-w-0 ${mobileView === 'map' ? 'block' : 'hidden'} md:block`}>
         <SalonsMap salons={salonsForMap} onSalonClick={handleSalonClick} locale={locale} />
       </div>

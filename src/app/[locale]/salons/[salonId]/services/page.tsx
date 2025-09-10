@@ -193,12 +193,27 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   };
 
   const toggleCategory = (categoryId: string) => {
-    setForm(prev => ({
-      ...prev,
-      categoryIds: prev.categoryIds.includes(categoryId)
-        ? prev.categoryIds.filter(id => id !== categoryId)
-        : [...prev.categoryIds, categoryId]
-    }));
+    setForm(prev => {
+      // If category is already selected, remove it
+      if (prev.categoryIds.includes(categoryId)) {
+        return {
+          ...prev,
+          categoryIds: prev.categoryIds.filter(id => id !== categoryId)
+        };
+      }
+      
+      // Check if we've reached the maximum number of categories (6)
+      if (prev.categoryIds.length >= 6) {
+        setFormError(t("modal.errors.maxCategories"));
+        return prev;
+      }
+      
+      // Add the new category
+      return {
+        ...prev,
+        categoryIds: [...prev.categoryIds, categoryId]
+      };
+    });
   };
 
   const getCategoryNames = (categoryIds: string[] = []) => {
@@ -299,7 +314,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
               setEditingService(null);
               setShowModal(true);
             }}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary h-12 px-6 shadow-medium"
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-12 px-6 shadow-medium"
           >
             <Plus className="h-5 w-5 mr-2" />
             {t("header.addServiceButton")}
@@ -326,7 +341,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   setEditingService(null);
                   setShowModal(true);
                 }}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-white h-10 px-4"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-10 px-4"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t("emptyState.addFirstServiceButton")}
@@ -368,7 +383,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       
                       {/* Edit Button */}
                       <button
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
+                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-50 hover:text-rose-600 h-9 px-3 absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
                         onClick={() => handleEdit(service)}
                       >
                         <Edit3 className="h-4 w-4" />
@@ -388,7 +403,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                               {service.durationMinutes} {t("serviceCard.minutes")}
                             </div>
                             {service.isApp && (
-                              <div className="flex items-center gap-1 text-primary">
+                              <div className="flex items-center gap-1 text-rose-500">
                                 <Smartphone className="h-4 w-4" />
                                 <span>{t("serviceCard.inApp")}</span>
                               </div>
@@ -396,7 +411,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xl font-bold text-primary">
+                          <div className="text-xl font-bold text-rose-500">
                             {service.price} ₽
                           </div>
                           <div className="flex items-center gap-1 text-sm">
@@ -426,7 +441,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       {categoryNames.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-4">
                           {categoryNames.map((name, index) => (
-                            <span key={index} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                            <span key={index} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 border-transparent bg-rose-50 text-rose-700 hover:bg-rose-100">
                               {name}
                             </span>
                           ))}
@@ -450,7 +465,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                                 }
                               }}
                             />
-                            <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer">
+                            <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-50 hover:text-rose-600 h-9 px-3 cursor-pointer">
                               <Upload className="h-4 w-4 mr-1" />
                               {t("serviceCard.addPhotoButton")}
                             </span>
@@ -467,7 +482,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                                   className="w-16 h-16 object-cover rounded-md border"
                                 />
                                 <button
-                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-destructive text-destructive-foreground hover:bg-destructive/90 absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-destructive text-destructive-foreground hover:bg-destructive/90 absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover/img:opacity-100 transition-opacity"
                                   onClick={() => handleImageDelete(service.id, img.storagePath)}
                                 >
                                   <X className="h-3 w-3" />
@@ -575,7 +590,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                         <button
                           type="button"
                           onClick={() => setShowNewCategoryInput(true)}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80"
+                          className="inline-flex items-center gap-1 text-sm font-medium text-rose-500 hover:text-rose-600"
                         >
                           <Plus className="h-4 w-4" />
                           {t("modal.form.addCategory")}
@@ -596,7 +611,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           type="button"
                           onClick={handleCreateCategory}
                           disabled={!newCategoryName.trim() || isCreatingCategory}
-                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50"
                         >
                           {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                         </button>

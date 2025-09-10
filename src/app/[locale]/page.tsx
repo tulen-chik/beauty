@@ -29,8 +29,8 @@ export default function Home() {
   // FAQ данные
   const faqItems = [
     {
-      question: "Как работает Beauty Platform?",
-      answer: "Beauty Platform соединяет клиентов с салонами красоты и мастерами в сфере бьюти-услуг. Вы можете найти услуги, забронировать время и управлять своими записями онлайн."
+      question: "Как работает charming?",
+      answer: "charming соединяет клиентов с салонами красоты и мастерами в сфере бьюти-услуг. Вы можете найти услуги, забронировать время и управлять своими записями онлайн."
     },
     {
       question: "Безопасно ли бронировать онлайн?",
@@ -48,15 +48,15 @@ export default function Home() {
 
   // Структурированные данные для SEO
   const websiteData = {
-    name: "Beauty Platform",
+    name: "charming",
     description: "Find the best beauty salons near you. Book appointments online with verified beauty professionals.",
-    url: "https://beauty-platform.com"
+    url: "https://charming.by"
   }
 
   const organizationData = {
-    name: "Beauty Platform",
-    url: "https://beauty-platform.com",
-    logo: "https://beauty-platform.com/logo.png"
+    name: "charming",
+    url: "https://charming.by",
+    logo: "https://charming.by/logo.png"
   }
 
   // Анимации
@@ -137,7 +137,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <Sparkles className="w-4 h-4 text-rose-600" />
-            <span className="text-sm font-semibold text-rose-700 tracking-wide">Beauty Platform</span>
+            <span className="text-sm font-semibold text-rose-700 tracking-wide">Charming</span>
           </motion.div>
 
           <motion.h1
@@ -390,7 +390,7 @@ export default function Home() {
               <div className="p-2 bg-rose-600 rounded-xl text-white">
                 <Sparkles className="w-6 h-6" />
               </div>
-              <span className="text-2xl font-bold">Beauty Platform</span>
+              <span className="text-2xl font-bold">Charming</span>
             </div>
             <p className="text-gray-400 text-lg leading-relaxed max-w-2xl font-medium">{t("footerText")}</p>
             <div className="w-16 h-1 bg-rose-600 rounded-full mt-4"></div>

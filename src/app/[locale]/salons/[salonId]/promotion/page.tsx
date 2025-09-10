@@ -222,7 +222,7 @@ export default function SalonServicePromotionsPage({ params }: { params: { salon
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold text-primary">
-                            {service.price} ₽
+                            {service.price} Br
                           </div>
                         </div>
                       </div>
@@ -315,7 +315,7 @@ export default function SalonServicePromotionsPage({ params }: { params: { salon
                       className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlanId === plan.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                     >
                       <h4 className="font-semibold text-lg">{plan.name}</h4>
-                      <p className="text-2xl font-bold my-2">{plan.price} ₽</p>
+                      <p className="text-2xl font-bold my-2">{plan.price} {plan.currency}</p>
                       <p className="text-sm text-muted-foreground">{t("purchaseModal.duration", { days: plan.durationDays })}</p>
                       <ul className="mt-3 text-sm space-y-1 list-disc list-inside">
                         {plan.features.map((feature, i) => <li key={i}>{feature}</li>)}
