@@ -15,38 +15,39 @@ import {
    SalonRatingProvider,
    AdminProvider,
    BlogAdminProvider,
-   PromotionProvider
+   PromotionProvider,
+   SubscriptionProvider
    } from '@/contexts';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <DatabaseProvider>
       <UserProvider>
-
-          <SalonProvider>
-            <SalonInvitationProvider>
-              <ServiceCategoryProvider>
-                <SalonServiceProvider>
-                  <SalonScheduleProvider>
-                    <AppointmentProvider>
-                      <ChatProvider>
-                        <SalonRatingProvider>
-                          <PromotionProvider>
+        <SalonProvider>
+          <SalonInvitationProvider>
+            <ServiceCategoryProvider>
+              <SalonServiceProvider>
+                <SalonScheduleProvider>
+                  <AppointmentProvider>
+                    <ChatProvider>
+                      <SalonRatingProvider>
+                        <PromotionProvider>
                           <AdminProvider>
                             <BlogAdminProvider>
-                              {children}
+                              <SubscriptionProvider>
+                                {children}
+                              </SubscriptionProvider>
                             </BlogAdminProvider>
                           </AdminProvider>
-                          </PromotionProvider>
-                        </SalonRatingProvider>
-                      </ChatProvider>
-                    </AppointmentProvider>
-                  </SalonScheduleProvider>
-                </SalonServiceProvider>
-              </ServiceCategoryProvider>
-            </SalonInvitationProvider>
-          </SalonProvider>
-
+                        </PromotionProvider>
+                      </SalonRatingProvider>
+                    </ChatProvider>
+                  </AppointmentProvider>
+                </SalonScheduleProvider>
+              </SalonServiceProvider>
+            </ServiceCategoryProvider>
+          </SalonInvitationProvider>
+        </SalonProvider>
       </UserProvider>
     </DatabaseProvider>
   );

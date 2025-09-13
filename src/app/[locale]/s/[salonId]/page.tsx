@@ -43,14 +43,16 @@ interface Salon {
 interface ScheduleDay {
   day: string
   isOpen: boolean
-  times?: {
+  times?: Array<{
     start: string
     end: string
-  }[]
+  }>
 }
 
 interface Schedule {
-  weeks?: ScheduleDay[][]
+  salonId: string
+  weeklySchedule: ScheduleDay[]
+  updatedAt: string
 }
 
 export default function SalonPublicPage() {
@@ -266,11 +268,15 @@ export default function SalonPublicPage() {
                     <h3 className="text-lg font-bold text-gray-900">{t('mapTitle')}</h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    {/* 6. Типизирован элемент `d` в функции map */}
-                    {(schedule.weeks?.[0] || []).map((d: ScheduleDay) => (
-                      <div key={d.day} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-2">
-                        <span className="font-medium capitalize">{d.day}</span>
-                        <span className="text-gray-700">{d.isOpen ? `${d.times?.[0]?.start || "09:00"} – ${d.times?.[0]?.end || "18:00"}` : "закрыто"}</span>
+                    {schedule.weeklySchedule.map((day: ScheduleDay) => (
+                      <div key={day.day} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-2">
+                        <span className="font-medium capitalize">{day.day}</span>
+                        <span className="text-gray-700">
+                          {day.isOpen 
+                            ? `${day.times?.[0]?.start || "09:00"} – ${day.times?.[0]?.end || "18:00"}` 
+                            : "закрыто"
+                          }
+                        </span>
                       </div>
                     ))}
                   </div>

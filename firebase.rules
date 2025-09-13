@@ -97,6 +97,13 @@
         ".read": "auth != null && root.child('notifications').child($notificationId).child('userId').val() === auth.uid",
         ".write": "auth != null && root.child('notifications').child($notificationId).child('userId').val() === auth.uid"
       }
+    },
+    "subscriptions": {
+      ".indexOn": ["salonId", "status"],
+      "$subscriptionId": {
+        ".read": "auth != null && (root.child('subscriptions').child($subscriptionId).child('salonId').exists() && root.child('salons').child(root.child('subscriptions').child($subscriptionId).child('salonId').val()).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (root.child('subscriptions').child($subscriptionId).child('salonId').exists() && root.child('salons').child(root.child('subscriptions').child($subscriptionId).child('salonId').val()).child('members').child(auth.uid).exists() || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
     }
   }
-} 
+}

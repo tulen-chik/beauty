@@ -1,13 +1,13 @@
 import React from 'react';
 import { Clock, Calendar } from 'lucide-react';
-import type { SalonSchedule } from '@/types/database';
+import type { SalonSchedule, WeekDay } from '@/types/database';
 
 interface SalonScheduleDisplayProps {
   schedule: SalonSchedule;
   className?: string;
 }
 
-const dayNames = {
+const dayNames: Record<WeekDay, string> = {
   monday: 'Понедельник',
   tuesday: 'Вторник',
   wednesday: 'Среда',
@@ -17,7 +17,7 @@ const dayNames = {
   sunday: 'Воскресенье'
 };
 
-const shortDayNames = {
+const shortDayNames: Record<WeekDay, string> = {
   monday: 'Пн',
   tuesday: 'Вт',
   wednesday: 'Ср',
@@ -31,7 +31,7 @@ export const SalonScheduleDisplay: React.FC<SalonScheduleDisplayProps> = ({
   schedule, 
   className = "" 
 }) => {
-  if (!schedule || !schedule.weeks || schedule.weeks.length === 0) {
+  if (!schedule || !schedule.weeklySchedule || schedule.weeklySchedule.length === 0) {
     return (
       <div className={`text-center py-4 text-gray-500 ${className}`}>
         <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-300" />
@@ -40,8 +40,15 @@ export const SalonScheduleDisplay: React.FC<SalonScheduleDisplayProps> = ({
     );
   }
 
-  // Use the first week as default schedule
-  const weekSchedule = schedule.weeks[0];
+  // Sort days according to the week order
+  const weekOrder: WeekDay[] = [
+    'monday', 'tuesday', 'wednesday', 'thursday', 
+    'friday', 'saturday', 'sunday'
+  ];
+  
+  const sortedSchedule = [...schedule.weeklySchedule].sort(
+    (a, b) => weekOrder.indexOf(a.day) - weekOrder.indexOf(b.day)
+  );
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -51,16 +58,16 @@ export const SalonScheduleDisplay: React.FC<SalonScheduleDisplayProps> = ({
       </div>
       
       <div className="space-y-2">
-        {weekSchedule.map((day) => (
+        {sortedSchedule.map((day) => (
           <div key={day.day} className="flex items-center justify-between text-sm">
             <span className="text-gray-600 w-24">
-              {shortDayNames[day.day as keyof typeof shortDayNames] || day.day}
+              {shortDayNames[day.day]}
             </span>
             
-            {day.isOpen ? (
-              <div className="flex items-center gap-2">
+            {day.isOpen && day.times && day.times.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
                 {day.times.map((time, index) => (
-                  <span key={index} className="text-gray-800 font-medium">
+                  <span key={index} className="text-gray-800 font-medium whitespace-nowrap">
                     {time.start} - {time.end}
                   </span>
                 ))}
@@ -73,4 +80,4 @@ export const SalonScheduleDisplay: React.FC<SalonScheduleDisplayProps> = ({
       </div>
     </div>
   );
-}; 
+};

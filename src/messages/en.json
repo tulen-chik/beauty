@@ -130,6 +130,66 @@
     "descriptionTooLong": "Description is too long (max {max} characters)",
     "phoneHelp": "Include country code, e.g. +1 555 123 4567"
   },
+    "bookingPage": {
+      "modalTitle": "Create Manual Booking",
+      "loading": "Loading...",
+      "errorTitle": "An Error Occurred",
+      "closeButton": "Close",
+      "successMessage": "Appointment created successfully! We will contact you shortly to confirm.",
+      "header": {
+        "minutes": "min",
+        "currency": "$"
+      },
+      "scheduleInfo": "Showing salon's working hours. Availability depends on staff schedules.",
+      "scheduleNotConfigured": "The salon's work schedule has not been configured yet.",
+      "calendar": {
+        "title": "Select a date",
+        "daysOfWeek": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "legendAvailable": "Available slots",
+        "legendUnavailable": "No slots / Day off"
+      },
+      "timeSelector": {
+        "title": "Select a time",
+        "loading": "Finding available slots...",
+        "noSlots": "No available slots for the selected date.",
+        "selectDatePrompt": "Select a date first to see available times.",
+        "reasonTaken": "Taken",
+        "reasonPast": "Past",
+        "timeLabel": "Time:"
+      },
+      "fields": {
+        "serviceLabel": "Service",
+        "servicePlaceholder": "Select a service...",
+        "serviceErrorRequired": "A service must be selected.",
+        "staffLabel": "Staff (optional)",
+        "staffAny": "Any available staff",
+        "customerNameLabel": "Your Name",
+        "customerNamePlaceholder": "John Doe",
+        "customerNameErrorRequired": "Please enter your name.",
+        "customerPhoneLabel": "Phone Number",
+        "customerPhonePlaceholder": "+1 (555) 123-4567",
+        "customerPhoneErrorRequired": "Please enter your phone number.",
+        "customerPhoneErrorInvalid": "Invalid phone number format.",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Any special requests...",
+        "autofillMessage": "Data has been pre-filled from your profile."
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "bookNow": "Book Now",
+        "submitting": "Booking..."
+      },
+      "messages": {
+        "errorContext": "Failed to load necessary data. Please try refreshing the page.",
+        "errorServiceNotFound": "Service not found. It may have been deleted.",
+        "errorLoading": "Failed to load booking information.",
+        "errorSlotTaken": "The selected time slot is no longer available. Please choose another one.",
+        "errorGeneric": "Failed to create the appointment. Please try again.",
+        "selectTimeRequired": "A time slot must be selected.",
+        "selectServicePrompt": "Please select a service to continue.",
+        "privacyNotice": "Your data is used only to confirm your appointment."
+      }
+    },
   "profilePage": {
     "title": "Profile",
     "loading": "Loading...",
@@ -161,6 +221,7 @@
       "rebook": "Book Again"
     }
   },
+  
   "salonSettings": {
     "title": "Salon Settings",
     "subtitle": "Manage your business and system settings",
@@ -170,6 +231,9 @@
     "notFound": {
       "title": "Salon Not Found",
       "description": "The requested salon does not exist or has been deleted"
+    },
+    "common": {
+      "cancel":"Cancel"
     },
     "accessDenied": {
       "title": "Access Denied",
@@ -181,6 +245,34 @@
       "invalidEmail": "Please enter a valid email or leave empty"
     },
     "sections": {
+      "subscription": {
+      "title": "Subscription Management",
+      "purchase": "Subscribe",
+      "loading": "Loading subscriptions...",
+      "noSubscriptions": "No active subscriptions found.",
+      "period": "Billing period",
+      "modalTitle": "Choose a Plan",
+      "purchaseSuccess": "Subscription purchased successfully!",
+      "cancelAnytime": "Cancel anytime, no questions asked.",
+      "purchaseNow": "Subscribe Now",
+      "processing": "Processing",
+      "selectPlan": "Select Plan",
+      "selected": "Selected",
+      "noPlansTitle": "No Plans Available",
+      "noPlans": "There are currently no subscription plans available. Please check back later.",
+      "billingPeriods": {
+        "monthly": "month",
+        "yearly": "year"
+      },
+      "statuses": {
+        "active": "Active",
+        "trialing": "Trial",
+        "past_due": "Past Due",
+        "canceled": "Canceled",
+        "unpaid": "Unpaid",
+        "expired": "Expired"
+      }
+    },
       "business": {
         "title": "Business Information",
         "name": "Salon Name",
@@ -224,6 +316,7 @@
   },
   "salonCrm": {
     "menu": {
+      "salon": "Salon",
       "title": "Menu",
       "dashboard": "Dashboard",
       "appointments": "Appointments",
@@ -231,6 +324,7 @@
       "schedule": "Schedule",
       "staff": "Staff",
       "settings": "Settings",
+      "createBooking": "Create Booking",
       "promotion": "Promotion",
       "chats": "Chats",
       "ratings": "Ratings"
@@ -826,6 +920,7 @@
 "pageTitle": "My Salons",
 "createButton": "+ New Salon",
 "loading": "Loading...",
+"maxSalonsReached": "You have reached the maximum number of salons ({max}). Please delete an existing salon to create a new one.",
 "noSalons": "You don't have any salons yet.",
 "role": "Your role: {role}",
 "joined": "Joined: {date}",

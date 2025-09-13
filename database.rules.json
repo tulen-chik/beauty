@@ -1,0 +1,252 @@
+{
+    "rules": {
+      "users": {
+        ".indexOn": ["email", "role"],
+        "$userId": {
+          ".read": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".write": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".validate": "newData.hasChildren(['email', 'displayName', 'createdAt', 'role', 'settings'])",
+          "email": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/)"
+          },
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length >= 2"
+          },
+          "role": {
+            ".validate": "newData.val() == 'admin' || newData.val() == 'user'"
+          },
+          "settings": {
+            ".validate": "newData.hasChildren(['language', 'notifications'])"
+          }
+        }
+      },
+  
+      "salons": {
+        "$salonId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || (root.child('salons').child($salonId).child('members').child(auth.uid).child('role').val() == 'owner' || root.child('salons').child($salonId).child('members').child(auth.uid).child('role').val() == 'manager'))",
+          ".validate": "newData.hasChildren(['name', 'address', 'createdAt', 'updatedAt', 'members'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length >= 2"
+          },
+          "address": {
+            ".validate": "newData.isString() && newData.val().length >= 2"
+          },
+          "members": {
+            "$memberId": {
+              ".validate": "newData.hasChildren(['userId', 'role', 'joinedAt'])",
+              "role": {
+                ".validate": "newData.val() == 'owner' || newData.val() == 'manager' || newData.val() == 'employee' || newData.val() == 'viewer'"
+              }
+            }
+          }
+        }
+      },
+  
+      "userSalons": {
+        "$userId": {
+          ".read": "true",
+          ".write": "auth != null && (auth.uid == $userId || root.child('users').child(auth.uid).child('role').val() == 'admin')",
+          ".validate": "newData.hasChildren(['userId', 'salons'])",
+          "salons": {
+            "$index": {
+              ".validate": "newData.hasChildren(['salonId', 'role', 'joinedAt'])"
+            }
+          }
+        }
+      },
+  
+      "salonInvitations": {
+        ".indexOn": ["salonId", "email", "status"],
+        "$invitationId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salonInvitations').child($invitationId).child('email').val() == root.child('users').child(auth.uid).child('email').val() || root.child('salons').child(root.child('salonInvitations').child($invitationId).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('salonInvitations').child($invitationId).child('salonId').val()).child('members').child(auth.uid).child('role').val() == 'owner' || root.child('salons').child(root.child('salonInvitations').child($invitationId).child('salonId').val()).child('members').child(auth.uid).child('role').val() == 'manager')",
+          ".validate": "newData.hasChildren(['salonId', 'email', 'role', 'invitedBy', 'status', 'createdAt'])"
+        }
+      },
+  
+      "serviceCategories": {
+        ".indexOn": "salonId",
+        "$categoryId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(newData.child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".validate": "newData.hasChildren(['name', 'createdAt', 'salonId'])"
+        }
+      },
+  
+      "salonServices": {
+        ".indexOn": ["salonId", "isActive", "isApp"],
+        "$serviceId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(newData.child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".validate": "newData.hasChildren(['salonId', 'name', 'price', 'durationMinutes', 'isActive', 'createdAt', 'updatedAt', 'isApp'])",
+          "price": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "durationMinutes": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
+        }
+      },
+  
+      "appointments": {
+        "$salonId": {
+          ".indexOn": ["startAt", "status", "employeeId", "serviceId"],
+          "$appointmentId": {
+            ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child($salonId).child('members').hasChild(auth.uid) || root.child('appointments').child($salonId).child($appointmentId).child('customerUserId').val() == auth.uid)",
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child($salonId).child('members').hasChild(auth.uid) || root.child('appointments').child($salonId).child($appointmentId).child('customerUserId').val() == auth.uid)",
+            ".validate": "newData.hasChildren(['salonId', 'serviceId', 'startAt', 'durationMinutes', 'status', 'createdAt', 'updatedAt'])",
+            "status": {
+              ".validate": "newData.val() == 'pending' || newData.val() == 'confirmed' || newData.val() == 'completed' || newData.val() == 'cancelled' || newData.val() == 'no_show'"
+            },
+            "durationMinutes": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            }
+          }
+        }
+      },
+  
+      "chats": {
+        ".indexOn": ["salonId", "customerUserId", "appointmentId", "status"],
+        "$chatId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chats').child($chatId).child('customerUserId').val() == auth.uid || root.child('salons').child(root.child('chats').child($chatId).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chats').child($chatId).child('customerUserId').val() == auth.uid || root.child('salons').child(root.child('chats').child($chatId).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".validate": "newData.hasChildren(['salonId', 'customerUserId', 'customerName', 'status', 'lastMessageAt', 'unreadCount', 'createdAt', 'updatedAt'])"
+        }
+      },
+  
+      "chatMessages": {
+        "$chatId": {
+          "$messageId": {
+            ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chats').child($chatId).child('customerUserId').val() == auth.uid || root.child('salons').child(root.child('chats').child($chatId).child('salonId').val()).child('members').hasChild(auth.uid))",
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || auth.uid == newData.child('senderId').val())",
+            ".validate": "newData.hasChildren(['chatId', 'senderId', 'senderType', 'senderName', 'messageType', 'content', 'status', 'createdAt', 'updatedAt'])",
+            "senderType": {
+              ".validate": "newData.val() == 'customer' || newData.val() == 'salon'"
+            },
+            "messageType": {
+              ".validate": "newData.val() == 'text' || newData.val() == 'image' || newData.val() == 'file' || newData.val() == 'system'"
+            }
+          }
+        }
+      },
+  
+      "chatParticipants": {
+        "$chatId": {
+          "$participantId": {
+            ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chats').child($chatId).child('customerUserId').val() == auth.uid || root.child('salons').child(root.child('chats').child($chatId).child('salonId').val()).child('members').hasChild(auth.uid))",
+            ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('chats').child($chatId).child('salonId').val()).child('members').hasChild(auth.uid))"
+          }
+        }
+      },
+  
+      "chatNotifications": {
+        "$notificationId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chatNotifications').child($notificationId).child('userId').val() == auth.uid)",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('chatNotifications').child($notificationId).child('userId').val() == auth.uid)"
+        }
+      },
+  
+      "salonRatings": {
+        ".indexOn": ["salonId", "customerUserId", "serviceId", "status"],
+        "$ratingId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salonRatings').child($ratingId).child('customerUserId').val() == auth.uid || root.child('salons').child(root.child('salonRatings').child($ratingId).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".validate": "newData.hasChildren(['salonId', 'customerUserId', 'customerName', 'rating', 'review', 'isAnonymous', 'isVerified', 'status', 'createdAt', 'updatedAt'])",
+          "rating": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5"
+          },
+          "review": {
+            ".validate": "newData.isString() && newData.val().length >= 10 && newData.val().length <= 1000"
+          }
+        }
+      },
+  
+      "salonRatingResponses": {
+        "$responseId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('salonRatingResponses').child($responseId).child('salonId').val()).child('members').hasChild(auth.uid))"
+        }
+      },
+  
+      "salonRatingHelpful": {
+        "$helpfulId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('salonRatingHelpful').child($helpfulId).child('userId').val() == auth.uid"
+        }
+      },
+  
+      "blogAuthors": {
+        "$authorId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "blogCategories": {
+        "$categoryId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "blogPosts": {
+        "$postId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "servicePromotionPlans": {
+        "$planId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "servicePromotions": {
+        ".indexOn": ["salonId", "serviceId", "planId", "status"],
+        "$promotionId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('servicePromotions').child($promotionId).child('salonId').val()).child('members').hasChild(auth.uid))"
+        }
+      },
+  
+      "promotionAnalytics": {
+        "$analyticsId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('servicePromotions').child(root.child('promotionAnalytics').child($analyticsId).child('servicePromotionId').val()).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "subscriptionPlans": {
+        "$planId": {
+          ".read": "true",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "subscriptions": {
+        ".indexOn": ["salonId", "planId", "status"],
+        "$subscriptionId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('subscriptions').child($subscriptionId).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('subscriptions').child($subscriptionId).child('salonId').val()).child('members').hasChild(auth.uid))"
+        }
+      },
+  
+      "subscriptionBilling": {
+        "$billingId": {
+          ".read": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child(root.child('subscriptions').child(root.child('subscriptionBilling').child($billingId).child('subscriptionId').val()).child('salonId').val()).child('members').hasChild(auth.uid))",
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'"
+        }
+      },
+  
+      "salonSchedules": {
+        "$salonId": {
+          ".read": "true",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() == 'admin' || root.child('salons').child($salonId).child('members').hasChild(auth.uid))"
+        }
+      }
+    }
+  }
+  

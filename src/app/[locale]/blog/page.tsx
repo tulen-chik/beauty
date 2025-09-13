@@ -34,7 +34,7 @@ export default function BlogPage() {
     if (!posts.length && !loading) {
       loadAll();
     }
-  }, [loadAll, posts.length, loading]);
+  }, [posts.length]);
 
   // 4. Мемоизируем все производные данные для оптимизации производительности
   const publishedPosts = useMemo(() => posts.filter((p) => p.status === "published"), [posts]);

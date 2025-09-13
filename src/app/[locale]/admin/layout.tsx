@@ -16,7 +16,8 @@ import {
   X,
   LogOut,
   User,
-  DollarSign
+  DollarSign,
+  Star
 } from "lucide-react"
 import { useUser } from "@/contexts/UserContext"
 import { AdminProvider } from "@/contexts/AdminContext"
@@ -28,6 +29,7 @@ const navigation = [
   { name: 'Салоны', href: '/admin/salons', icon: Building2 },
   { name: 'Услуги', href: '/admin/services', icon: Scissors },
   { name: 'Категории', href: '/admin/categories', icon: Tag },
+  { name: 'Отзывы', href: '/admin/reviews', icon: Star },
   { name: 'Приглашения', href: '/admin/invitations', icon: UserPlus },
   { name: 'Контент', href: '/admin/content', icon: MessageCircle },
   { name: 'Настройки', href: '/admin/settings', icon: Settings },

@@ -196,6 +196,12 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      // Check if user already has 3 or more salons
+      const currentUserSalons = await fetchUserSalons(userId);
+      if (currentUserSalons && currentUserSalons.salons.length >= 3) {
+        throw new Error('Вы не можете иметь более 3 салонов');
+      }
+      
       const salon = await salonOperations.create(salonId, data);
       setSalons((prev) => [...prev, { ...data, id: salonId } as Salon]);
       setLoading(false);

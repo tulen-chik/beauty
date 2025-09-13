@@ -12,3 +12,4 @@ export { SalonRatingProvider,useSalonRating } from './SalonRatingContext';
 export { AdminProvider,useAdmin } from './AdminContext';
 export { BlogAdminProvider,useBlogAdmin } from './BlogAdminContext';
 export { PromotionProvider, usePromotion } from './PromotionContext'
+export { SubscriptionProvider, useSubscription } from './SubscriptionContext'

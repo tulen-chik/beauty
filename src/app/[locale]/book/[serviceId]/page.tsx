@@ -30,12 +30,14 @@ type TimeSlot = {
   reason?: string
 }
 
+type DayAvailabilityStatus = 'loading' | 'available' | 'unavailable' | 'unchecked';
+
 export default function BookServicePage() {
   const params = useParams() as { serviceId: string; locale: string }
   const router = useRouter()
   const { serviceId } = params
   const { currentUser } = useUser()
-  const t = useTranslations('booking')
+  const t = useTranslations('bookingPage')
   
   // Contexts
   const { fetchSalon } = useSalon()
@@ -43,80 +45,17 @@ export default function BookServicePage() {
   const { getSchedule } = useSalonSchedule()
   const { getService } = useSalonService()
   const { getUserById } = useUser()
-  const { createOrGetChat } = useChat()
-
-  // Debug: Log when context functions change
-  useEffect(() => {
-    console.log(`🔧 Context functions changed:`, {
-      hasFetchSalon: !!fetchSalon,
-      hasIsTimeSlotAvailable: !!isTimeSlotAvailable,
-      hasGetSchedule: !!getSchedule,
-      hasGetService: !!getService,
-      hasCreateAppointment: !!createAppointment
-    })
-    
-    // Проверяем, что функции действительно работают
-    if (isTimeSlotAvailable) {
-      console.log(`🔧 isTimeSlotAvailable function details:`, {
-        name: isTimeSlotAvailable.name,
-        toString: isTimeSlotAvailable.toString().substring(0, 100) + '...'
-      })
-    }
-  }, [fetchSalon, isTimeSlotAvailable, getSchedule, getService, createAppointment])
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState<string | null>(null)
 
   const [service, setService] = useState<Service | null>(null)
-
-  // Debug: Log when service changes
-  useEffect(() => {
-    console.log(`🔧 Service changed:`, service)
-    if (service) {
-      console.log(`🔧 Service details:`, {
-        id: service.id,
-        name: service.name,
-        salonId: service.salonId,
-        durationMinutes: service.durationMinutes,
-        price: service.price
-      })
-    } else {
-      console.log(`❌ No service available`)
-    }
-  }, [service])
   const [salon, setSalon] = useState<any>(null)
-
-  // Debug: Log when salon changes
-  useEffect(() => {
-    console.log(`🏢 Salon changed:`, salon)
-  }, [salon])
   const [previewUrl, setPreviewUrl] = useState<string>("")
   const [salonSchedule, setSalonSchedule] = useState<any>(null)
-
-  // Debug: Log when salonSchedule changes
-  useEffect(() => {
-    console.log(`📅 Salon schedule changed:`, salonSchedule)
-    if (salonSchedule) {
-      console.log(`📊 Schedule structure:`, {
-        hasWeeks: !!salonSchedule.weeks,
-        weeksLength: salonSchedule.weeks?.length || 0,
-        firstWeek: salonSchedule.weeks?.[0] || null,
-        firstWeekDays: salonSchedule.weeks?.[0]?.map((d: any) => d.day) || []
-      })
-      
-      if (salonSchedule.weeks && salonSchedule.weeks.length > 0) {
-        const firstWeek = salonSchedule.weeks[0]
-        console.log(`📊 First week details:`, firstWeek)
-        firstWeek.forEach((day: any, index: number) => {
-          console.log(`📊 Day ${index}: ${day.day} - ${day.isOpen ? 'Open' : 'Closed'} - Times: ${day.times?.map((t: any) => `${t.start}-${t.end}`).join(', ') || 'None'}`)
-        })
-      }
-    } else {
-      console.log(`❌ No salon schedule available`)
-    }
-  }, [salonSchedule])
 
   // Form state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -126,11 +65,9 @@ export default function BookServicePage() {
   const [customerPhone, setCustomerPhone] = useState("")
   const [notes, setNotes] = useState("")
 
-  // Auto-fill customer info when user is logged in
   useEffect(() => {
     if (currentUser) {
       setCustomerName(currentUser.displayName || "")
-      // setCustomerPhone(currentUser..phoneNumber || "")
     }
   }, [currentUser])
 
@@ -138,117 +75,32 @@ export default function BookServicePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([])
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false)
-
-  // Debug: Log when selectedTime changes
-  useEffect(() => {
-    console.log(`🕐 Selected time changed to:`, selectedTime)
-    if (selectedTime) {
-      console.log(`🕐 Selected time is set to: ${selectedTime}`)
-      console.log(`🕐 Available time slots:`, availableTimeSlots)
-      console.log(`🕐 Matching slot:`, availableTimeSlots.find(s => s.time === selectedTime))
-    } else {
-      console.log(`🕐 Selected time cleared`)
-    }
-  }, [selectedTime, availableTimeSlots])
-
-  // Debug: Log when employeeId changes
-  useEffect(() => {
-    console.log(`👤 Employee ID changed:`, employeeId)
-  }, [employeeId])
-
-  // Test function to check time slot availability
-  const testTimeSlotAvailability = async () => {
-    if (!service || !isTimeSlotAvailable) {
-      console.log(`❌ Cannot test: service=${!!service}, isTimeSlotAvailable=${!!isTimeSlotAvailable}`)
-      return
-    }
-    
-    console.log(`🧪 Testing time slot availability...`)
-    
-    // Test with current time + 1 hour
-    const testTime = new Date()
-    testTime.setHours(testTime.getHours() + 1, 0, 0, 0)
-    
-    try {
-      const result = await isTimeSlotAvailable(
-        service.salonId,
-        testTime.toISOString(),
-        service.durationMinutes
-      )
-      console.log(`🧪 Test result for ${testTime.toISOString()}: ${result}`)
-    } catch (error) {
-      console.error(`🧪 Test error:`, error)
-    }
-  }
-
-  // Debug: Log when availableTimeSlots changes
-  useEffect(() => {
-    console.log(`🕐 Available time slots changed:`, availableTimeSlots)
-    console.log(`🕐 Total slots: ${availableTimeSlots.length}`)
-    console.log(`🕐 Available slots: ${availableTimeSlots.filter(s => s.available).length}`)
-    console.log(`🕐 Unavailable slots: ${availableTimeSlots.filter(s => !s.available).length}`)
-    if (availableTimeSlots.length > 0) {
-      console.log(`🕐 First slot:`, availableTimeSlots[0])
-      console.log(`🕐 Last slot:`, availableTimeSlots[availableTimeSlots.length - 1])
-    }
-  }, [availableTimeSlots])
-
-  // Debug: Log when loadingTimeSlots changes
-  useEffect(() => {
-    console.log(`🔄 Loading time slots changed:`, loadingTimeSlots)
-  }, [loadingTimeSlots])
-
-  // Debug: Log when currentMonth changes
-  useEffect(() => {
-    console.log(`📅 Current month changed to: ${currentMonth.toDateString()}`)
-  }, [currentMonth])
-
-
-
-  // Debug: Log when selectedDate changes
-  useEffect(() => {
-    console.log(`📅 Selected date changed to: ${selectedDate.toDateString()}`)
-    console.log(`📅 Selected date day of week: ${selectedDate.getDay()}`)
-    console.log(`📅 Selected date is today: ${isToday(selectedDate)}`)
-    console.log(`📅 Selected date is available: ${isDateAvailable(selectedDate)}`)
-    console.log(`📅 Salon schedule available: ${!!salonSchedule}`)
-    if (salonSchedule) {
-      console.log(`📅 Salon schedule weeks: ${salonSchedule.weeks?.length || 0}`)
-    }
-  }, [selectedDate, salonSchedule])
+  const [dayAvailability, setDayAvailability] = useState<Record<string, DayAvailabilityStatus>>({});
 
   useEffect(() => {
     let isCancelled = false
     const load = async () => {
       try {
-        console.log('🔍 Starting to load data...')
         setLoading(true)
-        setError(null)
+        setSubmissionError(null)
         
-        // Check if context functions exist
         if (!getService || !fetchSalon || !getSchedule) {
-          console.error('❌ Context functions not available:', { getService: !!getService, fetchSalon: !!fetchSalon, getSchedule: !!getSchedule })
-          setError("Ошибка инициализации контекстов")
+          setSubmissionError(t('messages.errorContext'))
           setLoading(false)
           return
         }
         
-        console.log('✅ Context functions available, loading service...')
-        
-        // Load service using context
         const svc = await getService(serviceId)
         if (!svc) {
-          console.error('❌ Service not found')
-          setError("Услуга не найдена")
+          setSubmissionError(t('messages.errorServiceNotFound'))
           setLoading(false)
           return
         }
-        console.log('✅ Service loaded:', svc)
+        
         const s: Service = { id: serviceId, ...(svc as any) }
         if (isCancelled) return
         setService(s)
 
-        // Load preview image
         try {
           const imgs = await getServiceImages(serviceId)
           if (!isCancelled && imgs && imgs.length > 0) setPreviewUrl(imgs[0].url)
@@ -256,64 +108,40 @@ export default function BookServicePage() {
           console.warn('Failed to load service images', e)
         }
 
-        console.log('🔄 Loading salon...')
-        // Load salon using context
         const salonData = await fetchSalon(s.salonId)
-        if (!isCancelled) {
-          console.log('✅ Salon loaded:', salonData)
-          setSalon(salonData)
-        }
+        if (!isCancelled) setSalon(salonData)
 
-        console.log('🔄 Loading schedule...')
-        // Load salon schedule using context
         try {
           const schedule = await getSchedule(s.salonId)
-          if (!isCancelled) {
-            console.log('✅ Schedule loaded:', schedule)
-            console.log('📊 Schedule structure:', {
-              hasSchedule: !!schedule,
-              hasWeeks: !!(schedule && schedule.weeks),
-              weeksLength: schedule?.weeks?.length || 0,
-              firstWeek: schedule?.weeks?.[0] || null,
-              firstDay: schedule?.weeks?.[0]?.[0] || null
-            })
-            setSalonSchedule(schedule)
-          }
+          if (!isCancelled) setSalonSchedule(schedule)
         } catch (e) {
           console.error('❌ Error loading schedule:', e)
         }
         
-        console.log('✅ All data loaded successfully')
       } catch (e: any) {
-        console.error('❌ Error in load function:', e)
-        if (!isCancelled) setError(e.message || "Ошибка загрузки")
+        if (!isCancelled) setSubmissionError(e.message || t('messages.errorLoading'))
       } finally {
-        if (!isCancelled) {
-          console.log('🏁 Setting loading to false')
-          setLoading(false)
-        }
+        if (!isCancelled) setLoading(false)
       }
     }
     load()
     return () => {
-      console.log('🧹 Cleanup: cancelling load')
       isCancelled = true
     }
-  }, [serviceId, getService, fetchSalon, getSchedule])
+  }, [serviceId, getService, fetchSalon, getSchedule, t])
 
-  // Generate calendar days for current month
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear()
     const month = currentMonth.getMonth()
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const startDate = new Date(firstDay)
-    startDate.setDate(startDate.getDate() - firstDay.getDay())
+    startDate.setDate(startDate.getDate() - (firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1))
     
     const days = []
     const currentDate = new Date(startDate)
     
-    while (currentDate <= lastDay || days.length < 42) {
+    while (days.length < 42) {
       days.push(new Date(currentDate))
       currentDate.setDate(currentDate.getDate() + 1)
     }
@@ -321,84 +149,100 @@ export default function BookServicePage() {
     return days
   }, [currentMonth])
 
-  // Check if date is available (not in past and salon is open)
-  const isDateAvailable = (date: Date) => {
+  const isDateWorkingDay = (date: Date) => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
-    if (date < today) {
-      console.log(`❌ Date ${date.toDateString()} is in the past`)
-      return false
-    }
+    if (date < today) return false
     
-    // Check if we can book for today (need at least 2 hours advance)
-    if (date.toDateString() === today.toDateString()) {
-      const now = new Date()
-      const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000)
-      if (date < twoHoursFromNow) {
-        console.log(`❌ Date ${date.toDateString()} is too soon (need 2 hours advance)`)
-        return false
-      }
-    }
-    
-    if (!salonSchedule) {
-      console.log(`⚠️ No salon schedule available, allowing date ${date.toDateString()}`)
-      return true
-    }
-    
-    if (!salonSchedule.weeks || salonSchedule.weeks.length === 0) {
-      console.log(`⚠️ Salon schedule has no weeks, allowing date ${date.toDateString()}`)
-      return true
-    }
+    if (!salonSchedule?.weeklySchedule) return true
     
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     const dayName = dayNames[date.getDay()]
     
-    console.log(`🔍 Checking availability for ${date.toDateString()} (${dayName})`)
-    console.log(`📅 Salon schedule weeks:`, salonSchedule.weeks)
-    console.log(`📅 Available days in first week:`, salonSchedule.weeks[0]?.map((d: any) => d.day) || [])
+    const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
     
-    // Check if salon is open on this day
-    const weekIndex = Math.floor((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) % salonSchedule.weeks.length
-    const week = salonSchedule.weeks[weekIndex]
-    
-    if (!week) {
-      console.log(`❌ No week found for index ${weekIndex}`)
-      return false
-    }
-    
-    console.log(`📅 Week ${weekIndex}:`, week)
-    
-    const daySchedule = week.find((d: { day: string }) => d.day === dayName)
-    
-    if (!daySchedule) {
-      console.log(`❌ No day schedule found for ${dayName}`)
-      console.log(`❌ Available days in this week:`, week.map((d: any) => d.day))
-      return false
-    }
-    
-    console.log(`📅 Day schedule for ${dayName}:`, daySchedule)
-    
-    const isOpen = daySchedule.isOpen
-    console.log(`✅ Date ${date.toDateString()} is ${isOpen ? 'available' : 'not available'} (salon ${isOpen ? 'open' : 'closed'})`)
-    
-    return isOpen
+    return daySchedule?.isOpen || false
   }
 
-  // Generate time slots for selected date
+  useEffect(() => {
+    if (!salonSchedule || !service || !isTimeSlotAvailable) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const checkDayHasSlots = async (date: Date): Promise<boolean> => {
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[date.getDay()];
+      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName);
+
+      if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
+        return false;
+      }
+
+      for (const timeRange of daySchedule.times) {
+        const [startHour] = timeRange.start.split(':').map(Number);
+        const [endHour] = timeRange.end.split(':').map(Number);
+        let currentHour = startHour;
+
+        while (currentHour < endHour) {
+          const slotDate = new Date(date);
+          slotDate.setHours(currentHour, 0, 0, 0);
+
+          if (slotDate > new Date()) {
+            const isAvailable = await isTimeSlotAvailable(
+              service.salonId,
+              slotDate.toISOString(),
+              service.durationMinutes
+            );
+            if (isAvailable) return true;
+          }
+          currentHour++;
+        }
+      }
+      return false;
+    };
+
+    const checkMonthAvailability = async () => {
+      const initialAvailability: Record<string, DayAvailabilityStatus> = {};
+      const promises: Promise<void>[] = [];
+
+      for (const date of calendarDays) {
+        const dateKey = date.toISOString().split('T')[0];
+        if (isDateWorkingDay(date)) {
+          initialAvailability[dateKey] = 'loading';
+          const promise = checkDayHasSlots(date).then(hasSlots => {
+            if (!isCancelled) {
+              setDayAvailability(prev => ({
+                ...prev,
+                [dateKey]: hasSlots ? 'available' : 'unavailable'
+              }));
+            }
+          });
+          promises.push(promise);
+        } else {
+          initialAvailability[dateKey] = 'unavailable';
+        }
+      }
+      
+      if (!isCancelled) {
+        setDayAvailability(prev => ({ ...prev, ...initialAvailability }));
+      }
+
+      await Promise.all(promises);
+    };
+
+    checkMonthAvailability();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [calendarDays, salonSchedule, service, isTimeSlotAvailable]);
+
+
   const generateTimeSlots = async () => {
-    console.log(`🕐 Generating time slots for date: ${selectedDate?.toDateString()}`)
-    console.log(`🕐 Service:`, service)
-    console.log(`🕐 Salon Schedule:`, salonSchedule)
-    console.log(`🕐 isTimeSlotAvailable function:`, !!isTimeSlotAvailable)
-    
     if (!selectedDate || !service || !salonSchedule || !isTimeSlotAvailable) {
-      console.log(`❌ Cannot generate time slots:`, {
-        hasSelectedDate: !!selectedDate,
-        hasService: !!service,
-        hasSalonSchedule: !!salonSchedule,
-        hasIsTimeSlotAvailable: !!isTimeSlotAvailable
-      })
       setAvailableTimeSlots([])
       return
     }
@@ -408,103 +252,46 @@ export default function BookServicePage() {
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       const dayName = dayNames[selectedDate.getDay()]
       
-      console.log(`🕐 Day name: ${dayName}`)
-      console.log(`🕐 Selected date day of week: ${selectedDate.getDay()}`)
+      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
       
-      // Get schedule for this day
-      const weekIndex = Math.floor((selectedDate.getTime() - new Date(selectedDate.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) % salonSchedule.weeks.length
-      const week = salonSchedule.weeks[weekIndex]
-      const daySchedule = week.find((d: { day: string }) => d.day === dayName)
-      
-      console.log(`🕐 Week index: ${weekIndex}`)
-      console.log(`🕐 Week:`, week)
-      console.log(`🕐 Day schedule:`, daySchedule)
-      console.log(`🕐 Looking for day: ${dayName}`)
-      console.log(`🕐 Available days in week:`, week.map((d: any) => d.day))
-      
-      if (!daySchedule?.isOpen) {
-        console.log(`❌ Day is not open or no schedule found`)
-        console.log(`❌ Day schedule:`, daySchedule)
+      if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
         setAvailableTimeSlots([])
         return
       }
 
-      console.log(`🕐 Day is open, generating slots...`)
-      console.log(`🕐 Day schedule times:`, daySchedule.times)
       const slots: TimeSlot[] = []
       
-              // Generate slots for each time range with hourly intervals only
-        for (const timeRange of daySchedule.times) {
-          console.log(`🕐 Processing time range: ${timeRange.start} - ${timeRange.end}`)
+      for (const timeRange of daySchedule.times) {
+        const [startHour] = timeRange.start.split(':').map(Number)
+        const [endHour] = timeRange.end.split(':').map(Number)
+        
+        let currentHour = startHour
+        
+        while (currentHour < endHour) {
+          const timeString = `${currentHour.toString().padStart(2, '0')}:00`
+          const slotDate = new Date(selectedDate)
+          slotDate.setHours(currentHour, 0, 0, 0)
           
-          const [startHour, startMinute] = timeRange.start.split(':').map(Number)
-          const [endHour, endMinute] = timeRange.end.split(':').map(Number)
-          
-          console.log(`🕐 Start: ${startHour}:${startMinute}, End: ${endHour}:${endMinute}`)
-          
-          let currentHour = startHour
-          
-          // Only generate slots for full hours
-          while (currentHour < endHour) {
-            const timeString = `${currentHour.toString().padStart(2, '0')}:00`
+          if (slotDate <= new Date()) {
+            slots.push({ time: timeString, available: false, reason: 'Время прошло' })
+          } else {
+            const isAvailable = await isTimeSlotAvailable(
+              service.salonId,
+              slotDate.toISOString(),
+              service.durationMinutes,
+              employeeId || undefined
+            )
             
-            console.log(`🕐 Generating slot for: ${timeString}`)
-            
-            // Check if this slot is available
-            const slotDate = new Date(selectedDate)
-            slotDate.setHours(currentHour, 0, 0, 0)
-            
-            // Check if slot is in the past
-            const now = new Date()
-            if (slotDate <= now) {
-              console.log(`🕐 Slot ${timeString} is in the past`)
-              slots.push({
-                time: timeString,
-                available: false,
-                reason: 'Время прошло'
-              })
-            } else {
-              console.log(`🕐 Checking availability for slot ${timeString} at ${slotDate.toISOString()}`)
-              // Check availability using appointment context
-              const availableCheck = await isTimeSlotAvailable(
-                service.salonId,
-                slotDate.toISOString(),
-                service.durationMinutes,
-                employeeId || undefined // Pass employeeId if selected
-              )
-              
-              console.log(`🕐 Slot ${timeString} availability check result:`, availableCheck)
-              
-              // Если слот недоступен, попробуем понять почему
-              if (!availableCheck) {
-                console.log(`🕐 Slot ${timeString} is not available, checking why...`)
-                try {
-                  // Попробуем получить записи на этот день для отладки
-                  // const dayAppointments = await appointmentOperations.listByDay(service.salonId, selectedDate)
-                  // console.log(`🕐 Day appointments for debugging:`, dayAppointments)
-                } catch (e) {
-                  console.log(`🕐 Could not fetch day appointments for debugging:`, e)
-                }
-              }
-              
-              const isAvailable = availableCheck
-              let reason = "Время занято"
-              if (!isAvailable) reason = "Занято"
-              
-              slots.push({
-                time: timeString,
-                available: isAvailable,
-                reason: reason
-              })
-            }
-            
-            // Move to next hour
-            currentHour++
+            slots.push({
+              time: timeString,
+              available: isAvailable,
+              reason: isAvailable ? undefined : "Занято"
+            })
           }
+          currentHour++
         }
+      }
       
-      console.log(`✅ Generated ${slots.length} time slots:`, slots)
-      console.log(`✅ Available slots:`, slots.filter(s => s.available))
       setAvailableTimeSlots(slots)
     } catch (error) {
       console.error('❌ Error generating time slots:', error)
@@ -519,26 +306,21 @@ export default function BookServicePage() {
   }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable])
 
   const employees = useMemo(() => {
-    if (!salon) return [] as Array<{ userId: string; role: string; displayName?: string }>
-    return (salon.members || []).filter((m: { role: string }) => ["owner", "manager", "employee"].includes(m.role))
+    if (!salon) return []
+    return (salon.members || []).filter((m: { role: string }) => ["manager", "employee"].includes(m.role))
   }, [salon])
 
-  // Load employee names
   const [employeeNames, setEmployeeNames] = useState<Record<string, string>>({})
   
   useEffect(() => {
     const loadEmployeeNames = async () => {
-      if (!employees.length) return
+      if (!employees.length || !getUserById) return
       
       const names: Record<string, string> = {}
       for (const employee of employees) {
         try {
           const user = await getUserById(employee.userId)
-          if (user) {
-            names[employee.userId] = user.displayName || employee.userId
-          } else {
-            names[employee.userId] = employee.userId
-          }
+          names[employee.userId] = user?.displayName || employee.userId
         } catch (err) {
           console.warn(`Failed to load user ${employee.userId}:`, err)
           names[employee.userId] = employee.userId
@@ -557,61 +339,78 @@ export default function BookServicePage() {
     return combined.toISOString()
   }
 
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+
+    if (!customerName.trim()) {
+      errors.customerName = t('fields.customerNameErrorRequired');
+    }
+    if (!customerPhone.trim()) {
+      errors.customerPhone = t('fields.customerPhoneErrorRequired');
+    } else if (!/^\+?[0-9\s-()]{7,}$/.test(customerPhone)) {
+      errors.customerPhone = t('fields.customerPhoneErrorInvalid');
+    }
+    if (!selectedTime) {
+      errors.selectedTime = t('messages.selectTimeRequired');
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleBook = async () => {
-          if (!service || !selectedDate || !selectedTime || !customerName || !customerPhone || !isTimeSlotAvailable || !createAppointment) {
-        setError(t('requiredFields'))
-        return
-      }
+    if (!validateForm()) {
+      return;
+    }
     
     setSubmitting(true)
-    setError(null)
+    setSubmissionError(null)
     setSuccess(null)
     
     try {
       const startAt = combineDateTimeToIso(selectedDate, selectedTime)
       
-      // Check availability using appointment context
       const ok = await isTimeSlotAvailable(
-        service.salonId,
+        service!.salonId,
         startAt,
-        service.durationMinutes,
+        service!.durationMinutes,
         employeeId || undefined
       )
       
       if (!ok) {
-        setError("Выбранное время недоступно. Выберите другое время.")
+        setSubmissionError(t('messages.errorSlotTaken'))
         setSubmitting(false)
+        generateTimeSlots()
         return
       }
 
       const appointmentId = Date.now().toString()
       
-      // Create appointment using appointment context
-      await createAppointment(service.salonId, appointmentId, {
-        salonId: service.salonId,
-        serviceId: service.id,
+      await createAppointment(service!.salonId, appointmentId, {
+        salonId: service!.salonId,
+        serviceId: service!.id,
         employeeId: employeeId || undefined,
         customerName: customerName || undefined,
         customerPhone: customerPhone || undefined,
         customerUserId: currentUser?.userId || undefined,
         startAt,
-        durationMinutes: service.durationMinutes,
+        durationMinutes: service!.durationMinutes,
         status: "confirmed",
         notes: notes || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       })
 
-      setSuccess("Запись успешно создана!")
-      setSubmitting(false)
+      setSuccess(t('successMessage'))
     } catch (e: any) {
-      setError(e.message || "Не удалось создать запись")
+      setSubmissionError(e.message || t('messages.errorGeneric'))
+    } finally {
       setSubmitting(false)
     }
   }
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('ru-RU', { 
+    return date.toLocaleDateString(params.locale, { 
       weekday: 'short', 
       month: 'short', 
       day: 'numeric' 
@@ -619,8 +418,7 @@ export default function BookServicePage() {
   }
 
   const isToday = (date: Date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
+    return date.toDateString() === new Date().toDateString()
   }
 
   const isSelected = (date: Date) => {
@@ -631,31 +429,24 @@ export default function BookServicePage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-gray-600 mb-4">Загрузка...</div>
-          {salonSchedule && (
-            <div className="text-xs text-gray-500 border-t pt-2">
-              <div>Salon Schedule: ✅</div>
-              <div>Weeks: {salonSchedule.weeks?.length || 0}</div>
-              <div>First Week: {salonSchedule.weeks?.[0]?.length || 0} days</div>
-              <div>First Day: {salonSchedule.weeks?.[0]?.[0]?.day || 'N/A'}</div>
-            </div>
-          )}
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
+          <div className="text-gray-600">{t('loading')}</div>
         </div>
       </div>
     )
   }
 
-  if (error && !service) {
+  if (submissionError && !service) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 text-center">
-          <div className="text-red-600 font-semibold mb-2">Ошибка</div>
-          <div className="text-gray-700 mb-4">{error}</div>
+          <div className="text-red-600 font-semibold mb-2">{t('errorTitle')}</div>
+          <div className="text-gray-700 mb-4">{submissionError}</div>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium"
           >
-            Назад
+            {t('backButton')}
           </button>
         </div>
       </div>
@@ -679,12 +470,12 @@ export default function BookServicePage() {
               {service?.durationMinutes && (
                 <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  <span>{service.durationMinutes} мин</span>
+                  <span>{service.durationMinutes} {t('header.minutes')}</span>
                 </div>
               )}
             </div>
             {service?.price !== undefined && (
-              <div className="text-rose-600 font-bold">{service.price} ₽</div>
+              <div className="text-rose-600 font-bold">{service.price} {t('header.currency')}</div>
             )}
           </div>
 
@@ -696,32 +487,34 @@ export default function BookServicePage() {
                 <span>{success}</span>
               </div>
             )}
-            {error && (
-              <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">{error}</div>
+            {submissionError && (
+              <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">{submissionError}</div>
             )}
 
-            {/* Salon Schedule Info */}
-            {salonSchedule && (
+            {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
+            {salonSchedule && salonSchedule.weeklySchedule && salonSchedule.weeklySchedule.length > 0 ? (
               <div className="bg-gray-50 rounded-lg p-4">
                 <SalonScheduleDisplay schedule={salonSchedule} />
                 <div className="mt-3 pt-3 border-t border-gray-200">
                   <div className="text-xs text-gray-600">
                     <Clock className="w-3 h-3 inline mr-1" />
-                    Запись возможна минимум за 2 часа до начала процедуры
+                    {t('scheduleInfo')}
                   </div>
                 </div>
               </div>
+            ) : !loading && (
+              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                {t('scheduleNotConfigured')}
+              </div>
             )}
 
-            {/* Calendar and Time Selection */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Calendar */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t('selectDate')} <span className="text-red-500">*</span>
+                  {t('calendar.title')} <span className="text-red-500">*</span>
                 </h3>
                 
-                {/* Month Navigation */}
                 <div className="flex items-center justify-between mb-4">
                   <button
                     onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
@@ -730,7 +523,7 @@ export default function BookServicePage() {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <span className="font-medium">
-                    {currentMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                    {currentMonth.toLocaleDateString(params.locale, { month: 'long', year: 'numeric' })}
                   </span>
                   <button
                     onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
@@ -740,23 +533,8 @@ export default function BookServicePage() {
                   </button>
                 </div>
 
-                {/* Today Button */}
-                <div className="mb-4">
-                  <button
-                    onClick={() => {
-                      const today = new Date()
-                      setCurrentMonth(today)
-                      setSelectedDate(today)
-                    }}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                  >
-                    Сегодня
-                  </button>
-                </div>
-
-                {/* Calendar Grid */}
                 <div className="grid grid-cols-7 gap-1 mb-2">
-                  {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
+                  {t.raw('calendar.daysOfWeek').map((day: string) => (
                     <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
                       {day}
                     </div>
@@ -764,103 +542,76 @@ export default function BookServicePage() {
                 </div>
                 
                 <div className="grid grid-cols-7 gap-1">
-                  {calendarDays.map((date, index) => {
+                  {calendarDays.map((date) => {
                     const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
-                    const available = isDateAvailable(date)
-                    
-                    // Debug info for first few dates
-                    if (index < 7) {
-                      console.log(`📅 Calendar date ${date.toDateString()}: available=${available}, isCurrentMonth=${isCurrentMonth}`)
-                    }
-                    
+                    const dateKey = date.toISOString().split('T')[0];
+                    const status = dayAvailability[dateKey];
+                    const isAvailableForBooking = status === 'available';
+
                     return (
                       <button
-                        key={index}
-                        onClick={() => {
-                          if (available) {
-                            console.log(`✅ Date selected: ${date.toDateString()}`)
-                            setSelectedDate(date)
-                          } else {
-                            console.log(`❌ Cannot select date: ${date.toDateString()} (not available)`)
-                          }
-                        }}
-                        disabled={!available}
+                        key={dateKey}
+                        onClick={() => { if (isAvailableForBooking) setSelectedDate(date) }}
+                        disabled={!isAvailableForBooking}
                         className={`
-                          p-2 text-sm rounded-lg transition-colors
-                          ${isCurrentMonth ? 'text-gray-900' : 'text-gray-300'}
-                          ${isToday(date) ? 'bg-blue-100 text-blue-700' : ''}
-                          ${isSelected(date) ? 'bg-rose-100 text-rose-700' : ''}
-                          ${available && !isToday(date) && !isSelected(date) ? 'hover:bg-gray-100' : ''}
-                          ${!available ? 'text-gray-300 cursor-not-allowed' : ''}
+                          p-2 text-sm rounded-lg transition-colors border
+                          ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
+                          ${status === 'loading' ? 'opacity-50' : ''}
+                          ${isToday(date) ? 'border-blue-500' : 'border-transparent'}
+                          ${isSelected(date) ? 'bg-rose-600 text-white font-bold ring-2 ring-rose-300' : ''}
+                          
+                          ${isAvailableForBooking 
+                            ? 'bg-green-50 border-green-200 font-semibold hover:bg-green-100' 
+                            : 'bg-gray-50'
+                          }
+                          
+                          ${!isAvailableForBooking ? 'text-gray-400 cursor-not-allowed' : ''}
+                          ${isSelected(date) && isAvailableForBooking ? 'bg-rose-600 text-white' : ''}
                         `}
-                        title={available ? `Выбрать ${date.toDateString()}` : `Недоступно: ${date.toDateString()}`}
                       >
                         {date.getDate()}
                       </button>
                     )
                   })}
                 </div>
+                 <div className="mt-4 text-xs text-gray-500 space-y-1">
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></div><span>- {t('calendar.legendAvailable')}</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-gray-50"></div><span>- {t('calendar.legendUnavailable')}</span></div>
+                </div>
               </div>
 
               {/* Time Selection */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t('selectTime')} <span className="text-red-500">*</span>
+                  {t('timeSelector.title')} <span className="text-red-500">*</span>
                 </h3>
                 
-                {/* Time Interval Info */}
-                <div className="mb-4">
-                                     <div className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                     <div className="flex items-center gap-2">
-                       <Clock className="w-4 h-4 text-blue-600" />
-                       <span className="font-medium">{t('hourlySlots')}</span>
-                     </div>
-                     <p className="text-xs text-blue-700 mt-1">
-                       {t('hourlySlotsDesc')}
-                     </p>
-                   </div>
-                </div>
-                
+                {formErrors.selectedTime && (
+                  <p className="mb-2 text-sm text-red-600">{formErrors.selectedTime}</p>
+                )}
+
                 {selectedDate && salonSchedule ? (
                   <div>
                     <div className="text-sm text-gray-600 mb-3">
                       {formatDate(selectedDate)} • {salon?.name || ''}
                     </div>
                     
-                    {/* Selected Time Display */}
-                    {selectedTime && (
-                      <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg">
-                        <div className="flex items-center gap-2 text-rose-700">
-                          <Clock className="w-4 h-4" />
-                          <span className="font-medium">Выбрано время: {selectedTime}</span>
-                        </div>
-                        {service && (
-                          <div className="text-xs text-rose-600 mt-1">
-                            Продолжительность: {service.durationMinutes} мин
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    
                     {loadingTimeSlots ? (
                       <div className="text-center py-8 text-gray-500">
-                        <Clock className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                        <p>Загрузка доступного времени...</p>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600 mx-auto mb-3"></div>
+                        <p>{t('timeSelector.loading')}</p>
                       </div>
                     ) : availableTimeSlots.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2">
                         {availableTimeSlots.map((slot, index) => (
                           <button
                             key={index}
-                            onClick={() => {
-                              console.log(`🕐 Clicked on time slot: ${slot.time}`)
-                              console.log(`🕐 Slot available: ${slot.available}`)
-                              console.log(`🕐 Slot reason: ${slot.reason}`)
+                            onClick={() => { 
                               if (slot.available) {
-                                console.log(`✅ Setting selected time to: ${slot.time}`)
-                                setSelectedTime(slot.time)
-                              } else {
-                                console.log(`❌ Cannot select unavailable slot: ${slot.time}`)
+                                setSelectedTime(slot.time);
+                                if (formErrors.selectedTime) {
+                                  setFormErrors(prev => ({ ...prev, selectedTime: '' }));
+                                }
                               }
                             }}
                             disabled={!slot.available}
@@ -869,7 +620,7 @@ export default function BookServicePage() {
                               ${slot.available 
                                 ? selectedTime === slot.time
                                   ? 'bg-rose-600 text-white border-rose-600'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-rose-300 hover:bg-rose-50'
+                                  : 'bg-white text-gray-700 border-gray-300 hover:border-rose-400 hover:bg-rose-50'
                                 : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                               }
                             `}
@@ -880,25 +631,25 @@ export default function BookServicePage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Clock className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                        <p>Нет доступного времени на выбранную дату</p>
+                      <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                        <Calendar className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                        <p>{t('timeSelector.noSlots')}</p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                    <p>Выберите дату для просмотра доступного времени</p>
+                  <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+                    <Calendar className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                    <p>{t('timeSelector.selectDatePrompt')}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Other Form Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('selectStaff')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.staffLabel')}</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <select
@@ -906,7 +657,7 @@ export default function BookServicePage() {
                     onChange={(e) => setEmployeeId(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
                   >
-                    <option value="">{t('anySpecialist')}</option>
+                    <option value="">{t('fields.staffAny')}</option>
                     {employees.map((m: { userId: string }) => (
                       <option key={m.userId} value={m.userId}>
                         {employeeNames[m.userId] || m.userId}
@@ -914,52 +665,60 @@ export default function BookServicePage() {
                     ))}
                   </select>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {t('staffSelectionNote')}
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('customerName')} <span className="text-red-500">*</span>
+                  {t('fields.customerNameLabel')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
-                  placeholder={t('customerNamePlaceholder')}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (formErrors.customerName) {
+                      setFormErrors(prev => ({ ...prev, customerName: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 ${formErrors.customerName ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder={t('fields.customerNamePlaceholder')}
                   required
                 />
-                {currentUser && (
-                  <p className="text-xs text-green-600 mt-1">
-                    ✓ Автоматически заполнено из профиля
-                  </p>
-                )}
+                {formErrors.customerName ? (
+                  <p className="mt-1 text-xs text-red-600">{formErrors.customerName}</p>
+                ) : currentUser ? (
+                  <p className="mt-1 text-xs text-green-600">{t('fields.autofillMessage')}</p>
+                ) : null}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('customerPhone')} <span className="text-red-500">*</span>
+                  {t('fields.customerPhoneLabel')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
-                  placeholder={t('customerPhonePlaceholder')}
+                  onChange={(e) => {
+                    setCustomerPhone(e.target.value);
+                    if (formErrors.customerPhone) {
+                      setFormErrors(prev => ({ ...prev, customerPhone: '' }));
+                    }
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 ${formErrors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder={t('fields.customerPhonePlaceholder')}
                   required
                 />
+                {formErrors.customerPhone && <p className="mt-1 text-xs text-red-600">{formErrors.customerPhone}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Комментарий</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.notesLabel')}</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
-                  placeholder="Пожелания к записи"
+                  placeholder={t('fields.notesPlaceholder')}
                 />
               </div>
             </div>
@@ -969,7 +728,7 @@ export default function BookServicePage() {
                 <ChatButton
                   salonId={salon.id}
                   customerUserId={currentUser.userId}
-                  customerName={currentUser.displayName}
+                  customerName={currentUser.displayName || ""}
                   serviceId={serviceId}
                   className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
                   variant="button"
@@ -980,20 +739,20 @@ export default function BookServicePage() {
                 className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
                 disabled={submitting}
               >
-                {t('cancel')}
+                {t('buttons.cancel')}
               </button>
               <button
                 onClick={handleBook}
-                disabled={submitting || !selectedDate || !selectedTime || !customerName || !customerPhone}
-                className="px-5 py-2 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-50"
+                disabled={submitting}
+                className="px-5 py-2 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {submitting ? "Создание..." : t('bookNow')}
+                {submitting ? t('buttons.submitting') : t('buttons.bookNow')}
               </button>
             </div>
 
             <div className="pt-2 text-xs text-gray-500 flex items-center gap-2">
               <Shield className="w-3 h-3" />
-              <span>Данные защищены и не передаются третьим лицам</span>
+              <span>{t('messages.privacyNotice')}</span>
             </div>
           </div>
         </div>

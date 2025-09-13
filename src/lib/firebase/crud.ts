@@ -1,5 +1,6 @@
 import { db } from './init';
 import { get, ref, remove, set, update } from 'firebase/database';
+import { z, ZodType } from 'zod';
 
 // Base CRUD helpers used across firebase modules
 export const createOperation = async <T>(
@@ -27,4 +28,40 @@ export const updateOperation = async <T>(path: string, data: Partial<T>, schema:
 
 export const deleteOperation = async (path: string) => {
   await remove(ref(db, path));
+};
+
+export interface BatchOperation<T> {
+  id: string;
+  data: Partial<T>;
+}
+
+export const batchOperation = async <T>(
+  paths: string[],
+  data: Partial<T>[],
+  schema: ZodType
+): Promise<T[]> => {
+  if (paths.length !== data.length) {
+    throw new Error('Paths and data arrays must have the same length');
+  }
+
+  const updates: { [key: string]: any } = {};
+  const results: T[] = [];
+
+  // Validate all data first
+  for (let i = 0; i < paths.length; i++) {
+    const currentData = await readOperation<T>(paths[i]);
+    const mergedData = { ...(currentData || {}), ...data[i] };
+    const validatedData = schema.parse(mergedData);
+    
+    // Add to batch update
+    updates[paths[i]] = validatedData;
+    results.push(validatedData as T);
+  }
+
+  // Perform batch update
+  if (Object.keys(updates).length > 0) {
+    await update(ref(db, '/'), updates);
+  }
+
+  return results;
 };

@@ -15,7 +15,7 @@ export interface SalonWorkDay {
 
 export interface SalonSchedule {
   salonId: string;
-  weeks: SalonWorkDay[][];
+  weeklySchedule: SalonWorkDay[]; // Single week pattern that repeats
   updatedAt: string;
 }
 

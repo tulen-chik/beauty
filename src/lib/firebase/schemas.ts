@@ -30,9 +30,10 @@ export const salonWorkDaySchema = z.object({
   times: z.array(salonWorkTimeSchema),
 });
 
+// --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
 export const salonScheduleSchema = z.object({
   salonId: z.string(),
-  weeks: z.array(z.array(salonWorkDaySchema)),
+  weeklySchedule: z.array(salonWorkDaySchema), 
   updatedAt: z.string(),
 });
 
@@ -295,47 +296,70 @@ export const servicePromotionPlanSchema = z.object({
   createdAt: z.string().datetime("Неверный формат даты создания"),
 });
 
-/**
- * Схема salonSubscriptionSchema была УДАЛЕНА,
- * так как соответствующий тип данных больше не используется.
- */
+// Subscription Plan Schema
+export const subscriptionPlanSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, 'Название плана должно содержать минимум 2 символа'),
+  description: z.string().min(10, 'Описание должно содержать минимум 10 символов'),
+  price: z.number().min(0, 'Цена не может быть отрицательной'),
+  currency: z.string().default('RUB'),
+  billingPeriod: z.enum(['monthly', 'quarterly', 'yearly']),
+  features: z.array(z.string()),
+  isActive: z.boolean().default(true),
+  isPopular: z.boolean().default(false),
+  createdAt: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  updatedAt: z.string().or(z.date()).transform(val => new Date(val).toISOString())
+});
 
-/**
- * Схема для отслеживания покупки и статуса продвижения конкретной услуги.
- * Эта схема объединяет в себе логику старых salonSubscriptionSchema и servicePromotionSchema.
- */
+// Subscription Billing Schema
+export const subscriptionBillingSchema = z.object({
+  id: z.string().optional(),
+  subscriptionId: z.string(),
+  amount: z.number().min(0, 'Сумма не может быть отрицательной'),
+  currency: z.string().default('RUB'),
+  status: z.enum(['pending', 'paid', 'failed', 'refunded']),
+  paymentMethod: z.string().optional(),
+  paymentIntentId: z.string().optional(),
+  billingPeriodStart: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  billingPeriodEnd: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  paidAt: z.string().or(z.date()).transform(val => new Date(val).toISOString()).optional(),
+  createdAt: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  updatedAt: z.string().or(z.date()).transform(val => new Date(val).toISOString())
+});
+
+// Subscription Schema
+export const subscriptionSchema = z.object({
+  id: z.string().optional(),
+  salonId: z.string(),
+  planId: z.string(),
+  status: z.enum(['active', 'canceled', 'past_due', 'unpaid', 'trialing']),
+  currentPeriodStart: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  currentPeriodEnd: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  cancelAtPeriodEnd: z.boolean().default(false),
+  canceledAt: z.string().or(z.date()).transform(val => new Date(val).toISOString()).optional(),
+  trialStart: z.string().or(z.date()).transform(val => new Date(val).toISOString()).optional(),
+  trialEnd: z.string().or(z.date()).transform(val => new Date(val).toISOString()).optional(),
+  createdAt: z.string().or(z.date()).transform(val => new Date(val).toISOString()),
+  // updatedAt: z.string().or(z.date()).transform(val => new Date(val).toISOString())
+});
+
 export const servicePromotionSchema = z.object({
-  // ID услуги, которая продвигается
   serviceId: z.string().min(1, "ID услуги обязателен"),
-  // ID салона, которому принадлежит услуга
   salonId: z.string().min(1, "ID салона обязателен"),
-  // ID купленного плана продвижения
   planId: z.string().min(1, "ID плана обязателен"),
-  // Статус конкретно этого продвижения
   status: z.enum(['active', 'cancelled', 'expired', 'pending_payment', 'paused']),
-  // Даты начала и окончания периода продвижения
   startDate: z.string().datetime("Неверный формат даты начала"),
   endDate: z.string().datetime("Неверный формат даты окончания"),
-  // Дата следующего платежа (опционально)
   nextPaymentDate: z.string().datetime("Неверный формат даты следующего платежа").optional(),
   createdAt: z.string().datetime("Неверный формат даты создания"),
   updatedAt: z.string().datetime("Неверный формат даты обновления"),
 });
 
-/**
- * Схема для аналитики эффективности продвижения услуги.
- */
 export const promotionAnalyticsSchema = z.object({
-  // Ссылка на конкретное продвижение услуги
   servicePromotionId: z.string().min(1, "ID продвижения услуги обязателен"),
-  // Дата, за которую собрана статистика
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Дата должна быть в формате YYYY-MM-DD"),
-  // Количество показов
   impressions: z.number().int().nonnegative("Количество показов не может быть отрицательным"),
-  // Количество кликов
   clicks: z.number().int().nonnegative("Количество кликов не может быть отрицательным"),
-  // Средняя позиция
   averageRank: z.number().positive("Средний ранг должен быть положительным числом"),
-  // Количество записей
   bookingsCount: z.number().int().nonnegative("Количество записей не может быть отрицательным"),
 });

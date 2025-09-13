@@ -708,12 +708,17 @@
       "rebook": "Записаться снова"
     }
   },
+  
+  
   "salonSettings": {
     "title": "Настройки салона",
     "subtitle": "Управляйте настройками вашего бизнеса и системы",
     "loading": "Загрузка...",
     "saving": "Сохранение...",
     "loadingTitle": "Загрузка настроек салона...",
+    "common": {
+      "cancel":"Отменить"
+    },
     "notFound": {
       "title": "Салон не найден",
       "description": "Запрашиваемый салон не существует или был удален"
@@ -727,7 +732,37 @@
       "loadFailed": "Не удалось загрузить данные салона",
       "invalidEmail": "Пожалуйста, введите корректный email или оставьте поле пустым"
     },
+    
     "sections": {
+
+      "subscription": {
+      "title": "Управление подпиской",
+      "purchase": "Оформить подписку",
+      "loading": "Загрузка подписок...",
+      "noSubscriptions": "Активных подписок не найдено.",
+      "period": "Период оплаты",
+      "modalTitle": "Выберите тарифный план",
+      "purchaseSuccess": "Подписка успешно оформлена!",
+      "cancelAnytime": "Можно отменить в любой момент.",
+      "purchaseNow": "Оформить подписку",
+      "processing": "Обработка",
+      "selectPlan": "Выбрать тариф",
+      "selected": "Выбрано",
+      "noPlansTitle": "Нет доступных тарифов",
+      "noPlans": "В данный момент нет доступных тарифных планов. Пожалуйста, проверьте позже.",
+      "billingPeriods": {
+        "monthly": "месяц",
+        "yearly": "год"
+      },
+      "statuses": {
+        "active": "Активна",
+        "trialing": "Пробный период",
+        "past_due": "Просрочен платеж",
+        "canceled": "Отменена",
+        "unpaid": "Не оплачено",
+        "expired": "Истекла"
+      }
+    },
       "business": {
         "title": "Информация о бизнесе",
         "name": "Название салона",
@@ -771,6 +806,7 @@
   },
   "salonCrm": {
     "menu": {
+      "salon": "Салон",
       "title": "Меню",
       "dashboard": "Панель управления",
       "appointments": "Записи",
@@ -880,6 +916,7 @@
   },
   "salonSchedule": {
     "title": "Расписание салона",
+    "createBooking": "Создать запись",
     "service": "Услуга",
     "scheduleSetup": "Настройки расписания",
     "client": "Клиент",
@@ -926,6 +963,7 @@
       "pageTitle": "Мои салоны",
       "createButton": "+ Новый салон",
       "loading": "Загрузка...",
+      "maxSalonsReached": "Вы достигли максимального количества салонов ({max}). Удалите один из существующих салонов, чтобы создать новый.",
       "noSalons": "У вас пока нет салонов.",
       "role": "Ваша роль: {role}",
       "joined": "Присоединились: {date}",
@@ -1014,5 +1052,60 @@
         "noData": "Данные по аналитике еще не собраны.",
         "closeButton": "Закрыть"
       }
+    },
+    "bookingPage": {
+      "modalTitle": "Создать запись вручную",
+    "loading": "Загрузка...",
+    "errorTitle": "Ошибка",
+    "backButton": "Назад",
+    "successMessage": "Запись успешно создана!",
+    "header": {
+      "minutes": "мин",
+      "currency": "₽"
+    },
+    "scheduleInfo": "Запись возможна минимум за 2 часа до начала процедуры.",
+    "calendar": {
+      "title": "Выберите дату",
+      "daysOfWeek": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+      "legendAvailable": "Есть свободные окна",
+      "legendUnavailable": "Нет свободных окон"
+    },
+    "timeSelector": {
+      "title": "Выберите время",
+      "loading": "Загрузка доступного времени...",
+      "noSlots": "Нет доступного времени на выбранную дату",
+      "selectDatePrompt": "Выберите дату для просмотра доступного времени"
+    },
+    "fields": {
+      "serviceLabel": "Услуга",
+      "servicePlaceholder": "Выберите услугу...",
+      "staffLabel": "Выберите специалиста",
+      "staffAny": "Любой специалист",
+      "customerNameLabel": "Ваше имя",
+      "customerNamePlaceholder": "Введите ваше имя",
+      "customerNameErrorRequired": "Пожалуйста, укажите ваше имя.",
+      "customerPhoneLabel": "Ваш телефон",
+      "customerPhonePlaceholder": "+7 (999) 999-99-99",
+      "customerPhoneErrorRequired": "Пожалуйста, укажите ваш номер телефона.",
+      "customerPhoneErrorInvalid": "Неверный формат номера телефона.",
+      "notesLabel": "Комментарий",
+      "notesPlaceholder": "Пожелания к записи",
+      "autofillMessage": "✓ Автоматически заполнено из профиля"
+    },
+    "buttons": {
+      "cancel": "Отмена",
+      "bookNow": "Записаться",
+      "submitting": "Создание..."
+    },
+    "messages": {
+      "errorSlotTaken": "Выбранное время недоступно. Выберите другое время.",
+      "errorGeneric": "Не удалось создать запись.",
+      "errorLoading": "Ошибка загрузки.",
+      "errorServiceNotFound": "Услуга не найдена.",
+      "errorContext": "Ошибка инициализации контекстов.",
+      "selectTimeRequired": "Пожалуйста, выберите время для записи.",
+      "privacyNotice": "Данные защищены и не передаются третьим лицам.",
+      "selectServicePrompt": "Пожалуйста, выберите услугу, чтобы продолжить."
     }
+  }
 }
