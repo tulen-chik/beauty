@@ -28,6 +28,7 @@ export default function SalonCrmLayout({
     { key: "staff", label: t('menu.staff'), path: "/staff" },
     { key: "settings", label: t('menu.settings'), path: "/settings" },
     { key: "promotion", label: t('menu.promotion'), path: "/promotion" },
+    { key: "analytics", label: t('menu.analytics'), path: "/analytics" },
   ];
 
   const handleMenuClick = (path: string) => {
@@ -94,11 +95,10 @@ export default function SalonCrmLayout({
         )}
 
         {/* Desktop Layout */}
-        <div className="hidden lg:flex lg:min-h-screen lg:py-12 lg:px-4 lg:items-center lg:justify-center">
-          <div className="w-full max-w-7xl flex bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[600px]">
+        <div className="hidden lg:flex lg:min-h-[calc(100vh-3rem)] lg:py-6 lg:px-2 lg:items-start lg:justify-center">
+          <div className="w-full max-w-7xl flex bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[calc(100vh-6rem)]">
             {/* Основной контент */}
-            {/* THE FIX IS HERE: Added min-w-0 to allow this flex item to shrink */}
-            <div className="flex-1 p-8 min-w-0">
+            <div className="flex-1 p-6 min-w-0 overflow-auto">
               {children}
             </div>
             {/* Меню справа */}
@@ -122,9 +122,9 @@ export default function SalonCrmLayout({
         </div>
 
         {/* Mobile Content */}
-        <div className="lg:hidden p-4">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="p-4 sm:p-6">
+        <div className="lg:hidden p-4 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-w-full">
+            <div className="p-4 sm:p-6 overflow-x-auto">
               {children}
             </div>
           </div>

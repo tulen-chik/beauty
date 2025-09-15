@@ -8,6 +8,7 @@ import { useUser } from '@/contexts';
 import RatingStats from '@/components/RatingStats';
 import RatingCard from '@/components/RatingCard';
 import type { SalonRating } from '@/types/database';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function SalonRatingsPage() {
   const params = useParams();
@@ -105,12 +106,7 @@ export default function SalonRatingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Загрузка отзывов...</p>
-        </div>
-      </div>
+      <LoadingSpinner/>
     );
   }
 

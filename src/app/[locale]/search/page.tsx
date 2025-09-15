@@ -13,6 +13,7 @@ import { usePromotion } from "@/contexts/PromotionContext"
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import RatingDisplay from "@/components/RatingDisplay"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 // --- ТИПЫ ДАННЫХ ---
 type AnySalon = {
@@ -178,7 +179,7 @@ const SalonsMap = ({
   }
 
   if (mapLoading) {
-    return <div className="w-full h-full rounded-lg bg-gray-50 flex items-center justify-center"><div className="animate-spin h-8 w-8 border-b-2 border-blue-600"></div></div>
+    return <LoadingSpinner/>
   }
   if (mapError) {
     return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center"><p className="text-red-800 text-sm font-medium mb-2">Не удалось загрузить карту</p><p className="text-red-700 text-xs mb-4">Ошибка: {mapError}</p><button onClick={initializeMap} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Попробовать снова</button></div>

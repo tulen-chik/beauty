@@ -6,6 +6,7 @@ import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
 import type { ChatMessage, ChatMessageType } from '@/types/database';
 import { useTranslations } from 'next-intl';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 interface ChatInterfaceProps {
   chatId: string;
@@ -201,9 +202,7 @@ export default function ChatInterface({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">{t('loadingChat')}</div>
-      </div>
+      <LoadingSpinner />
     );
   }
 

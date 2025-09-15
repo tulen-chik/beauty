@@ -19,6 +19,7 @@ import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useUser } from "@/contexts/UserContext";
 import { useChat } from "@/contexts/ChatContext";
 import ChatButton from "@/components/ChatButton";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 type Appointment = {
   id: string;
@@ -274,12 +275,7 @@ export default function SalonAppointmentsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t("loading")}</p>
-        </div>
-      </div>
+      <LoadingSpinner/>
     );
   }
 

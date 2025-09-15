@@ -11,21 +11,12 @@ import {
   FacebookShareButton, TwitterShareButton, LinkedinShareButton, TelegramShareButton, WhatsappShareButton,
   FacebookIcon, TwitterIcon, LinkedinIcon, TelegramIcon, WhatsappIcon,
 } from "react-share"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 // 1. Импортируем хук из вашего контекста и типы
 import { useBlogAdmin as useBlog } from "@/contexts/BlogAdminContext"
 import type { BlogPost, BlogCategory } from "@/types/database"
 import BlogContent from "../BlogContent" // Предполагается, что этот компонент у вас есть
-
-// Компонент для состояния загрузки
-const LoadingState = () => (
-  <div className="min-h-screen bg-white flex items-center justify-center">
-    <div className="text-center text-gray-500">
-      <Loader2 className="w-12 h-12 mx-auto animate-spin text-rose-500" />
-      <p className="mt-4 text-lg font-semibold">Загрузка статьи...</p>
-    </div>
-  </div>
-);
 
 // Компонент для состояния "Не найдено"
 const NotFoundState = () => (
@@ -93,7 +84,7 @@ export default function BlogPostPage() {
 
   // 5. Обрабатываем состояния загрузки и "не найдено"
   if (loading && !post) {
-    return <LoadingState />;
+    return <LoadingSpinner />;
   }
 
   if (!loading && !post) {
@@ -102,7 +93,7 @@ export default function BlogPostPage() {
   
   // Если post есть, но категории еще нет (редкий случай), можно показать заглушку
   if (!category) {
-      return <LoadingState />;
+      return <LoadingSpinner />;
   }
 
   return (

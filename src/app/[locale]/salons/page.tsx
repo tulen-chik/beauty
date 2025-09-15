@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
 import { useTranslations } from 'next-intl'; // <--- Импортируем хук
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 // Компонент для отображения имени салона с переводом
 function SalonName({ salonId }: { salonId: string }) {
@@ -32,7 +33,7 @@ function SalonName({ salonId }: { salonId: string }) {
   }, [salonId, fetchSalon, t]); // Добавляем t в зависимости
 
   if (loading) {
-    return <span className="text-gray-400">{t('loading')}</span>; 
+    return <LoadingSpinner/>
   }
 
   return <>{name}</>;

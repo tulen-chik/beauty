@@ -17,6 +17,7 @@ import { useSalonRating } from "@/contexts"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import ChatButton from "@/components/ChatButton"
 import RatingDisplay from "@/components/RatingDisplay"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 type Service = {
   id: string
@@ -115,9 +116,7 @@ export default function ServicePublicPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center text-gray-600">Загрузка...</div>
-      </div>
+      <LoadingSpinner/>
     )
   }
 

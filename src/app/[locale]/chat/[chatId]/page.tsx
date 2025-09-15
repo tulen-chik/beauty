@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
 import ChatInterface from '@/components/ChatInterface';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export default function ChatPage() {
   const params = useParams();
@@ -47,12 +48,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <div className="text-gray-600">Загрузка чата...</div>
-        </div>
-      </div>
+      <LoadingSpinner />
     );
   }
 

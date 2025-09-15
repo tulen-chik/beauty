@@ -327,7 +327,8 @@
       "createBooking": "Create Booking",
       "promotion": "Promotion",
       "chats": "Chats",
-      "ratings": "Ratings"
+      "ratings": "Ratings",
+      "analytics": "Analytics"
     }
   },
   "salonAppointments": {
@@ -1008,6 +1009,62 @@
       "bookings": "Bookings",
       "noData": "Analytics data has not been collected yet.",
       "closeButton": "Close"
+    }
+  },
+  "SalonAnalyticsPage": {
+    "header": {
+      "title": "Service Analytics",
+      "subtitle": "Review revenue and popularity of services by month."
+    },
+    "exportButton": "Export to Excel",
+    "allYear": "All Year",
+    "loading": "Loading data...",
+    "emptyState": {
+      "title": "No Data to Display",
+      "description": "No completed services found for the year {year}."
+    },
+    "table": {
+      "serviceName": "Service Name",
+      "servicePrice": "Price ($)",
+      "yearlyCount": "Qty (Year)",
+      "monthlyPeriods": "Sales by Month",
+      "yearlyTotal": "Total (Year)",
+      "grandTotal": "Grand Total Revenue",
+      "details": "Details"
+    },
+    "ratingByQuantityTitle": "Top by Quantity",
+    "ratingByProfitTitle": "Top by Revenue",
+    "pcs": "pcs",
+    "noDataForPeriod": "No data for the selected period.",
+    "months": {
+      "short": {
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun",
+        "jul": "Jul",
+        "aug": "Aug",
+        "sep": "Sep",
+        "oct": "Oct",
+        "nov": "Nov",
+        "dec": "Dec"
+      },
+      "full": {
+        "jan": "January",
+        "feb": "February",
+        "mar": "March",
+        "apr": "April",
+        "may": "May",
+        "jun": "June",
+        "jul": "July",
+        "aug": "August",
+        "sep": "September",
+        "oct": "October",
+        "nov": "November",
+        "dec": "December"
+      }
     }
   }
 }

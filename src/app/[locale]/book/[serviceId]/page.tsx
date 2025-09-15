@@ -14,6 +14,8 @@ import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { useTranslations } from "next-intl"
 import { useChat } from "@/contexts/ChatContext"
 import ChatButton from "@/components/ChatButton"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall"
 
 type Service = {
   id: string
@@ -427,12 +429,7 @@ export default function BookServicePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
-          <div className="text-gray-600">{t('loading')}</div>
-        </div>
-      </div>
+      <LoadingSpinner />
     )
   }
 
@@ -503,9 +500,7 @@ export default function BookServicePage() {
                 </div>
               </div>
             ) : !loading && (
-              <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
-                {t('scheduleNotConfigured')}
-              </div>
+              <LoadingSpinner />
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -597,10 +592,7 @@ export default function BookServicePage() {
                     </div>
                     
                     {loadingTimeSlots ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600 mx-auto mb-3"></div>
-                        <p>{t('timeSelector.loading')}</p>
-                      </div>
+                      <LoadingSpinnerSmall />
                     ) : availableTimeSlots.length > 0 ? (
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2">
                         {availableTimeSlots.map((slot, index) => (

@@ -8,16 +8,7 @@ import Image from "next/image"
 // 1. Импортируем хук из вашего контекста
 import { useBlogAdmin as useBlog } from "@/contexts/BlogAdminContext" 
 import type { BlogPost, BlogCategory } from "@/types/database"
-
-// Отдельный компонент для состояния загрузки для чистоты кода
-const LoadingState = () => (
-  <div className="flex justify-center items-center min-h-screen bg-white">
-    <div className="text-center text-gray-500">
-      <Loader2 className="w-12 h-12 mx-auto animate-spin text-rose-500" />
-      <p className="mt-4 text-lg font-semibold">Загрузка статей...</p>
-    </div>
-  </div>
-);
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 export default function BlogPage() {
   // 2. Получаем все необходимые данные и функции из контекста
@@ -85,7 +76,7 @@ export default function BlogPage() {
 
   // 5. Отображаем индикатор загрузки, пока данные не получены
   if (loading && posts.length === 0) {
-    return <LoadingState />;
+    return <LoadingSpinner />;
   }
 
   return (
