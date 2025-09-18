@@ -631,7 +631,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           {categories.map((cat) => (
                             <label
                               key={cat.id}
-                              className="flex items-center space-x-2 cursor-pointer hover:bg-accent/50 p-2 rounded-md transition-colors"
+                              className="flex items-center space-x-2 cursor-pointer hover:bg-rose-50 p-2 rounded-md transition-colors"
                             >
                               <input
                                 type="checkbox"
@@ -708,14 +708,15 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       setShowModal(false);
                       setEditingService(null);
                     }}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 flex-1 sm:flex-none"
+
                   >
                     {t("modal.form.cancelButton")}
                   </button>
                   <button
                     type="submit"
                     disabled={serviceLoading || categoryLoading}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 flex-1 sm:flex-none"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-500 hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
                   >
                     {(serviceLoading || categoryLoading) ? t("modal.form.savingButton") : (editingService ? t("modal.form.saveButton") : t("modal.form.addButton"))}
                   </button>

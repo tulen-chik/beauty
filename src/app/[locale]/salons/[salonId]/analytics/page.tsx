@@ -135,9 +135,8 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
     };
 
     const loading = appointmentsLoading || servicesLoading;
-    const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+    const availableYears = Array.from({ length: 1 }, (_, i) => new Date().getFullYear() - i);
 
-    // --- JSX РЕНДЕРИНГ КОМПОНЕНТА ---
     return (
         <div className="min-h-screen bg-gradient-soft py-8 px-4">
             <div className="max-w-7xl mx-auto">
@@ -151,7 +150,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                         <button
                             onClick={handleExportToExcel}
                             disabled={loading || tableData.length === 0}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent h-10 px-4"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 h-10 px-4"
                         >
                             <FileDown className="h-4 w-4 mr-2" />
                             {t("exportButton")}
@@ -211,7 +210,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                                 ))}
                                 <div className="flex justify-between items-center p-4 font-bold bg-muted/50 rounded-lg mt-4">
                                     <span>{t("table.grandTotal")}:</span>
-                                    <span className="text-xl text-rose-600">{totalRevenue.toFixed(2)} ₽</span>
+                                    <span className="text-xl text-rose-600">{totalRevenue.toFixed(2)} Br</span>
                                 </div>
                             </div>
 
