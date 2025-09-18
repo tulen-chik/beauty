@@ -301,7 +301,7 @@ export default function SalonServicePromotionsPage() {
                         {activePromotion ? (
                           <button
                             onClick={() => handleViewAnalytics(activePromotion)}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4"
+                            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4"
                           >
                             <BarChart2 className="h-4 w-4 mr-2" />
                             Посмотреть аналитику
@@ -397,7 +397,7 @@ export default function SalonServicePromotionsPage() {
                 </button>
                 <button
                   onClick={() => setShowPurchaseModal(false)}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
                 >
                   Отмена
                 </button>
@@ -482,7 +482,7 @@ export default function SalonServicePromotionsPage() {
               <div className="flex gap-3 pt-6 border-t">
                 <button
                   onClick={() => setShowAnalyticsModal(false)}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
                 >
                   Закрыть
                 </button>

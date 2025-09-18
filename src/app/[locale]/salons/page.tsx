@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
-import { useTranslations } from 'next-intl'; // <--- Импортируем хук
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { useTranslations } from 'next-intl'; 
+import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall";
 
 // Компонент для отображения имени салона с переводом
 function SalonName({ salonId }: { salonId: string }) {
-  const t = useTranslations('salons'); // <--- Инициализируем хук для неймспейса 'salons'
+  const t = useTranslations('salons'); 
   const { fetchSalon } = useSalon();
   const [name, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,10 +30,10 @@ function SalonName({ salonId }: { salonId: string }) {
     };
 
     getSalonName();
-  }, [salonId, fetchSalon, t]); // Добавляем t в зависимости
+  }, [salonId, fetchSalon, t]); 
 
   if (loading) {
-    return <LoadingSpinner/>
+    return <LoadingSpinnerSmall/>
   }
 
   return <>{name}</>;
@@ -41,7 +41,7 @@ function SalonName({ salonId }: { salonId: string }) {
 
 // Основной компонент страницы
 export default function UserSalonsPage() {
-  const t = useTranslations('salons'); // <--- Инициализируем хук для неймспейса 'salons'
+  const t = useTranslations('salons'); 
   const { fetchUserSalons, userSalons, loading, error } = useSalon();
   const [fetched, setFetched] = useState(false);
   const { currentUser } = useUser();

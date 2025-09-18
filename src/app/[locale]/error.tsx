@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 
 export default function Error({
   error,
@@ -19,29 +20,46 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white p-4">
-      <div className="max-w-md w-full text-center">
-        <div className="mb-8">
-          <h1 className="text-6xl font-bold text-black mb-4">Error</h1>
-          <h2 className="text-2xl font-medium text-gray-800 mb-2">{t('errorTitle')}</h2>
-          <p className="text-gray-600">{t('errorDescription')}</p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <button
-            onClick={reset}
-            className="px-8 py-3 border-2 border-black text-black font-medium hover:bg-black hover:text-white transition-colors duration-200"
-          >
-            {t('tryAgain')}
-          </button>
-          <Link 
-            href="/workspaces"
-            className="px-8 py-3 border border-gray-400 text-gray-600 font-medium hover:bg-gray-100 transition-colors duration-200"
-          >
-            {t('backToHome')}
-          </Link>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50 p-6">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+        <div className="p-8 text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-50 mb-6">
+            <AlertCircle className="h-10 w-10 text-red-500" />
+          </div>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('errorTitle', { defaultValue: 'Oops! Something went wrong' })}</h1>
+          <p className="text-gray-600 mb-8">
+            {t('errorDescription', { 
+              defaultValue: 'We encountered an unexpected error. Please try again or return to the homepage.' 
+            })}
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={reset}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors duration-200 w-full sm:w-auto"
+            >
+              <RefreshCw className="h-5 w-5" />
+              {t('tryAgain', { defaultValue: 'Try Again' })}
+            </button>
+            
+            <Link 
+              href="/"
+              className="flex items-center justify-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200 w-full sm:w-auto"
+            >
+              <Home className="h-5 w-5" />
+              {t('backToHome', { defaultValue: 'Back to Home' })}
+            </Link>
+          </div>
+          
+          <div className="mt-8 p-4 bg-gray-50 rounded-lg text-left">
+            <p className="text-sm text-gray-600 mb-2">Error details (only visible in development):</p>
+            <code className="block p-3 bg-gray-100 rounded text-xs text-red-500 overflow-x-auto">
+              {error.message}
+            </code>
+          </div>
         </div>
       </div>
     </main>
   );
-} 
+}
