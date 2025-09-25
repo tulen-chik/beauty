@@ -16,21 +16,15 @@ import {
   Phone,
   Calendar,
   Building2,
-  X
+  X,
+  Plus,
+  UserPlus
 } from "lucide-react"
 import { useAdmin } from "@/contexts/AdminContext"
 import { useUser } from "@/contexts/UserContext"
-
-interface User {
-  userId: string
-  displayName: string
-  email: string
-  role: string
-  createdAt: string
-  lastLoginAt?: string
-  isActive: boolean
-  avatarUrl?: string
-}
+import {CreateSalonModal} from "./components/CreateSalonModal"
+import { CreateUserModal } from "./components/CreateUserModal"
+import { User } from "@/types/database"
 
 export default function AdminUsersPage() {
   const t = useTranslations('admin')
@@ -50,6 +44,8 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserModal, setShowUserModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showCreateSalonModal, setShowCreateSalonModal] = useState(false)
+  const [showCreateUserModal, setShowCreateUserModal] = useState(false)
 
   useEffect(() => {
     loadUsers()
@@ -127,9 +123,18 @@ export default function AdminUsersPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Управление пользователями</h1>
-          <p className="text-gray-600 mt-1">Просмотр и управление всеми пользователями системы</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Управление пользователями</h1>
+            <p className="text-gray-600 mt-1">Просмотр и управление всеми пользователями системы</p>
+          </div>
+          <button
+            onClick={() => setShowCreateUserModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <UserPlus className="h-5 w-5 mr-2" />
+            Добавить пользователя
+          </button>
         </div>
 
         {/* Filters */}
@@ -239,8 +244,40 @@ export default function AdminUsersPage() {
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
-                  
-                  
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUserModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="Просмотр"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowCreateSalonModal(true);
+                            }}
+                            className="text-green-600 hover:text-green-900"
+                            title="Добавить салон"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowDeleteModal(true);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Удалить"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -305,14 +342,6 @@ export default function AdminUsersPage() {
                     </span>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Статус</label>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      selectedUser.isActive 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {selectedUser.isActive ? 'Активен' : 'Неактивен'}
-                    </span>
                   </div>
                 </div>
 
@@ -321,12 +350,7 @@ export default function AdminUsersPage() {
                   <p className="text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</p>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Последний вход</label>
-                  <p className="text-sm text-gray-900">
-                    {selectedUser.lastLoginAt ? formatDate(selectedUser.lastLoginAt) : 'Никогда'}
-                  </p>
-                </div>
+
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">
@@ -367,7 +391,7 @@ export default function AdminUsersPage() {
                   Отмена
                 </button>
                 <button
-                  onClick={() => handleDeleteUser(selectedUser.userId)}
+                  onClick={() => handleDeleteUser(selectedUser.id)}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
                 >
                   Удалить
@@ -377,6 +401,25 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      {/* Create Salon Modal */}
+      {showCreateSalonModal && selectedUser && (
+        <CreateSalonModal
+          isOpen={showCreateSalonModal}
+          onClose={() => {
+            setShowCreateSalonModal(false);
+            setSelectedUser(null);
+          }}
+          userId={selectedUser.id}
+          userName={selectedUser.displayName}
+        />
+      )}
+
+      {/* Create User Modal */}
+      <CreateUserModal 
+        isOpen={showCreateUserModal}
+        onClose={() => setShowCreateUserModal(false)}
+      />
     </div>
   )
 }

@@ -39,7 +39,15 @@ interface AdminContextType {
   
   // Users management
   users: User[];
-  loadUsers: () => Promise<void>;
+  loadUsers: () => Promise<(User & { id: string; })[]>;
+  createUser: (userData: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone?: string;
+    role?: string;
+    adminId: string;
+  }) => Promise<User>;
   updateUser: (userId: string, data: Partial<User>) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   getUserSalons: (userId: string) => Promise<UserSalons | null>;
@@ -137,10 +145,53 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      setUsers([]);
+      const usersList = await userOperations.list();
+      setUsers(usersList);
       setLoading(false);
+      return usersList;
     } catch (e: any) {
       setError(e.message);
+      setLoading(false);
+      throw e;
+    }
+  }, []);
+
+  const createUser = useCallback(async (userData: {
+    email: string;
+    password: string;
+    displayName: string;
+    phone?: string;
+    role?: string;
+    adminId: string;
+  }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create user');
+      }
+
+      const newUser = await response.json();
+      
+      // Update the local users list
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      
+      return newUser;
+    } catch (err) {
+      console.error('Error creating user:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create user';
+      setError(errorMessage);
+      throw err;
+    } finally {
       setLoading(false);
     }
   }, []);
@@ -346,6 +397,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     // Users management
     users,
     loadUsers,
+    createUser,
     updateUser,
     deleteUser,
     getUserSalons,

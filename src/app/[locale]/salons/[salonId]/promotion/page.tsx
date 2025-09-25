@@ -379,7 +379,6 @@ export default function SalonServicePromotionsPage() {
                 </div>
               </div>
 
-              {/* OPTIMIZATION: Stack buttons on mobile, reverse order on larger screens */}
               <div className="flex flex-col-reverse sm:flex-row sm:justify-start gap-3 pt-6 border-t">
                 <button
                   onClick={handlePurchasePromotion}
