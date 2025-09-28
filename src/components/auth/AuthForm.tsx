@@ -2,9 +2,9 @@
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
 
@@ -16,21 +16,43 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
   const tAuth = useTranslations('auth');
   const tCommon = useTranslations('common');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, register, loginWithGoogle } = useUser();
+  
+  // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // new: validation state
+  const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ name?: string; email?: string; password?: string }>({});
-
-  // validation rules
+  
+  // Constants
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const MIN_PASSWORD_LENGTH = 6;
 
-  // map server error messages/codes to localized strings
+  // Handle auto-login from URL parameters
+  useEffect(() => {
+    const emailParam = searchParams?.get('email');
+    const passwordParam = searchParams?.get('password');
+
+    if (mode === 'login' && emailParam && passwordParam && !autoLoginAttempted) {
+      setEmail(emailParam);
+      setPassword(passwordParam);
+      setAutoLoginAttempted(true);
+      
+      // Small delay to allow state updates before submitting
+      const timer = setTimeout(() => {
+        const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+        handleSubmit(submitEvent).catch(console.error);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, autoLoginAttempted, mode]);
+
+  // Map server error messages/codes to localized strings
   const mapServerError = (err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
     // simple mapping by known substrings or keys
