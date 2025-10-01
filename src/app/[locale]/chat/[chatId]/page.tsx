@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useChat } from '@/contexts/ChatContext';
-import { useUser } from '@/contexts/UserContext';
+import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import ChatInterface from '@/components/ChatInterface';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+import { useChat } from '@/contexts/ChatContext';
+import { useUser } from '@/contexts/UserContext';
 
 export default function ChatPage() {
   const params = useParams();

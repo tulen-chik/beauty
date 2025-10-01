@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
-// ИЗМЕНЕНО: Импортируем getAdminDatabase вместо getAdminFirestore
-import { getAdminAuth, getAdminDatabase } from '@/lib/firebase/admin';
 // ИЗМЕНЕНО: Импортируем ServerValue для временных меток Realtime Database
 import { ServerValue } from 'firebase-admin/database';
+import { NextResponse } from 'next/server';
+
+// ИЗМЕНЕНО: Импортируем getAdminDatabase вместо getAdminFirestore
+import { getAdminAuth, getAdminDatabase } from '@/lib/firebase/admin';
 
 export async function POST(request: Request) {
   try {

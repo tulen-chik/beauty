@@ -1,5 +1,6 @@
+import { Calendar,Clock } from 'lucide-react';
 import React from 'react';
-import { Clock, Calendar } from 'lucide-react';
+
 import type { SalonSchedule, WeekDay } from '@/types/database';
 
 interface SalonScheduleDisplayProps {

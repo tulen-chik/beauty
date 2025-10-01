@@ -3,18 +3,17 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   getAuth, 
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateEmail,
   updatePassword,
-  updateProfile,
-  signInWithRedirect,
-  getRedirectResult
-} from 'firebase/auth';
+  updateProfile} from 'firebase/auth';
 
 import { userOperations } from './database';
 

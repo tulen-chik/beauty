@@ -1,6 +1,6 @@
 "use client";
+import { BarChart3, Calendar, TrendingUp,Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { BarChart3, Calendar, Users, TrendingUp } from "lucide-react";
 
 export default function SalonDashboardPage() {
   const t = useTranslations('salonDashboard');

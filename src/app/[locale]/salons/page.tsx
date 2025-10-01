@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from 'next-intl'; 
+import { useEffect, useState } from "react";
+
+import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall";
+
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
-import { useTranslations } from 'next-intl'; 
-import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall";
 
 // Компонент для отображения имени салона с переводом
 function SalonName({ salonId }: { salonId: string }) {

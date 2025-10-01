@@ -1,17 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useParams } from "next/navigation"
+import { CheckCircle, ChevronLeft, ChevronRight, Clock, Scissors, User, X } from "lucide-react"
 import Image from "next/image"
-import { Calendar, Clock, User, Phone, Shield, ChevronLeft, ChevronRight, X, CheckCircle, Scissors } from "lucide-react"
+import { useParams } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useEffect, useMemo, useState } from "react"
+
 import { getServiceImages } from "@/lib/firebase/database"
-import { useUser } from "@/contexts/UserContext"
-import { useSalon } from "@/contexts/SalonContext"
+
+import { ModalPortal } from '@/components/ui/ModalPortal'
+
 import { useAppointment } from "@/contexts/AppointmentContext"
+import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
-import { useTranslations } from "next-intl"
-import { ModalPortal } from '@/components/ui/ModalPortal'
+import { useUser } from "@/contexts/UserContext"
 
 // --- TYPE DEFINITIONS ---
 type Service = {

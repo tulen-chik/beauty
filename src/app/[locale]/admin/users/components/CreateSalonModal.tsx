@@ -1,8 +1,10 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
-import { Map, MapPin, Building2, Phone, FileText, CheckCircle, X } from "lucide-react";
+import { Building2, CheckCircle, FileText, Map, MapPin, Phone, X } from "lucide-react";
 import { useTranslations } from 'next-intl';
+import { useEffect,useRef, useState } from "react";
+
 import { useSalon } from "@/contexts/SalonContext";
+
 import { SalonRole } from "@/types/salon";
 
 interface CreateSalonModalProps {
@@ -165,7 +167,12 @@ const MapSelector = ({
   );
 };
 
+import { useRouter } from "next/navigation";
+
+import type { Salon as DBSalon } from "@/types/database";
+
 export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSalonModalProps) => {
+  const router = useRouter();
   const { createSalon, loading, error } = useSalon();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -173,6 +180,8 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
   const [description, setDescription] = useState("");
   const [success, setSuccess] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [addServices, setAddServices] = useState(false);
+  const [createdSalon, setCreatedSalon] = useState<DBSalon | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const t = useTranslations('salonCreation');
 
@@ -244,7 +253,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
           role: 'owner' as SalonRole,
           joinedAt: new Date().toISOString(),
           isActive: true
-        }], // Add the owner as the first member
+        }],
         rating: 0,
         reviewCount: 0,
         createdAt: new Date().toISOString(),
@@ -252,12 +261,16 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
       };
       
       // Call createSalon with the correct parameters
-      await createSalon(
+      const salon = await createSalon(
         tempId,  // salonId (temporary)
         salonData,  // data
         userId  // userId
       );
       
+      setCreatedSalon({
+        ...salon,
+        id: tempId
+      });
       setSuccess(true);
       
       // Reset form
@@ -267,11 +280,13 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
       setDescription('');
       setCoordinates(undefined);
       
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-      }, 2000);
+      // Close modal after 2 seconds if not adding services
+      if (!addServices) {
+        setTimeout(() => {
+          setSuccess(false);
+          onClose();
+        }, 2000);
+      }
       
     } catch (error) {
       console.error('Error creating salon:', error);
@@ -302,9 +317,31 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {t('successTitle')}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-6">
               {t('successMessage')}
             </p>
+            
+            {addServices && createdSalon?.id && (
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push(`/admin/salons/${createdSalon.id}/services`);
+                    onClose();
+                  }}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {t('addServicesNow')}
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {t('close')}
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -431,22 +468,38 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
               )}
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {t('cancelButton')}
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {loading ? t('creatingButton') : t('createButton')}
-              </button>
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center">
+                <input
+                  id="add-services"
+                  name="add-services"
+                  type="checkbox"
+                  checked={addServices}
+                  onChange={(e) => setAddServices(e.target.checked)}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label htmlFor="add-services" className="ml-2 block text-sm text-gray-700">
+                  {t('addServicesAfter')}
+                </label>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {t('cancelButton')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {loading ? t('creatingButton') : t('createButton')}
+                </button>
+              </div>
             </div>
           </form>
         )}

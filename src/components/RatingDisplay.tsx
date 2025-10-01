@@ -1,5 +1,5 @@
-import React from 'react';
 import { Star, StarHalf } from 'lucide-react';
+import React from 'react';
 
 interface RatingDisplayProps {
   rating: number;

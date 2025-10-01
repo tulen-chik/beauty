@@ -1,5 +1,5 @@
-import { useTranslations } from "next-intl";
 import { FileDown } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface AnalyticsHeaderProps {
   year: number;

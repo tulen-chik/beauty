@@ -1,16 +1,16 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+
 import { 
+  salonRatingHelpfulOperations, 
   salonRatingOperations, 
-  salonRatingResponseOperations, 
-  salonRatingHelpfulOperations 
-} from '@/lib/firebase/database';
+  salonRatingResponseOperations} from '@/lib/firebase/database';
+
 import type { 
   SalonRating, 
-  SalonRatingResponse, 
+  SalonRatingCategories, 
   SalonRatingHelpful, 
-  SalonRatingStats,
-  SalonRatingCategories 
-} from '@/types/database';
+  SalonRatingResponse, 
+  SalonRatingStats} from '@/types/database';
 
 interface SalonRatingContextType {
   // Rating operations

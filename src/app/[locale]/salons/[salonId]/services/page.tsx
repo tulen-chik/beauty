@@ -1,21 +1,21 @@
 "use client"
-import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
-import { useSalonService } from "@/contexts/SalonServiceContext";
-import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
 import { 
-  Plus, 
-  Edit3, 
+  Camera,
+  Check,
+  CheckCircle2, 
   Clock, 
+  Edit3, 
+  Loader2,
+  Plus, 
+  Smartphone,
   Upload, 
   X, 
-  CheckCircle2, 
-  XCircle,
-  Smartphone,
-  Camera,
-  Loader2,
-  Check
-} from "lucide-react";
+  XCircle} from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
+
+import { useSalonService } from "@/contexts/SalonServiceContext";
+import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
 
 interface ServiceFormData {
   id: string;

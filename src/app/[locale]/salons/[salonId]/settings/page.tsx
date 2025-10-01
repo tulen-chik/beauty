@@ -1,37 +1,29 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import {motion } from 'framer-motion';
+import { 
+  AlertCircle,
+  Building2,
+  CalendarOff,
+  CheckCircle, 
+  Crown, 
+  Loader2, 
+  Map, 
+  Save,
+  Shield,
+  X,
+  Zap} from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Building2, 
-  Clock, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Globe, 
-  CreditCard, 
-  Bell,
-  Shield,
-  Zap,
-  Save,
-  Loader2,
-  Map,
-  Crown,
-  Calendar,
-  CalendarOff,
-  CheckCircle,
-  AlertCircle,
-  Star,
-  X
-} from 'lucide-react';
+import { useEffect, useRef,useState } from 'react';
+
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 
 import { useSalon } from '@/contexts/SalonContext';
-import { useUser } from '@/contexts/UserContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useUser } from '@/contexts/UserContext';
+
 import type { Salon, SalonMember } from '@/types/database';
 import type { SalonSubscription, SalonSubscriptionPlan } from '@/types/subscriptions';
 

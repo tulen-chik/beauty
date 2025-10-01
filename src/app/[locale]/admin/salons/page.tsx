@@ -1,28 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
 import { 
   Building2, 
-  Search, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  MoreVertical,
   Calendar,
-  Users,
-  Star,
+  Eye, 
+  Mail, 
+  MapPin, 
+  MoreVertical,
+  Phone, 
+  Search, 
   Settings,
   Trash2,
-  Edit,
-  X
-} from "lucide-react"
+  X,
+  XCircle} from "lucide-react"
+import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react"
+
 import { useAdmin } from "@/contexts/AdminContext"
 import { useUser } from "@/contexts/UserContext"
-import Link from "next/link"
+
 import type { Salon } from "@/types/database"
 
 export default function AdminSalonsPage() {

@@ -1,9 +1,10 @@
 "use client";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { useRouter, usePathname } from "next/navigation";
+import { Building2, Menu,X } from "lucide-react";
+import { usePathname,useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import React, { useState } from "react";
-import { Menu, X, Building2, MessageCircle } from "lucide-react";
+
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 export default function SalonCrmLayout({ 
   children, 

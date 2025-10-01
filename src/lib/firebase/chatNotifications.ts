@@ -1,8 +1,10 @@
-import type { ChatNotification } from '@/types/database';
-import { chatNotificationSchema } from './schemas';
+import { get, ref, update } from 'firebase/database';
+
 import { createOperation } from './crud';
 import { db } from './init';
-import { get, ref, update } from 'firebase/database';
+import { chatNotificationSchema } from './schemas';
+
+import type { ChatNotification } from '@/types/database';
 
 export const chatNotificationOperations = {
   create: (notificationId: string, data: Omit<ChatNotification, 'id'>) =>

@@ -1,21 +1,23 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { Calendar, CheckCircle, ChevronLeft, ChevronRight,Clock, Shield, User } from "lucide-react"
 import Image from "next/image"
-import { Calendar, Clock, MapPin, Scissors, CheckCircle, XCircle, Building2, User, Phone, Shield, MessageCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
-import { getServiceImages } from "@/lib/firebase/database"
-import { useUser } from "@/contexts/UserContext"
-import { useSalon } from "@/contexts/SalonContext"
-import { useAppointment } from "@/contexts/AppointmentContext"
-import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
-import { useSalonService } from "@/contexts/SalonServiceContext"
-import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
+import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useChat } from "@/contexts/ChatContext"
+import { useEffect, useMemo, useState } from "react"
+
+import { getServiceImages } from "@/lib/firebase/database"
+
 import ChatButton from "@/components/ChatButton"
+import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall"
+
+import { useAppointment } from "@/contexts/AppointmentContext"
+import { useSalon } from "@/contexts/SalonContext"
+import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
+import { useSalonService } from "@/contexts/SalonServiceContext"
+import { useUser } from "@/contexts/UserContext"
 
 type Service = {
   id: string

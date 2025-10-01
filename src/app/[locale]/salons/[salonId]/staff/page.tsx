@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+
 import { useSalon } from "@/contexts/SalonContext";
-import type { SalonMember, SalonRole, User } from "@/types/database";
 import { useSalonInvitation } from "@/contexts/SalonInvitationContext";
 import { useUser } from "@/contexts/UserContext";
-import { useTranslations } from "next-intl";
+
+import type { SalonMember, SalonRole, User } from "@/types/database";
 
 const ROLES: { value: SalonRole; label: string }[] = [
   { value: "owner", label: "Владелец" },

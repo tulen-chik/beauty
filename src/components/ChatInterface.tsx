@@ -1,12 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, Image, File, X, MessageCircle, Clock, Check, CheckCheck } from 'lucide-react';
+import { Check, CheckCheck,Clock, File, Image, MessageCircle, Send, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import React, { useEffect, useRef,useState } from 'react';
+
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
-import type { ChatMessage, ChatMessageType } from '@/types/database';
-import { useTranslations } from 'next-intl';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
+import type { ChatMessageType } from '@/types/database';
 
 interface ChatInterfaceProps {
   chatId: string;

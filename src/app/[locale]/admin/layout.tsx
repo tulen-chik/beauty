@@ -1,27 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { 
+  Building2, 
+  DollarSign,
+  LayoutDashboard, 
+  LogOut,
+  Menu, 
+  MessageCircle, 
+  Scissors, 
+  Settings, 
+  Star,
+  Tag, 
+  User,
+  UserPlus, 
+  Users, 
+  X} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  LayoutDashboard, 
-  Users, 
-  Building2, 
-  Scissors, 
-  Tag, 
-  UserPlus, 
-  MessageCircle, 
-  Settings, 
-  Menu, 
-  X,
-  LogOut,
-  User,
-  DollarSign,
-  Star
-} from "lucide-react"
-import { useUser } from "@/contexts/UserContext"
-import { AdminProvider } from "@/contexts/AdminContext"
+import { useState } from "react"
+
 import AdminRoute from "@/components/auth/AdminRoute"
+
+import { useUser } from "@/contexts/UserContext"
 
 const navigation = [
   { name: 'Дашборд', href: '/admin', icon: LayoutDashboard },

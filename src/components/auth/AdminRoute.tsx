@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useUser } from "@/contexts/UserContext"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+
+import { useUser } from "@/contexts/UserContext"
 
 interface AdminRouteProps {
   children: React.ReactNode

@@ -1,0 +1,39 @@
+{
+  "sections": {
+    "contactInfo": "Контактная информация",
+    "workingHours": "Часы работы",
+    "description": "Описание"
+  },
+  "fields": {
+    "phone": "Телефон",
+    "email": "Email",
+    "website": "Веб-сайт",
+    "status": "Статус"
+  },
+  "days": {
+    "monday": "Понедельник",
+    "tuesday": "Вторник",
+    "wednesday": "Среда",
+    "thursday": "Четверг",
+    "friday": "Пятница",
+    "saturday": "Суббота",
+    "sunday": "Воскресенье"
+  },
+  "status": {
+    "active": "Активен",
+    "inactive": "Неактивен"
+  },
+  "buttons": {
+    "edit": "Редактировать"
+  },
+  "closed": "Выходной",
+  "notSpecified": "Не указано",
+  "messages": {
+    "salonUpdated": "Информация о салоне успешно обновлена"
+  },
+  "errors": {
+    "salonNotFound": "Салон не найден",
+    "loadFailed": "Не удалось загрузить информацию о салоне",
+    "updateFailed": "Не удалось обновить информацию о салоне"
+  }
+}

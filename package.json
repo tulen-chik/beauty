@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "lint:fix": "eslint src --fix && pnpm format",
+    "lint:fix": "eslint src --fix && npm format",
     "lint:strict": "eslint --max-warnings=0 src",
     "typecheck": "tsc --noEmit --incremental false",
     "test:watch": "jest --watch",
@@ -18,6 +18,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "@hello-pangea/dnd": "^18.0.1",
     "@types/js-cookie": "^3.0.6",
     "axios": "^1.12.2",

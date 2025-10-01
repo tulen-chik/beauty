@@ -1,6 +1,8 @@
+import { Calendar, CheckCircle,MessageCircle, ThumbsDown, ThumbsUp, User } from 'lucide-react';
 import React, { useState } from 'react';
-import { Star, ThumbsUp, ThumbsDown, MessageCircle, Calendar, User, CheckCircle } from 'lucide-react';
+
 import RatingDisplay from './RatingDisplay';
+
 import type { SalonRating, SalonRatingResponse } from '@/types/database';
 
 interface RatingCardProps {

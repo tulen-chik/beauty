@@ -1,20 +1,21 @@
 import React, {
   createContext,
-  useContext,
-  useState,
   ReactNode,
+  useCallback,
+  useContext,
   useMemo,
-  useCallback
-} from 'react';
+  useState} from 'react';
+
 import {
-  servicePromotionPlanOperations,
-  servicePromotionOperations,
   promotionAnalyticsOperations,
+  servicePromotionOperations,
+  servicePromotionPlanOperations,
 } from '@/lib/firebase/database';
+
 import type {
-  ServicePromotionPlan,
-  ServicePromotion,
   PromotionAnalytics,
+  ServicePromotion,
+  ServicePromotionPlan,
 } from '@/types/database';
 
 /**

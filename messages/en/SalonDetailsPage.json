@@ -1,0 +1,39 @@
+{
+  "sections": {
+    "contactInfo": "Contact Information",
+    "workingHours": "Working Hours",
+    "description": "Description"
+  },
+  "fields": {
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "status": "Status"
+  },
+  "days": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "buttons": {
+    "edit": "Edit"
+  },
+  "closed": "Closed",
+  "notSpecified": "Not specified",
+  "messages": {
+    "salonUpdated": "Salon information has been updated successfully"
+  },
+  "errors": {
+    "salonNotFound": "Salon not found",
+    "loadFailed": "Failed to load salon information",
+    "updateFailed": "Failed to update salon information"
+  }
+}

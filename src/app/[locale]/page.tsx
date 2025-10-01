@@ -2,21 +2,22 @@
 
 import { motion } from "framer-motion"
 import {
-  Scissors,
-  Star,
   CalendarCheck,
+  CheckCircle,
+  Heart,
+  MessageCircle,
+  Scissors,
+  ShieldCheck,
+  Sparkles,
+  Star,
   User,
   Users,
-  ShieldCheck,
-  Heart,
-  Sparkles,
-  CheckCircle,
-  MessageCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
-import StructuredData from "@/components/StructuredData"
+
 import FAQ from "@/components/FAQ"
+import StructuredData from "@/components/StructuredData"
 
 export default function Home() {
   const t = useTranslations("home")

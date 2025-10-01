@@ -1,17 +1,19 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { useTranslations } from "next-intl"
 import { 
-  Tag, 
-  Search, 
-  Plus, 
   Edit, 
-  Trash2, 
   Eye, 
+  Plus, 
+  Search, 
+  Tag, 
+  Trash2, 
   X
 } from "lucide-react"
+import { useTranslations } from "next-intl"
+import {useEffect, useState } from "react"
+
 import { useAdmin } from "@/contexts/AdminContext"
+
 import type { ServiceCategory } from '@/types/database' // Assuming this is the path
 
 export default function AdminCategoriesPage() {

@@ -1,9 +1,5 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-
 import {
   Calendar,
   CalendarDays,
@@ -11,15 +7,18 @@ import {
   Phone,
   Search,
   User,
-  MessageCircle,
 } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 
-import { useAppointment } from "@/contexts/AppointmentContext";
-import { useSalonService } from "@/contexts/SalonServiceContext";
-import { useUser } from "@/contexts/UserContext";
-import { useChat } from "@/contexts/ChatContext";
 import ChatButton from "@/components/ChatButton";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+
+import { useAppointment } from "@/contexts/AppointmentContext";
+import { useChat } from "@/contexts/ChatContext";
+import { useSalonService } from "@/contexts/SalonServiceContext";
+import { useUser } from "@/contexts/UserContext";
 
 type Appointment = {
   id: string;

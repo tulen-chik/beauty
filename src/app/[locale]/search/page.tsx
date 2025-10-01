@@ -1,19 +1,21 @@
 "use client"
 
-import React from "react"
-import { useEffect, useMemo, useState, useRef, useCallback } from "react"
-import { Search, MapPin, Scissors, Map as MapIcon, X, ChevronDown, Globe, Store, List, Star, Filter, Tag } from "lucide-react"
-import Link from "next/link"
+import { ChevronDown, Filter, Globe, List, Map as MapIcon, Search, Star, Store, Tag,X } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { useParams } from "next/navigation"
-import { getAllSalons, getAllSalonServices, getServiceImages } from "@/lib/firebase/database"
 import { useTranslations } from "next-intl"
+import React from "react"
+import { useCallback,useEffect, useMemo, useRef, useState } from "react"
+
+import { getAllSalons, getAllSalonServices, getServiceImages } from "@/lib/firebase/database"
+
+import RatingDisplay from "@/components/RatingDisplay"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+
 import { useSalonRating } from "@/contexts"
 import { usePromotion } from "@/contexts/PromotionContext"
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext"
-import { useSalonService } from "@/contexts/SalonServiceContext"
-import RatingDisplay from "@/components/RatingDisplay"
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 // --- ТИПЫ ДАННЫХ ---
 type AnySalon = {

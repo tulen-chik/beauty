@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+
 import { salonOperations, userSalonsOperations } from '@/lib/firebase/database';
-import type { Salon, UserSalons, SalonRole } from '@/types/database';
+
+import type { Salon, SalonRole,UserSalons } from '@/types/database';
 
 interface SalonContextType {
   salons: Salon[];
@@ -250,22 +252,47 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [loadSalonFromCache, saveSalonToCache]);
 
-  // Удалить салон
+  // Полностью удалить салон и все связанные данные
   const deleteSalon = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
+    
     try {
+      // 1. Удаляем салон из списка пользовательских салонов
+      if (userSalons) {
+        const updatedUserSalons = {
+          ...userSalons,
+          salons: userSalons.salons.filter(s => s.salonId !== salonId)
+        };
+        await userSalonsOperations.update(userSalons.userId, updatedUserSalons);
+        saveUserSalonsToCache(userSalons.userId, updatedUserSalons);
+      }
+      
+      // 2. Удаляем сам салон
       await salonOperations.delete(salonId);
-      setSalons((prev) => prev.filter((s) => s.id !== salonId));
-      // Очищаем кеш салона
+      
+      // 3. Очищаем кеши
       clearSalonCache(salonId);
+      
+      // 4. Обновляем состояние
+      setSalons(prev => prev.filter(s => s.id !== salonId));
+      
+      // 5. Удаляем салон из списка пользовательских салонов в состоянии
+      if (userSalons) {
+        setUserSalons(prev => ({
+          ...prev!,
+          salons: prev!.salons.filter(s => s.salonId !== salonId)
+        }));
+      }
+      
       setLoading(false);
     } catch (e: any) {
+      console.error('Error deleting salon:', e);
       setError(e.message);
       setLoading(false);
       throw e;
     }
-  }, [clearSalonCache]);
+  }, [clearSalonCache, userSalons, saveUserSalonsToCache]);
 
   const value: SalonContextType = useMemo(() => ({
     salons,

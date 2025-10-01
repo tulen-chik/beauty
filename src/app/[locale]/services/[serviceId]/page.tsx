@@ -1,23 +1,24 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ArrowLeft, Building2, Calendar, CheckCircle, Clock, Images, Map as MapIcon, MapPin, Scissors, Star } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { Scissors, Building2, MapPin, Clock, ArrowLeft, Calendar, Images, CheckCircle, Map as MapIcon, MessageCircle, Star } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { useEffect, useMemo, useState } from "react"
 
-import { useSalonService } from "@/contexts/SalonServiceContext"
-import { useSalon } from "@/contexts/SalonContext"
-import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
-import { useUser } from "@/contexts/UserContext"
-import { useChat } from "@/contexts/ChatContext"
-import { useSalonRating } from "@/contexts"
-import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import ChatButton from "@/components/ChatButton"
 import RatingDisplay from "@/components/RatingDisplay"
+import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+
+import { useSalonRating } from "@/contexts"
+import { useChat } from "@/contexts/ChatContext"
+import { useSalon } from "@/contexts/SalonContext"
+import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
+import { useSalonService } from "@/contexts/SalonServiceContext"
+import { useUser } from "@/contexts/UserContext"
 
 type Service = {
   id: string

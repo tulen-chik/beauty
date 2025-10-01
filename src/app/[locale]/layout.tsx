@@ -1,17 +1,19 @@
 import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
-import { getRequestConfig, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 
 import '@/styles/globals.css';
 
 // Предполагается, что seoConfig находится здесь
 import { seoConfig } from '@/lib/config/seo'; 
+import { generateStructuredData } from '@/lib/seo'; // Ваша функция для генерации JSON-LD
+
+import GoogleAnalytics from '@/components/GoogleAnalytics';
+import SiteHeader from '@/components/layout/SiteHeader';
+
 import { locales } from '@/i18n.config';
 import { Providers } from '@/providers/Providers';
-import SiteHeader from '@/components/layout/SiteHeader';
-import GoogleAnalytics from '@/components/GoogleAnalytics';
-import { generateStructuredData } from '@/lib/seo'; // Ваша функция для генерации JSON-LD
 
 // 1. Используем функцию generateMetadata для большей гибкости
 export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {

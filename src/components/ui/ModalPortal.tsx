@@ -1,8 +1,8 @@
 'use client';
 
+import {motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export function ModalPortal({
   children,

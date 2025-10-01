@@ -1,25 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import { useTranslations } from "next-intl"
 import { 
-  Settings, 
-  Save, 
-  Globe, 
-  Mail, 
-  Shield, 
-  Database, 
-  Bell, 
-  Palette,
-  Server,
-  Key,
-  Users,
-  Building2,
-  MessageCircle,
   AlertTriangle,
-  CheckCircle,
-  Info
-} from "lucide-react"
+  Bell,
+  CheckCircle, 
+  Globe,
+  Mail,
+  Save,
+  Settings, 
+  Shield} from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useState } from "react"
+
 import { useUser } from "@/contexts/UserContext"
 
 interface SystemSettings {

@@ -1,10 +1,11 @@
 'use client';
+
 import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
 
@@ -32,37 +33,43 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const MIN_PASSWORD_LENGTH = 6;
 
-  // Handle auto-login from URL parameters
-  useEffect(() => {
-    const emailParam = searchParams?.get('email');
-    const passwordParam = searchParams?.get('password');
-
-    if (mode === 'login' && emailParam && passwordParam && !autoLoginAttempted) {
-      setEmail(emailParam);
-      setPassword(passwordParam);
-      setAutoLoginAttempted(true);
-      
-      // Small delay to allow state updates before submitting
-      const timer = setTimeout(() => {
-        const submitEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
-        handleSubmit(submitEvent).catch(console.error);
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, autoLoginAttempted, mode]);
-
   // Map server error messages/codes to localized strings
   const mapServerError = (err: unknown) => {
+    // Handle Firebase Auth errors
+    if (err && typeof err === 'object' && 'code' in err) {
+      const error = err as { code: string; message?: string };
+      const errorCode = error.code;
+      const errorMessage = error.message || '';
+      
+      switch (errorCode) {
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+          return tAuth('errors.invalidCredentials');
+        case 'auth/email-already-in-use':
+          return tAuth('errors.emailAlreadyInUse');
+        case 'auth/weak-password':
+          return tAuth('errors.weakPassword');
+        case 'auth/invalid-email':
+          return tAuth('errors.invalidEmail');
+        case 'auth/internal-error':
+          return tAuth('errors.internalError') || 'An internal error occurred. Please try again later.';
+        default: {
+          const msg = errorMessage || JSON.stringify(err);
+          if (/password.*mismatch|passwords do not match/i.test(msg)) {
+            return tAuth('errors.passwordsDoNotMatch');
+          }
+          if (/required/i.test(msg)) {
+            return tAuth('errors.requiredField');
+          }
+          return msg;
+        }
+      }
+    }
+  
+    // Fallback for non-Firebase errors
     const msg = err instanceof Error ? err.message : String(err);
-    // simple mapping by known substrings or keys
-    if (/invalid credentials|invalid email or password/i.test(msg)) return tAuth('errors.invalidCredentials');
-    if (/email already|already in use/i.test(msg)) return tAuth('errors.emailAlreadyInUse');
-    if (/weak password/i.test(msg)) return tAuth('errors.weakPassword');
-    if (/passwords do not match/i.test(msg)) return tAuth('errors.passwordsDoNotMatch');
-    if (/invalid email/i.test(msg)) return tAuth('errors.invalidEmail');
     if (/required/i.test(msg)) return tAuth('errors.requiredField');
-    // fallback to raw message (localized wrapper)
     return msg;
   };
 
@@ -77,8 +84,8 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     // client-side validation
     if (!validate()) return;
@@ -96,7 +103,27 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password, name, mode, login, register, router, validate, mapServerError]);
+
+  // Handle auto-login from URL parameters
+  useEffect(() => {
+    const emailParam = searchParams?.get('email');
+    const passwordParam = searchParams?.get('password');
+
+    if (mode === 'login' && emailParam && passwordParam && !autoLoginAttempted) {
+      setEmail(emailParam);
+      setPassword(passwordParam);
+      setAutoLoginAttempted(true);
+      
+      // Small delay to allow state updates before submitting
+      const timer = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        handleSubmit().catch(console.error);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, autoLoginAttempted, mode, handleSubmit]);
 
   // clear specific validation error on change
   const handleNameChange = (v: string) => { setName(v); if (validationErrors.name) setValidationErrors(prev => ({ ...prev, name: undefined })); };
@@ -166,7 +193,7 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
             transition={{ duration: 0.8 }}
           >
             <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-rose-600" />
-            <span className="text-xs sm:text-sm font-semibold text-rose-700 tracking-wide">Beauty Platform</span>
+            <span className="text-xs sm:text-sm font-semibold text-rose-700 tracking-wide">Charming</span>
           </motion.div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
             {mode === 'login' ? tAuth('login.title') : tAuth('register.title')}
@@ -279,8 +306,11 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                {/* SVG path data for Google icon */}
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.31v2.84C4.02 20.44 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.31c-.66 1.32-1.06 2.8-1.06 4.42s.4 3.1 1.06 4.42l3.53-2.84z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 4.02 3.56 2.31 7.07l3.53 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
               <span className="hidden sm:inline">{tAuth('continueWithGoogle')}</span>
               <span className="sm:hidden">Google</span>

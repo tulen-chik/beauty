@@ -1,21 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
-import { 
-  Crown,
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  X,
+import {
   CheckCircle,
-  DollarSign,
-  Tag,
-  Calendar
-} from "lucide-react"
+  Crown,
+  Edit, 
+  Eye, 
+  Plus, 
+  Search,
+  Trash2, 
+  X} from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react"
+
 import { useSubscription } from "@/contexts/SubscriptionContext"
+
 import type { SalonSubscriptionPlan } from '@/types/subscriptions'
 
 const initialFormData = {

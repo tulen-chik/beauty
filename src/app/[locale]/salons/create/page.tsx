@@ -1,10 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { Building2, CheckCircle,FileText, Map, MapPin, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
+import { useEffect,useRef, useState } from "react";
+
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
-import { Map, MapPin, Building2, Phone, FileText, CheckCircle } from "lucide-react";
-import { useTranslations } from 'next-intl';
 
 // Google Maps component for address selection
 const MapSelector = ({ 

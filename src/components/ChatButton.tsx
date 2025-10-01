@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState } from 'react';
-import { MessageCircle, Loader2 } from 'lucide-react';
-import { useChat } from '@/contexts/ChatContext';
-import { useUser } from '@/contexts/UserContext';
-import { useSalonService } from '@/contexts/SalonServiceContext';
+import { Loader2,MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import React, { useState } from 'react';
+
+import { useChat } from '@/contexts/ChatContext';
+import { useSalonService } from '@/contexts/SalonServiceContext';
+import { useUser } from '@/contexts/UserContext';
 
 interface ChatButtonProps {
   salonId: string;

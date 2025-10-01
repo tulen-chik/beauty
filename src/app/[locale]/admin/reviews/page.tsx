@@ -1,21 +1,22 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
-import { useTranslations } from "next-intl"
-import { 
-  Star, 
-  Search, 
-  Check, 
-  X, 
-  MessageSquare,
-  Calendar,
-  Clock
-} from "lucide-react"
-import type { SalonRating } from "@/types/database"
-import { useAdmin } from "@/contexts/AdminContext"
-import { useSalonRating } from "@/contexts/SalonRatingContext"
 import { format } from "date-fns"
 import { ru } from "date-fns/locale"
+import { 
+  Calendar,
+  Check, 
+  Clock,
+  MessageSquare,
+  Search, 
+  Star, 
+  X} from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useEffect, useMemo,useState } from "react"
+
+import { useAdmin } from "@/contexts/AdminContext"
+import { useSalonRating } from "@/contexts/SalonRatingContext"
+
+import type { SalonRating } from "@/types/database"
 
 type ReviewStatus = 'all' | 'pending' | 'approved' | 'rejected'
 

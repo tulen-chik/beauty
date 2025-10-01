@@ -1,30 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
 import { 
-  Users, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  Eye,
-  UserCheck,
-  UserX,
-  Mail,
-  Phone,
-  Calendar,
+  ArrowRight,
   Building2,
-  X,
+  Calendar, 
+  Eye,
+  MapPin,
   Plus,
-  UserPlus
-} from "lucide-react"
+  Search, 
+  Trash2,
+  UserPlus,
+  Users,
+  X} from "lucide-react"
+import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { useCallback,useEffect, useState } from "react"
+
 import { useAdmin } from "@/contexts/AdminContext"
+import { useSalon } from "@/contexts/SalonContext"
 import { useUser } from "@/contexts/UserContext"
-import {CreateSalonModal} from "./components/CreateSalonModal"
+
+import { CreateSalonModal } from "./components/CreateSalonModal"
 import { CreateUserModal } from "./components/CreateUserModal"
+
 import { User } from "@/types/database"
+import type { Salon } from "@/types/salon"
 
 export default function AdminUsersPage() {
   const t = useTranslations('admin')
@@ -46,6 +46,9 @@ export default function AdminUsersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showCreateSalonModal, setShowCreateSalonModal] = useState(false)
   const [showCreateUserModal, setShowCreateUserModal] = useState(false)
+  const [userSalons, setUserSalons] = useState<Salon[]>([])
+  const [loadingSalons, setLoadingSalons] = useState(false)
+  const { fetchUserSalons, fetchSalon } = useSalon()
 
   useEffect(() => {
     loadUsers()
@@ -71,6 +74,43 @@ export default function AdminUsersPage() {
       console.error('Error deleting user:', error)
     }
   }
+
+  const loadUserSalons = useCallback(async (userId: string) => {
+    try {
+      setLoadingSalons(true)
+      const userSalonsData = await fetchUserSalons(userId)
+      if (userSalonsData?.salons?.length) {
+        // Fetch full salon details and add the ID to each object
+        const salons = await Promise.all(
+          userSalonsData.salons.map(async (salonRef) => {
+            const salonData = await fetchSalon(salonRef.salonId);
+            if (salonData) {
+              // Here is the fix: combine the data with the ID
+              return { ...salonData, id: salonRef.salonId };
+            }
+            return null;
+          })
+        );
+        // The filter for `Boolean` now correctly removes any nulls
+        setUserSalons(salons.filter(Boolean) as Salon[]);
+      } else {
+        setUserSalons([])
+      }
+    } catch (error) {
+      console.error('Error loading user salons:', error)
+      setUserSalons([])
+    } finally {
+      setLoadingSalons(false)
+    }
+  }, [fetchUserSalons, fetchSalon])
+
+  useEffect(() => {
+    if (showUserModal && selectedUser) {
+      loadUserSalons(selectedUser.id)
+    } else {
+      setUserSalons([])
+    }
+  }, [showUserModal, selectedUser, loadUserSalons])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
@@ -341,16 +381,62 @@ export default function AdminUsersPage() {
                       {getRoleLabel(selectedUser.role)}
                     </span>
                   </div>
-                  <div>
-                  </div>
+                  
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Дата регистрации</label>
-                  <p className="text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</p>
+                  <p className="text-sm text-gray-900 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                    {formatDate(selectedUser.createdAt)}
+                  </p>
                 </div>
 
-
+                <div className="pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Салоны пользователя</h4>
+                  {loadingSalons ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                    </div>
+                  ) : userSalons.length > 0 ? (
+                    <div className="space-y-3">
+                      {userSalons.map((salon) => (
+                        <Link 
+                          key={salon.id} 
+                          href={`/admin/salons/${salon.id}/services`}
+                          className="block p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h5 className="font-medium text-gray-900">{salon.name}</h5>
+                              <p className="text-sm text-gray-500 flex items-center mt-1">
+                                <MapPin className="h-3.5 w-3.5 mr-1" />
+                                {salon.address}
+                              </p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-gray-400" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-gray-50 rounded-lg">
+                      <Building2 className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">У пользователя пока нет салонов</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowUserModal(false)
+                          setShowCreateSalonModal(true)
+                        }}
+                        className="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Добавить салон
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">

@@ -1,22 +1,24 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { Calendar, Clock, Share2, ArrowLeft, Tag, Copy, Check, Loader2 } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { useParams } from "next/navigation"
-import { useState, useEffect, useMemo } from "react"
 import copy from "copy-to-clipboard"
+import { motion } from "framer-motion"
+import { ArrowLeft, Calendar, Check, Clock, Copy, Tag } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import { useEffect, useMemo,useState } from "react"
 import {
-  FacebookShareButton, TwitterShareButton, LinkedinShareButton, TelegramShareButton, WhatsappShareButton,
-  FacebookIcon, TwitterIcon, LinkedinIcon, TelegramIcon, WhatsappIcon,
+  FacebookIcon,   FacebookShareButton, LinkedinIcon, LinkedinShareButton, TelegramIcon, TelegramShareButton, TwitterIcon, TwitterShareButton, WhatsappIcon,
+WhatsappShareButton,
 } from "react-share"
+
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 // 1. Импортируем хук из вашего контекста и типы
 import { useBlogAdmin as useBlog } from "@/contexts/BlogAdminContext"
-import type { BlogPost, BlogCategory } from "@/types/database"
+
 import BlogContent from "../BlogContent" // Предполагается, что этот компонент у вас есть
+
 
 // Компонент для состояния "Не найдено"
 const NotFoundState = () => (

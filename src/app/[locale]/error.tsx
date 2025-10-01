@@ -1,9 +1,9 @@
 'use client';
 
+import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
-import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 
 export default function Error({
   error,

@@ -1,8 +1,9 @@
 'use client'
 
-import Script from 'next/script'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useEffect, Suspense } from 'react'
+import Script from 'next/script'
+import { Suspense,useEffect } from 'react'
+
 import { GA_TRACKING_ID, pageview } from '@/lib/analytics'
 
 function GoogleAnalyticsInner() {

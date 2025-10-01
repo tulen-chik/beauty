@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useState } from 'react';
-import { useUser } from '@/contexts/UserContext';
-import { useChat } from '@/contexts/ChatContext';
-import { MessageCircle, ArrowLeft, Clock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle,Clock, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+
+import { useChat } from '@/contexts/ChatContext';
+import { useUser } from '@/contexts/UserContext';
+
 import type { Chat } from '@/types/database';
 
 export default function ChatsPage() {

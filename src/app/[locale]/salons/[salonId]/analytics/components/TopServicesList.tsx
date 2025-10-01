@@ -1,4 +1,4 @@
-import { TrendingUp, DollarSign } from "lucide-react";
+import { DollarSign,TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface TopService {

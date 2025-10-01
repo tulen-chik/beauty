@@ -512,7 +512,19 @@
       "title": "Authentication error",
       "subtitle": "Failed to sign in. Check your credentials and try again",
       "login": "Sign in",
-      "register": "Sign up"
+      "register": "Sign up",
+      "invalidCredentials": "Invalid email or password",
+      "emailAlreadyInUse": "This email is already registered",
+      "weakPassword": "Password is too weak. Use at least 6 characters",
+      "passwordsDoNotMatch": "Passwords don't match",
+      "invalidEmail": "Invalid email address",
+      "requiredField": "This field is required",
+      "internalError": "An internal error occurred. Please try again later",
+      "tooManyRequests": "Too many attempts. Please try again later",
+      "userDisabled": "This account has been disabled",
+      "operationNotAllowed": "This operation is not allowed",
+      "accountExistsWithDifferentCredential": "An account already exists with the same email"
+    
     }
   },
   "notifications": {
@@ -682,13 +694,18 @@
     },
     "or": "or",
     "continueWithGoogle": "Continue with Google",
-    "errors": {
+"errors": {
       "invalidCredentials": "Invalid email or password",
-      "emailAlreadyInUse": "This email is already in use",
-      "weakPassword": "Password is too weak",
-      "passwordsDoNotMatch": "Passwords do not match",
-      "invalidEmail": "Invalid email format",
-      "requiredField": "This field is required"
+      "emailAlreadyInUse": "This email is already registered",
+      "weakPassword": "Password is too weak. Use at least 6 characters",
+      "passwordsDoNotMatch": "Passwords don't match",
+      "invalidEmail": "Invalid email address",
+      "requiredField": "This field is required",
+      "internalError": "An internal error occurred. Please try again later",
+      "tooManyRequests": "Too many attempts. Please try again later",
+      "userDisabled": "This account has been disabled",
+      "operationNotAllowed": "This operation is not allowed",
+      "accountExistsWithDifferentCredential": "An account already exists with the same email"
     }
   },
   "salon": {

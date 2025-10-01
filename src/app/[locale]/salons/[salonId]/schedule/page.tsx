@@ -1,32 +1,33 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
 import {
-  Plus,
+  AlertCircle,
   Calendar,
   ChevronLeft,
   ChevronRight,
   Clock,
   FileText,
   Phone,
+  Plus,
   Scissors,
   Settings,
   User,
   X,
-  AlertCircle,
 } from "lucide-react";
-
-// --- CONTEXT HOOKS ---
-import { useUser } from "@/contexts/UserContext";
-import { useSalon } from "@/contexts/SalonContext";
-import { useAppointment } from "@/contexts/AppointmentContext";
-import { useSalonSchedule } from "@/contexts/SalonScheduleContext";
-import { useSalonService } from "@/contexts/SalonServiceContext";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 
 // --- COMPONENTS ---
 import ChatButton from "@/components/ChatButton";
+
+import { useAppointment } from "@/contexts/AppointmentContext";
+import { useSalon } from "@/contexts/SalonContext";
+import { useSalonSchedule } from "@/contexts/SalonScheduleContext";
+import { useSalonService } from "@/contexts/SalonServiceContext";
+// --- CONTEXT HOOKS ---
+import { useUser } from "@/contexts/UserContext";
+
 import ManualBookingModal from "./components/ManualBookingModal";
 
 // --- TYPE DEFINITIONS ---
@@ -429,7 +430,7 @@ export default function SalonSchedulePage() {
       <div className="w-full text-left p-3 rounded-lg border bg-white">
         <button 
           onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
-          className={`w-full text-left`}
+          className="w-full text-left"
         >
           <div className="flex justify-between items-start">
               <div>

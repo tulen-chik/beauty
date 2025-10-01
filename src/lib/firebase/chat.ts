@@ -1,8 +1,10 @@
-import type { Chat } from '@/types/database';
-import { chatSchema } from './schemas';
-import { createOperation, readOperation, updateOperation, deleteOperation } from './crud';
-import { db } from './init';
 import { get, ref } from 'firebase/database';
+
+import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
+import { db } from './init';
+import { chatSchema } from './schemas';
+
+import type { Chat } from '@/types/database';
 
 export const chatOperations = {
   create: (chatId: string, data: Omit<Chat, 'id'>) =>

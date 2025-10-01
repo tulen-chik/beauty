@@ -1,24 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
 import { 
-  Users, 
-  Building2, 
-  Scissors, 
+  Activity,
+  AlertCircle,
+  Building2,
+  CheckCircle,
+  MessageCircle,
+  Scissors,
   Tag, 
   UserPlus, 
-  TrendingUp, 
-  Activity,
-  Calendar,
-  MessageCircle,
-  Star,
-  AlertCircle,
-  CheckCircle
-} from "lucide-react"
+  Users} from "lucide-react"
+import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { useEffect } from "react"
+
 import { useAdmin } from "@/contexts/AdminContext"
 import { useUser } from "@/contexts/UserContext"
-import Link from "next/link"
 
 export default function AdminDashboard() {
   const t = useTranslations('admin')

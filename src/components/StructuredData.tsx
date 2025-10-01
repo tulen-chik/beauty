@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
+
 import { generateStructuredData } from '@/lib/seo'
+
 // Вам все еще нужны эти типы для определения пропсов
 import type {
-  WebSiteSchema,
-  OrganizationSchema,
   LocalBusinessSchema,
+  OrganizationSchema,
   ServiceSchema,
+  WebSiteSchema,
 } from '@/types/seo'
 
 // Эта карта типов остается здесь, в компоненте, так как она нужна для создания

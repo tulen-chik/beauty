@@ -1,24 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
-import { 
-  Zap,
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  X,
+import {
   CheckCircle,
-  XCircle,
-  Clock,
-  DollarSign,
-  Tag,
+  Edit, 
+  Eye, 
+  Plus, 
+  Search, 
   Star,
-  ArrowUpRight
-} from "lucide-react"
+  Trash2, 
+  X,
+  Zap} from "lucide-react"
+import { useTranslations } from "next-intl"
+import { useEffect, useState } from "react"
+
 import { usePromotion } from "@/contexts/PromotionContext" // Используем наш новый контекст
+
 import type { ServicePromotionPlan } from '@/types/database'
 
 // Начальное состояние для формы создания/редактирования плана

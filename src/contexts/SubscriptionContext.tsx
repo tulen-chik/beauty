@@ -1,21 +1,23 @@
 import React, {
   createContext,
+  ReactNode,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
-  ReactNode,
-  useMemo,
 } from 'react';
+
 import {
-  subscriptionPlanOperations,
-  subscriptionOperations,
   billingOperations,
+  subscriptionOperations,
+  subscriptionPlanOperations,
 } from '@/lib/firebase/subscriptions';
+
 import type {
-  SalonSubscriptionPlan,
   SalonSubscription,
+  SalonSubscriptionPlan,
   SubscriptionBilling,
 } from '@/types/subscriptions';
 

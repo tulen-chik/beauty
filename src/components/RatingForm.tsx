@@ -1,6 +1,8 @@
+import { Send, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { Star, Send, X } from 'lucide-react';
+
 import RatingInput from './RatingInput';
+
 import type { SalonRatingCategories } from '@/types/database';
 
 interface RatingFormProps {

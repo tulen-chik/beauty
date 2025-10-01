@@ -1,0 +1,39 @@
+{
+  "editSalon": "Edit Salon",
+  "createSalon": "Create Salon",
+  "sections": {
+    "basicInfo": "Basic Information",
+    "workingHours": "Working Hours"
+  },
+  "fields": {
+    "name": "Salon Name",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "website": "Website",
+    "description": "Description",
+    "open": "Open",
+    "active": "Active Salon"
+  },
+  "days": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving..."
+  },
+  "errors": {
+    "nameRequired": "Please enter the salon name",
+    "addressRequired": "Please enter the salon address",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidUrl": "Please enter a valid URL (starting with http:// or https://)",
+    "updateFailed": "Failed to update salon information. Please try again."
+  }
+}

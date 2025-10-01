@@ -1,4 +1,4 @@
-import { App, cert, getApps, initializeApp, applicationDefault } from 'firebase-admin/app';
+import { applicationDefault,cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 // ИЗМЕНЕНО: Импортируем getDatabase вместо getFirestore
 import { getDatabase } from 'firebase-admin/database';

@@ -341,7 +341,19 @@
       "title": "Ошибка авторизации",
       "subtitle": "Не удалось выполнить вход. Проверьте данные и попробуйте снова",
       "login": "Войти",
-      "register": "Зарегистрироваться"
+      "register": "Зарегистрироваться",
+      "invalidCredentials": "Неверный email или пароль",
+      "emailAlreadyInUse": "Этот email уже зарегистрирован",
+      "weakPassword": "Пароль слишком слабый. Используйте не менее 6 символов",
+      "passwordsDoNotMatch": "Пароли не совпадают",
+      "invalidEmail": "Некорректный email",
+      "requiredField": "Это поле обязательно для заполнения",
+      "internalError": "Произошла внутренняя ошибка. Пожалуйста, попробуйте позже",
+      "tooManyRequests": "Слишком много попыток. Пожалуйста, попробуйте позже",
+      "userDisabled": "Аккаунт отключен",
+      "operationNotAllowed": "Эта операция не разрешена",
+      "accountExistsWithDifferentCredential": "Аккаунт с таким email уже существует"
+    
     }
   },
   "notifications": {
@@ -420,13 +432,18 @@
     },
     "or": "или",
     "continueWithGoogle": "Продолжить с Google",
-    "errors": {
+"errors": {
       "invalidCredentials": "Неверный email или пароль",
-      "emailAlreadyInUse": "Этот email уже используется",
-      "weakPassword": "Пароль слишком слабый",
+      "emailAlreadyInUse": "Этот email уже зарегистрирован",
+      "weakPassword": "Пароль слишком слабый. Используйте не менее 6 символов",
       "passwordsDoNotMatch": "Пароли не совпадают",
       "invalidEmail": "Некорректный email",
-      "requiredField": "Это поле обязательно для заполнения"
+      "requiredField": "Это поле обязательно для заполнения",
+      "internalError": "Произошла внутренняя ошибка. Пожалуйста, попробуйте позже",
+      "tooManyRequests": "Слишком много попыток. Пожалуйста, попробуйте позже",
+      "userDisabled": "Аккаунт отключен",
+      "operationNotAllowed": "Эта операция не разрешена",
+      "accountExistsWithDifferentCredential": "Аккаунт с таким email уже существует"
     }
   },
   "salon": {

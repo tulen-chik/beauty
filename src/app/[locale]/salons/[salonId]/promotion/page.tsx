@@ -1,22 +1,24 @@
 "use client"
-import { useEffect, useState, useMemo } from "react"
-import { useSalonService } from "@/contexts/SalonServiceContext"
-import { usePromotion } from "@/contexts/PromotionContext"
-import type { SalonService } from "@/types/database"
-import type { ServicePromotionPlan, ServicePromotion, PromotionAnalytics } from "@/types/database"
 import {
-  Zap,
   BarChart2,
-  Loader2,
-  CheckCircle2,
-  Rocket,
   CalendarOff,
-  ShoppingCart,
-  Clock,
   Camera,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  Rocket,
+  ShoppingCart,
   XCircle,
+  Zap,
 } from "lucide-react"
 import { useParams } from "next/navigation"
+import { useEffect, useMemo,useState } from "react"
+
+import { usePromotion } from "@/contexts/PromotionContext"
+import { useSalonService } from "@/contexts/SalonServiceContext"
+
+import type { SalonService } from "@/types/database"
+import type { PromotionAnalytics,ServicePromotion, ServicePromotionPlan } from "@/types/database"
 
 export default function SalonServicePromotionsPage() {
   // Get salonId from URL params

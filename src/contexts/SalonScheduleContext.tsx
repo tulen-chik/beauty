@@ -1,6 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+
 import { salonScheduleOperations } from '@/lib/firebase/database';
-import type { SalonSchedule, SalonWorkDay, WeekDay } from '@/types/database';
+
+import type { SalonSchedule } from '@/types/database';
 
 interface SalonScheduleContextType {
   getSchedule: (salonId: string) => Promise<SalonSchedule | null>;

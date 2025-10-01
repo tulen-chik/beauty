@@ -1,13 +1,15 @@
 "use client"
 
-import { useEffect, useState, useCallback } from 'react';
+import { AlertCircle,ArrowLeft, CheckCircle, Clock, MessageCircle, User } from 'lucide-react';
+import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useCallback,useEffect, useState } from 'react';
+
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
-import { MessageCircle, ArrowLeft, Clock, CheckCircle, User, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+
 import type { Chat } from '@/types/database';
-import { useTranslations } from 'next-intl';
 
 export default function SalonChatsPage() {
   const params = useParams();

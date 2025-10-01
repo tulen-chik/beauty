@@ -3,18 +3,18 @@
 // 1. Импорты отсортированы для чистоты кода
 import { motion } from "framer-motion"
 import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star } from "lucide-react"
-import { useTranslations } from "next-intl"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useState } from "react"
 
+import RatingStats from "@/components/RatingStats"
+
+import { useSalonRating } from "@/contexts"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
-import { useSalonRating } from "@/contexts"
-import RatingDisplay from "@/components/RatingDisplay"
-import RatingStats from "@/components/RatingStats"
 
 // 2. Определены интерфейсы для улучшения типобезопасности
 type AnyService = {

@@ -1,8 +1,10 @@
-import type { User } from '@/types/database';
-import { userSchema } from './schemas';
-import { createOperation, readOperation, updateOperation, deleteOperation } from './crud';
-import { db } from './init';
 import { equalTo, get, orderByChild, query, ref } from 'firebase/database';
+
+import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
+import { db } from './init';
+import { userSchema } from './schemas';
+
+import type { User } from '@/types/database';
 
 export const userOperations = {
   create: (userId: string, data: Omit<User, 'id'>) =>

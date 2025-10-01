@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
-import { serviceCategoryOperations, getAllServiceCategories } from '@/lib/firebase/database';
+import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+
+import { getAllServiceCategories,serviceCategoryOperations } from '@/lib/firebase/database';
+
 import type { ServiceCategory } from '@/types/database';
 
 interface ServiceCategoryContextType {

@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { CheckCircle, Clock,Filter, Star, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import { Star, Filter, MessageCircle, CheckCircle, XCircle, Clock } from 'lucide-react';
+import React, { useEffect,useState } from 'react';
+
+import RatingCard from '@/components/RatingCard';
+import RatingStats from '@/components/RatingStats';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
 import { useSalonRating } from '@/contexts';
 import { useUser } from '@/contexts';
-import RatingStats from '@/components/RatingStats';
-import RatingCard from '@/components/RatingCard';
-import type { SalonRating } from '@/types/database';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+
 
 export default function SalonRatingsPage() {
   const params = useParams();

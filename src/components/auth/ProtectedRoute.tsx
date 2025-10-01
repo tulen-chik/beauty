@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 import { useUser } from '@/contexts';

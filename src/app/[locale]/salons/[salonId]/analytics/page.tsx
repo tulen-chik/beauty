@@ -1,10 +1,11 @@
 "use client"
-import { useEffect, useState, useMemo } from "react";
+import { BarChart2, ChevronDown, DollarSign, FileDown,Loader2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo,useState } from "react";
+import * as XLSX from 'xlsx'; // Импортируем библиотеку для работы с Excel
+
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
-import { Loader2, BarChart2, TrendingUp, DollarSign, ChevronDown, FileDown } from "lucide-react";
-import * as XLSX from 'xlsx'; // Импортируем библиотеку для работы с Excel
 
 // Определяем тип для структурированных данных аналитики
 interface ServiceAnalyticsData {

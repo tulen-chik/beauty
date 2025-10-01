@@ -1,17 +1,17 @@
-import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback, useEffect } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext,useMemo, useState } from 'react';
+
 import { 
-  chatOperations, 
   chatMessageOperations, 
-  chatParticipantOperations, 
-  chatNotificationOperations 
-} from '@/lib/firebase/database';
+  chatNotificationOperations, 
+  chatOperations, 
+  chatParticipantOperations} from '@/lib/firebase/database';
+
 import type { 
   Chat, 
   ChatMessage, 
-  ChatParticipant, 
+  ChatMessageType, 
   ChatNotification, 
-  ChatMessageType 
-} from '@/types/database';
+  ChatParticipant} from '@/types/database';
 
 interface ChatContextType {
   // Chat operations

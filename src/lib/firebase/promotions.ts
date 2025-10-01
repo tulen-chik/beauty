@@ -1,8 +1,10 @@
-import type { ServicePromotion, ServicePromotionPlan, PromotionAnalytics } from '@/types/database';
-import { servicePromotionPlanSchema, servicePromotionSchema, promotionAnalyticsSchema } from './schemas';
-import { createOperation, readOperation, updateOperation, deleteOperation } from './crud';
-import { db } from './init';
 import { equalTo, get, orderByChild, query, ref } from 'firebase/database';
+
+import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
+import { db } from './init';
+import { promotionAnalyticsSchema,servicePromotionPlanSchema, servicePromotionSchema } from './schemas';
+
+import type { PromotionAnalytics,ServicePromotion, ServicePromotionPlan } from '@/types/database';
 
 export const servicePromotionPlanOperations = {
   create: (planId: string, data: Omit<ServicePromotionPlan, 'id'>) =>

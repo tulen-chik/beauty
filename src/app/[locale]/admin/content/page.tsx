@@ -1,16 +1,15 @@
 "use client"
 
-import React, { useEffect, useState, useMemo, useRef } from "react"
-import {
-  MessageCircle, Search, Plus, Edit, Trash2, Eye, Calendar, User, Tag,
-  TrendingUp, FileText, Image, MoreVertical, CheckCircle, XCircle, Clock,
-  X, Users, Folder, ChevronsUpDown, Type, List, Lightbulb, Star, ListOrdered, Info, Loader2, AlertTriangle, UploadCloud
-} from "lucide-react"
+import { ChevronsUpDown,
+Edit, Eye, Folder, Info, Lightbulb, List, ListOrdered, Loader2,   MessageCircle, Plus, Search, Star,
+Trash2, Type, UploadCloud, Users,   X} from "lucide-react"
 import Link from "next/link"
+import React, { useEffect, useMemo, useRef,useState } from "react"
 
 // 1. Импортируем хук из вашего контекста
 import { useBlogAdmin } from "@/contexts/BlogAdminContext"
-import type { BlogPost, BlogAuthor, BlogCategory } from '@/types/database'
+
+import type { BlogAuthor, BlogCategory,BlogPost } from '@/types/database'
 
 export interface SeoData {
   metaTitle: string;

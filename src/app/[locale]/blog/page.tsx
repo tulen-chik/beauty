@@ -1,14 +1,17 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Search, Calendar, ArrowRight, Clock, Sparkles, TrendingUp, Star, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { useState, useEffect, useMemo } from "react"
+import { ArrowRight, Calendar, Clock,Search, Sparkles, Star, TrendingUp } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useMemo,useState } from "react"
+
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+
 // 1. Импортируем хук из вашего контекста
 import { useBlogAdmin as useBlog } from "@/contexts/BlogAdminContext" 
-import type { BlogPost, BlogCategory } from "@/types/database"
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+
+import type { BlogCategory } from "@/types/database"
 
 export default function BlogPage() {
   // 2. Получаем все необходимые данные и функции из контекста

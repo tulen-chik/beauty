@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { Building2,Lock, Mail, Phone, User, UserPlus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { X, UserPlus, Mail, Lock, User, Phone, Building2, CheckCircle } from "lucide-react";
+import { useState } from "react";
+
 import { useAdmin } from "@/contexts/AdminContext";
 import { useUser } from "@/contexts/UserContext";
 

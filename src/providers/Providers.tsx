@@ -3,21 +3,20 @@
 import { ReactNode } from 'react';
 
 import {
-   DatabaseProvider,
-   UserProvider,
-   SalonProvider,
-   SalonInvitationProvider,
-   ServiceCategoryProvider,
-   SalonServiceProvider,
-   SalonScheduleProvider,
-   AppointmentProvider,
-   ChatProvider,
-   SalonRatingProvider,
    AdminProvider,
+   AppointmentProvider,
    BlogAdminProvider,
+   ChatProvider,
+   DatabaseProvider,
    PromotionProvider,
-   SubscriptionProvider
-   } from '@/contexts';
+   SalonInvitationProvider,
+   SalonProvider,
+   SalonRatingProvider,
+   SalonScheduleProvider,
+   SalonServiceProvider,
+   ServiceCategoryProvider,
+   SubscriptionProvider,
+   UserProvider   } from '@/contexts';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (

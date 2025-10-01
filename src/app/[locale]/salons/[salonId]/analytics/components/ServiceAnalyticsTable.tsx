@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ServiceAnalyticsData {
   id: string;

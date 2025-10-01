@@ -1,8 +1,10 @@
-import type { Appointment, AppointmentStatus } from '@/types/database';
-import { appointmentSchema } from './schemas';
-import { createOperation, readOperation, updateOperation, deleteOperation } from './crud';
-import { db } from './init';
 import { endAt as fbEndAt, get, orderByChild, query, ref, startAt as fbStartAt } from 'firebase/database';
+
+import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
+import { db } from './init';
+import { appointmentSchema } from './schemas';
+
+import type { Appointment, AppointmentStatus } from '@/types/database';
 
 export const appointmentOperations = {
   create: (salonId: string, appointmentId: string, data: Omit<Appointment, 'id'>) =>

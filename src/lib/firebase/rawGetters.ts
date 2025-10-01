@@ -1,5 +1,6 @@
-import { db } from './init';
 import { get, ref } from 'firebase/database';
+
+import { db } from './init';
 
 export const getAllSalonInvitations = async () => {
   const snapshot = await get(ref(db, 'salonInvitations'));

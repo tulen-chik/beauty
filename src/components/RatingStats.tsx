@@ -1,5 +1,6 @@
-import React from 'react';
 import { Star } from 'lucide-react';
+import React from 'react';
+
 import type { SalonRatingStats } from '@/types/database';
 
 interface RatingStatsProps {

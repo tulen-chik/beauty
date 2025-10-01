@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image'; // Import the Image component
-import { usePathname } from 'next/navigation';
 import { MapPin, Menu, X } from 'lucide-react';
-import { useUser } from '@/contexts/UserContext';
+import Image from 'next/image'; // Import the Image component
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { useUser } from '@/contexts/UserContext';
 
 interface Props {
   locale: string;
