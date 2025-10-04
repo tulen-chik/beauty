@@ -2,6 +2,7 @@ import { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import '@/styles/globals.css';
 
@@ -118,6 +119,7 @@ export default async function RootLayout({
         />
       </head>
       <body>
+        <SpeedInsights/>
         <GoogleAnalytics />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
