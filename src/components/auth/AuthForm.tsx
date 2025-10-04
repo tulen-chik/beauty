@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
+import { ta } from 'date-fns/locale';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
@@ -52,6 +53,8 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
           return tAuth('errors.weakPassword');
         case 'auth/invalid-email':
           return tAuth('errors.invalidEmail');
+        case 'auth/network-request-failed':
+          return tAuth('errors.requestFalied');
         case 'auth/internal-error':
           return tAuth('errors.internalError') || 'An internal error occurred. Please try again later.';
         default: {

@@ -705,7 +705,8 @@
       "tooManyRequests": "Too many attempts. Please try again later",
       "userDisabled": "This account has been disabled",
       "operationNotAllowed": "This operation is not allowed",
-      "accountExistsWithDifferentCredential": "An account already exists with the same email"
+      "accountExistsWithDifferentCredential": "An account already exists with the same email",
+      "requestFalied": "Authentication request failed"
     }
   },
   "salon": {

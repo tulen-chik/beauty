@@ -443,7 +443,8 @@
       "tooManyRequests": "Слишком много попыток. Пожалуйста, попробуйте позже",
       "userDisabled": "Аккаунт отключен",
       "operationNotAllowed": "Эта операция не разрешена",
-      "accountExistsWithDifferentCredential": "Аккаунт с таким email уже существует"
+      "accountExistsWithDifferentCredential": "Аккаунт с таким email уже существует",
+      "requestFalied": "Ошибка сети, проверьте интернет соединение"
     }
   },
   "salon": {
