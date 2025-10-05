@@ -4,6 +4,7 @@ import { ChevronsUpDown,
 Edit, Eye, Folder, Info, Lightbulb, List, ListOrdered, Loader2,   MessageCircle, Plus, Search, Star,
 Trash2, Type, UploadCloud, Users,   X} from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import React, { useEffect, useMemo, useRef,useState } from "react"
 
 // 1. Импортируем хук из вашего контекста
@@ -198,8 +199,14 @@ const PostEditorModal = ({
               <div className="space-y-2">
                 <label className="label">Изображение</label>
                 {postData.image && (
-                  <div className="relative group">
-                    <img src={postData.image} alt="Превью" className="w-full h-40 object-cover rounded-md" />
+                  <div className="relative group h-40">
+                    <Image
+                      src={postData.image}
+                      alt="Превью"
+                      fill
+                      className="object-cover rounded-md"
+                      sizes="(max-width: 768px) 100vw, 600px"
+                    />
                     <button 
                       onClick={() => handleFieldChange('image', '')} 
                       className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -448,7 +455,54 @@ export default function AdminContentPage() {
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50"><tr><th className="th">Статья</th><th className="th">Автор</th><th className="th">Категория</th><th className="th">Статус</th><th className="th">Дата публикации</th><th className="th text-right">Действия</th></tr></thead>
-                  <tbody className="bg-white divide-y divide-gray-200">{filteredPosts.map((post) => (<tr key={post.id} className="hover:bg-gray-50"><td className="px-6 py-4"><div className="flex items-center"><img className="h-12 w-12 rounded-lg object-cover" src={post.image || '/placeholder.svg'} alt={post.title} /><div className="ml-4"><div className="text-sm font-medium text-gray-900 mb-1">{post.title}</div><div className="text-sm text-gray-500 line-clamp-2">{post.excerpt}</div></div></div></td><td className="px-6 py-4 whitespace-nowrap text-sm">{getAuthorName(post.authorId)}</td><td className="px-6 py-4 whitespace-nowrap text-sm">{getCategoryName(post.categoryId)}</td><td className="px-6 py-4 whitespace-nowrap"><span className={`badge ${post.status === 'published' ? 'badge-green' : 'badge-yellow'}`}>{post.status === 'published' ? 'Опубликовано' : 'Черновик'}</span></td><td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(post.publishedAt)}</td><td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><div className="flex items-center justify-end space-x-3"><Link href={`/blog/${post.slug}`} target="_blank" className="text-blue-600 hover:text-blue-900"><Eye size={16} /></Link><button onClick={() => openEdit(post)} className="text-gray-600 hover:text-gray-900"><Edit size={16} /></button><button onClick={() => { setSelectedPost(post); setShowDeleteModal(true); }} className="text-red-600 hover:text-red-900"><Trash2 size={16} /></button></div></td></tr>))}</tbody>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredPosts.map((post) => (
+                      <tr key={post.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <Image
+                              src={post.image || '/placeholder.svg'}
+                              alt={post.title}
+                              width={48}
+                              height={48}
+                              className="rounded-lg object-cover"
+                            />
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 mb-1">{post.title}</div>
+                              <div className="text-sm text-gray-500 line-clamp-2">{post.excerpt}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{getAuthorName(post.authorId)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{getCategoryName(post.categoryId)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`badge ${post.status === 'published' ? 'badge-green' : 'badge-yellow'}`}>
+                            {post.status === 'published' ? 'Опубликовано' : 'Черновик'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{formatDate(post.publishedAt)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end space-x-3">
+                            <Link href={`/blog/${post.slug}`} target="_blank" className="text-blue-600 hover:text-blue-900">
+                              <Eye size={16} />
+                            </Link>
+                            <button onClick={() => openEdit(post)} className="text-gray-600 hover:text-gray-900">
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedPost(post);
+                                setShowDeleteModal(true);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
               {filteredPosts.length === 0 && !loading && (<div className="text-center py-12"><MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" /><h3 className="text-lg font-medium text-gray-900 mb-2">Статьи не найдены</h3><p className="text-gray-500">Попробуйте изменить параметры поиска</p></div>)}
