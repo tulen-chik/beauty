@@ -1,655 +1,308 @@
 "use client"
 
-import { ChevronDown, Filter, Globe, List, Map as MapIcon, Search, Star, Store, Tag,X } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useTranslations } from "next-intl"
-import React from "react"
-import { useCallback,useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { getAllSalons, getAllSalonServices, getServiceImages } from "@/lib/firebase/database"
-
-import RatingDisplay from "@/components/RatingDisplay"
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
-
-import { useSalonRating } from "@/contexts"
+// --- ИМПОРТЫ КОНТЕКСТОВ И ВСПОМОГАТЕЛЬНЫХ КОМПОНЕНТОВ ---
+import { getServiceImages } from "@/lib/firebase/database"
+import { useSalonRating, useGeolocation, useSalon } from "@/contexts"
 import { usePromotion } from "@/contexts/PromotionContext"
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext"
+import { useSalonService } from "@/contexts/SalonServiceContext"
+import { MobileViewToggle } from "./components/Selectors"
+import { SearchAndFilterPanel } from "./components/Selectors"
+import { MapPanel } from "./components/Selectors"
 
-// --- ТИПЫ ДАННЫХ ---
-type AnySalon = {
-  id: string
-  name: string
-  address: string
-  description?: string
-  settings?: { business?: { coordinates?: { lat: number; lng: number } } }
-}
+// --- ИМПОРТ ТИПОВ ДАННЫХ ---
+import type { Salon, SalonService, ServiceCategory } from "@/types/database"; // Используем существующие типы
 
-type AnyService = {
-  id: string
-  salonId: string
-  name: string
-  description?: string
-  price: number
-  durationMinutes: number
-  isActive: boolean
-}
-
-type ProcessedService = AnyService & {
-  salon: { id: string; name: string; address: string } | null
-  imageUrl: string
-  isPromoted?: boolean
-  promotionEndDate?: string
-  categoryName?: string
-  categoryId?: string
+// --- НОВЫЙ ТИП ДЛЯ ОБРАБОТАННЫХ ДАННЫХ ---
+interface ProcessedService extends SalonService {
+  salon: { id: string; name: string; address: string } | null;
+  imageUrl: string;
+  isPromoted?: boolean;
+  promotionEndDate?: string;
+  categoryName?: string;
 }
 
 // --- КОНСТАНТЫ ---
-const POPULAR_CITIES = [
-  // { name: "Москва", value: "Москва" },
-  { name: "Минск", value: "Минск" },
-  { name: "Гомель", value: "Гомель" },
-  { name: "Гродно", value: "Гродно" },
-  { name: "Брест", value: "Брест" },
-  { name: "Витебск", value: "Витебск" },
-]
-const POPULAR_CITIES_EN = [
-  // { name: "Moscow", value: "Moscow" },
-  { name: "Minsk", value: "Minsk" },
-  { name: "Gomel", value: "Gomel" },
-  { name: "Grodno", value: "Grodno" },
-  { name: "Brest", value: "Brest" },
-  { name: "Vitebsk", value: "Vitebsk" },
-]
 const DEBOUNCE_DELAY = 300;
+const PAGE_SIZE = 15;
+const SALON_PAGE_SIZE = 50;
 
-// ===================================================================================
-// КОМПОНЕНТ КАРТЫ (SalonsMap)
-// ===================================================================================
-const SalonsMap = ({
-  salons,
-  onSalonClick,
-  locale,
-}: {
-  salons: AnySalon[]
-  onSalonClick: (salonId: string) => void
-  locale: string
-}) => {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const isMounted = useRef(false)
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([])
-  const [mapError, setMapError] = useState<string | null>(null)
-  const [mapLoading, setMapLoading] = useState(true)
-  const t = useTranslations("search")
 
-  useEffect(() => {
-    isMounted.current = true
-    const salonsWithCoords = salons.filter((s) => s.settings?.business?.coordinates)
-    if (salonsWithCoords.length > 0) {
-      initializeMap()
-    } else {
-      setMapLoading(false)
-    }
-    return () => {
-      isMounted.current = false
-      markers.forEach((marker) => marker.setMap(null))
-    }
-  }, [salons])
-
-  const loadGoogleMaps = () => {
-    if (window.google?.maps) return Promise.resolve()
-    return new Promise<void>((resolve, reject) => {
-      const scriptId = "google-maps-script"
-      if (document.getElementById(scriptId)) {
-        setTimeout(() => {
-          if (window.google?.maps) resolve()
-          else reject(new Error("Script exists but google.maps not available."))
-        }, 1000)
-        return
-      }
-      const script = document.createElement("script")
-      script.id = scriptId
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      if (!apiKey || apiKey.includes("YOUR_GOOGLE_MAPS_API_KEY")) {
-        return reject(new Error("Invalid or missing Google Maps API key"))
-      }
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
-      script.async = true
-      script.defer = true
-      const timeout = setTimeout(() => { script.remove(); reject(new Error("Google Maps loading timeout")) }, 15000)
-      script.onload = () => { clearTimeout(timeout); resolve() }
-      script.onerror = () => { clearTimeout(timeout); script.remove(); reject(new Error("Failed to load Google Maps script")) }
-      document.head.appendChild(script)
-    })
-  }
-
-  const initializeMap = async () => {
-    setMapLoading(true)
-    setMapError(null)
-    try {
-      await loadGoogleMaps()
-      if (!isMounted.current || !mapRef.current) return
-      if (!window.google?.maps) throw new Error("Google Maps API not available.")
-
-      const salonsWithCoords = salons.filter((s) => s.settings?.business?.coordinates)
-      let center = { lat: 55.7558, lng: 37.6176 }
-      if (salonsWithCoords.length > 0) {
-        const totalLat = salonsWithCoords.reduce((sum, s) => sum + (s.settings?.business?.coordinates?.lat || 0), 0)
-        const totalLng = salonsWithCoords.reduce((sum, s) => sum + (s.settings?.business?.coordinates?.lng || 0), 0)
-        center = { lat: totalLat / salonsWithCoords.length, lng: totalLng / salonsWithCoords.length }
-      }
-
-      const mapOptions: google.maps.MapOptions = {
-        center,
-        zoom: 12,
-        styles: [{ featureType: "poi.business", elementType: "labels", stylers: [{ visibility: "off" }] }],
-        zoomControl: true,
-        streetViewControl: false,
-        mapTypeControl: false,
-        fullscreenControl: false,
-        gestureHandling: "greedy" as any,
-      }
-      if (!mapRef.current) throw new Error("Map container became null.")
-      const newMap = new window.google.maps.Map(mapRef.current, mapOptions)
-      const newMarkers: google.maps.Marker[] = []
-      salonsWithCoords.forEach((salon) => {
-        const coords = salon.settings?.business?.coordinates
-        if (coords) {
-          const icon = {
-            url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 0C10.7157 0 4 6.71573 4 15C4 23.2843 19 38 19 38C19 38 34 23.2843 34 15C34 6.71573 27.2843 0 19 0Z" fill="#DC2626"/><circle cx="19" cy="15" r="6" fill="white"/></svg>`),
-            scaledSize: new window.google.maps.Size(38, 38),
-            anchor: new window.google.maps.Point(19, 38),
-          }
-          const marker = new window.google.maps.Marker({ position: coords, map: newMap, title: salon.name, icon: icon as any })
-          const infoWindow = new window.google.maps.InfoWindow({ content: `<div class="p-1 font-sans"><h3 class="font-semibold text-gray-900">${salon.name}</h3><p class="text-sm text-gray-600">${salon.address}</p></div>` })
-          marker.addListener("mouseover", () => infoWindow.open(newMap, marker))
-          marker.addListener("mouseout", () => infoWindow.close())
-          marker.addListener("click", () => onSalonClick(salon.id))
-          newMarkers.push(marker)
-        }
-      })
-      if (isMounted.current) {
-        setMarkers((prev) => { prev.forEach((m) => m.setMap(null)); return newMarkers })
-      }
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "Unknown map error."
-      if (isMounted.current) setMapError(msg)
-    } finally {
-      if (isMounted.current) setMapLoading(false)
-    }
-  }
-
-  if (mapLoading) {
-    return <LoadingSpinner/>
-  }
-  if (mapError) {
-    return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center"><p className="text-red-800 text-sm font-medium mb-2">Не удалось загрузить карту</p><p className="text-red-700 text-xs mb-4">Ошибка: {mapError}</p><button onClick={initializeMap} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Попробовать снова</button></div>
-  }
-  return <div ref={mapRef} className="w-full h-full rounded-lg border border-gray-200" />
-}
-
-// ===================================================================================
-// МЕМОИЗИРОВАННЫЕ ДОЧЕРНИЕ КОМПОНЕНТЫ
-// ===================================================================================
-const CitySelector = React.memo(({ currentCity, onCityChange, locale }: { currentCity: string | null; onCityChange: (city: string) => void; locale: string }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [customCity, setCustomCity] = useState("")
-  const [showCustomInput, setShowCustomInput] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
-  const t = useTranslations("search")
-  const popularCities = locale === "ru" ? POPULAR_CITIES : POPULAR_CITIES_EN
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setShowCustomInput(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  const handleCitySelect = (city: string) => { onCityChange(city); setIsOpen(false); setShowCustomInput(false); setCustomCity("") }
-  const handleCustomCitySubmit = (e: React.FormEvent) => { e.preventDefault(); if (customCity.trim()) { onCityChange(customCity.trim()); setCustomCity(""); setShowCustomInput(false); setIsOpen(false) } }
-
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 hover:border-gray-400 transition-all duration-200 text-sm font-medium shadow-sm">
-        <Globe className="w-4 h-4 text-gray-500" />
-        <span className="max-w-[140px] truncate">{currentCity || t("selectCity")}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-      </button>
-      {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
-          <div className="p-4 border-b border-gray-100 bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("popularCities")}</h3>
-            <div className="grid grid-cols-2 gap-1">{popularCities.map((city) => (<button key={city.value} onClick={() => handleCitySelect(city.value)} className="text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors">{city.name}</button>))}</div>
-          </div>
-          <div className="p-4">
-            {!showCustomInput ? (<button onClick={() => setShowCustomInput(true)} className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium">{t("customCity")}</button>) : (
-              <form onSubmit={handleCustomCitySubmit} className="space-y-3">
-                <input type="text" value={customCity} onChange={(e) => setCustomCity(e.target.value)} placeholder={t("enterCityName")} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" autoFocus />
-                <div className="flex gap-2">
-                  <button type="submit" disabled={!customCity.trim()} className="flex-1 px-3 py-2 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">{t("confirm")}</button>
-                  <button type="button" onClick={() => { setShowCustomInput(false); setCustomCity("") }} className="flex-1 px-3 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">{t("cancel")}</button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-});
-
-const ServiceCard = React.memo(({ service, locale, salonRating }: { service: ProcessedService; locale: string; salonRating?: any }) => {
-  const t = useTranslations("search");
-  const formatAddress = (fullAddress: string) => { if (!fullAddress) return ""; return fullAddress.split(",").slice(0, 2).join(",").trim() };
-
-  return (
-    <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-rose-50 to-pink-50 border-l-4 border-l-rose-400' : ''}`}>
-      {service.isPromoted && (
-        <div className="absolute top-2 right-2 bg-rose-400 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-          <Star className="w-3 h-3 fill-current" />
-          Рекомендуем
-        </div>
-      )}
-      <div className="flex items-start gap-4">
-        <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-          <Image 
-            src={service.imageUrl || "/service-placeholder.svg"} 
-            alt={service.name} 
-            fill 
-            className={service.imageUrl ? "object-cover" : "object-contain p-2"} 
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <Link href={`/${locale}/services/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
-          {service.categoryName && (
-            <div className="flex items-center gap-1 mb-1">
-              <Tag className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{service.categoryName}</span>
-            </div>
-          )}
-          {service.salon && (
-            <div className="mb-2">
-              <p className="text-sm text-gray-600">{service.salon.name}・{formatAddress(service.salon.address)}</p>
-              {salonRating && (
-                <div className="flex items-center gap-2 mt-1">
-                  <RatingDisplay rating={salonRating.averageRating} size="sm" />
-                  <span className="text-xs text-gray-500">({salonRating.totalRatings} отзывов)</span>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <div className="text-base font-bold text-gray-800">{service.price} Br</div>
-            <div className="text-sm text-gray-500">{service.durationMinutes} мин</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-// ===================================================================================
-// ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ
-// ===================================================================================
 export default function SearchPage() {
-  const t = useTranslations("search");
   const locale = useParams().locale as string;
 
+  // --- ИСПОЛЬЗОВАНИЕ КОНТЕКСТОВ ---
   const { getRatingStats } = useSalonRating();
-  const { findServicePromotionsBySalon, findActiveServicePromotion } = usePromotion();
-  const { getAllCategories } = useServiceCategory();
+  const { findActiveServicePromotion } = usePromotion();
+  const { getCategoriesBySalon } = useServiceCategory();
+  const { getServicesByCity, getServicesBySalon } = useSalonService();
+  const { city: userCity, position, loading: geoLoading } = useGeolocation();
+  const { fetchSalonsByCity } = useSalon();
 
+  // --- СОСТОЯНИЯ (с обновленными типами) ---
   const [loading, setLoading] = useState(true);
-  const [processedServices, setProcessedServices] = useState<ProcessedService[]>([]);
-  const [allSalons, setAllSalons] = useState<AnySalon[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const [services, setServices] = useState<ProcessedService[]>([]);
+  const [nextKey, setNextKey] = useState<string | null | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
+
+  const [allSalons, setAllSalons] = useState<Salon[]>([]);
+  const [salonsById, setSalonsById] = useState<Record<string, Salon>>({});
   const [salonRatings, setSalonRatings] = useState<Record<string, any>>({});
-  const [categories, setCategories] = useState<any[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'relevance' | 'price' | 'duration' | 'promoted'>('promoted');
-  const [showFilters, setShowFilters] = useState(false);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [categoriesById, setCategoriesById] = useState<Record<string, ServiceCategory>>({});
   
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [userCity, setUserCity] = useState<string | null>(null);
   const [manualCity, setManualCity] = useState<string | null>(null);
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'relevance' | 'price' | 'duration' | 'promoted'>('promoted');
   
+  const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
+  
   const currentCity = manualCity || userCity;
+  
+  // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
+  const observer = useRef<IntersectionObserver>();
+  const loaderRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading || isLoadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        fetchServices(true);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, isLoadingMore, hasMore]);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadDataForCity = async () => {
+      if (!currentCity) return;
+
       setLoading(true);
+      setServices([]);
+      setNextKey(undefined);
+      setHasMore(true);
+
       try {
-        const [rawSalons, rawServices, categoriesData] = await Promise.all([
-          getAllSalons(), 
-          getAllSalonServices(),
-          getAllCategories()
-        ]);
-        
-        const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }));
-        const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }));
-        const salonsById = Object.fromEntries(salonsList.map(s => [s.id, s]));
-        const categoriesById = Object.fromEntries(categoriesData.map(c => [c.id, c]));
-        
-        const servicesWithDetails = await Promise.all(
-          servicesList.map(async (service: any) => {
-            const salon = salonsById[service.salonId];
-            const category = categoriesById[service.categoryId];
-            let imageUrl = "";
-            let isPromoted = false;
-            let promotionEndDate = "";
-            
-            try {
-              const imgs = await getServiceImages(service.id);
-              if (imgs && imgs.length > 0) imageUrl = imgs[0].url;
-            } catch (e) { console.warn(`Failed to load images for service ${service.id}`, e) }
-            
-            try {
-              const promotion = await findActiveServicePromotion(service.id);
-              if (promotion && promotion.status === 'active') {
-                isPromoted = true;
-                promotionEndDate = promotion.endDate;
-              }
-            } catch (e) { console.warn(`Failed to load promotion for service ${service.id}`, e) }
-            
-            return { 
-              ...service, 
-              salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, 
-              imageUrl,
-              isPromoted,
-              promotionEndDate,
-              categoryName: category?.name || '',
-              categoryId: service.categoryId
-            };
-          })
-        );
-        
-        setAllSalons(salonsList);
-        setProcessedServices(servicesWithDetails);
-        setCategories(categoriesData);
-        
-        // Загружаем рейтинги для всех салонов
+        let accumulatedSalons: Salon[] = [];
+        let currentSalonNextKey: string | undefined = undefined;
+        let hasMoreSalons = true;
+
+        while (hasMoreSalons) {
+          // --- ИСПРАВЛЕНИЕ ---
+          // 1. Получаем результат в одну переменную с явным типом.
+          const response: { salons: Salon[]; nextKey: string | null } = await fetchSalonsByCity({
+            city: currentCity,
+            limit: SALON_PAGE_SIZE,
+            startAfterKey: currentSalonNextKey,
+          });
+
+          // 2. Теперь безопасно используем свойства из этой переменной.
+          accumulatedSalons = [...accumulatedSalons, ...response.salons];
+          currentSalonNextKey = response.nextKey ?? undefined;
+          hasMoreSalons = !!response.nextKey;
+        }
+
+        setAllSalons(accumulatedSalons);
+
+        const salonsMap = Object.fromEntries(accumulatedSalons.map(s => [s.id, s]));
+        setSalonsById(salonsMap);
+
         const ratingsData: Record<string, any> = {};
-        for (const salon of salonsList) {
-          try {
-            const stats = await getRatingStats(salon.id);
-            ratingsData[salon.id] = stats;
-          } catch (error) {
-            console.warn(`Failed to load ratings for salon ${salon.id}`, error);
-          }
+        for (const salon of accumulatedSalons) {
+          try { ratingsData[salon.id] = await getRatingStats(salon.id); } 
+          catch (error) { console.warn(`Failed to load ratings for salon ${salon.id}`, error); }
         }
         setSalonRatings(ratingsData);
+
+        await fetchServices(false, salonsMap);
+
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error("Error loading data for city:", error);
       } finally {
         setLoading(false);
       }
     };
-    loadData();
-  }, [getRatingStats, findActiveServicePromotion, getAllCategories]);
 
-  const filteredServices = useMemo(() => {
-    let filtered = processedServices;
-    const qLower = debouncedQuery.trim().toLowerCase();
-    
-    // Фильтрация по поисковому запросу
-    if (qLower) {
-      filtered = filtered.filter(s => 
-        s.name.toLowerCase().includes(qLower) || 
-        s.description?.toLowerCase().includes(qLower) ||
-        s.categoryName?.toLowerCase().includes(qLower)
-      );
-    }
-    
-    // Фильтрация по городу
-    if (currentCity) {
-      filtered = filtered.filter(s => s.salon?.address.toLowerCase().includes(currentCity.toLowerCase()));
-    }
-    
-    // Фильтрация по салону
-    if (selectedSalonId) {
-      filtered = filtered.filter(s => s.salon?.id === selectedSalonId);
-    }
-    
-    // Фильтрация по категории
-    if (selectedCategory) {
-      filtered = filtered.filter(s => s.categoryId === selectedCategory);
-    }
-    
-    // Только активные услуги
-    filtered = filtered.filter(s => s.isActive);
-    
-    // Сортировка с приоритизацией продвигаемых услуг
-    filtered.sort((a, b) => {
-      // Сначала продвигаемые услуги
-      if (a.isPromoted && !b.isPromoted) return -1;
-      if (!a.isPromoted && b.isPromoted) return 1;
-      
-      // Затем по выбранному критерию сортировки
-      switch (sortBy) {
-        case 'promoted':
-          return 0; // Уже отсортировано по продвижению выше
-        case 'price':
-          return a.price - b.price;
-        case 'duration':
-          return a.durationMinutes - b.durationMinutes;
-        case 'relevance':
-        default:
-          // Сортировка по релевантности (по названию)
-          return a.name.localeCompare(b.name);
+    loadDataForCity();
+  }, [currentCity]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+        if (!selectedSalonId) {
+            setCategories([]);
+            setCategoriesById({});
+            return;
+        }
+        const categoriesData = await getCategoriesBySalon(selectedSalonId);
+        setCategories(categoriesData);
+        setCategoriesById(Object.fromEntries(categoriesData.map(c => [c.id, c])));
+    };
+    loadCategories();
+  }, [selectedSalonId, getCategoriesBySalon]);
+
+
+  const processServicesChunk = useCallback(async (chunk: SalonService[], currentSalonsMap: Record<string, Salon>): Promise<ProcessedService[]> => {
+    return Promise.all(
+      chunk.map(async (service) => {
+        const salon = currentSalonsMap[service.salonId];
+        const firstCategoryId = service.categoryIds?.[0];
+        const category = firstCategoryId ? categoriesById[firstCategoryId] : undefined;
+        let imageUrl = "";
+        let isPromoted = false;
+        
+        try {
+          const imgs = await getServiceImages(service.id);
+          if (imgs?.length > 0) imageUrl = imgs[0].url;
+        } catch (e) { /* Игнорируем ошибку */ }
+        
+        try {
+          const promotion = await findActiveServicePromotion(service.id);
+          if (promotion?.status === 'active') isPromoted = true;
+        } catch (e) { /* Игнорируем ошибку */ }
+        
+        return { 
+          ...service, 
+          salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, 
+          imageUrl, 
+          isPromoted, 
+          categoryName: category?.name || '',
+        };
+      })
+    );
+  }, [categoriesById, findActiveServicePromotion]);
+
+  const fetchServices = useCallback(async (isLoadMore = false, currentSalonsMap = salonsById) => {
+    if (isLoadMore) setIsLoadingMore(true);
+
+    try {
+      let rawServices: SalonService[] = [];
+      let newNextKey: string | null = null;
+
+      if (selectedSalonId) {
+        rawServices = await getServicesBySalon(selectedSalonId, { search: debouncedQuery });
+        newNextKey = null;
+      } else if (currentCity) {
+        const result = await getServicesByCity({ 
+          limit: PAGE_SIZE, 
+          startAfterKey: isLoadMore ? (nextKey ?? undefined) : undefined ,
+          city: currentCity
+        });
+        rawServices = result.services;
+        newNextKey = result.nextKey;
       }
-    });
-    
-    return filtered;
-  }, [processedServices, debouncedQuery, currentCity, selectedSalonId, selectedCategory, sortBy]);
 
-  const salonsForMap = useMemo(() => {
-    if (!currentCity) return allSalons;
-    return allSalons.filter(s => s.address.toLowerCase().includes(currentCity.toLowerCase()));
-  }, [allSalons, currentCity]);
+      const processedChunk = await processServicesChunk(rawServices, currentSalonsMap);
+      
+      setServices(prev => isLoadMore ? [...prev, ...processedChunk] : processedChunk);
+      setNextKey(newNextKey);
+      setHasMore(newNextKey !== null);
+    } catch (error) {
+      console.error("Error fetching services:", error);
+    } finally {
+      if (isLoadMore) setIsLoadingMore(false);
+    }
+  }, [selectedSalonId, nextKey, getServicesByCity, getServicesBySalon, processServicesChunk, debouncedQuery, currentCity, salonsById]);
+  
+  useEffect(() => {
+    if (loading) return;
+
+    setServices([]);
+    setNextKey(undefined);
+    setHasMore(true);
+    fetchServices(false);
+  }, [selectedSalonId, debouncedQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_DELAY);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    if (!("geolocation" in navigator)) return;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=${locale || "ru"}`);
-          if (response.ok) {
-            const data = await response.json();
-            setUserCity(data.address?.city || data.address?.town || data.address?.village || t("unknownCity"));
-          }
-        } catch (error) { console.error("Error getting city name:", error) }
-      },
-      (error) => console.error("Geolocation error:", error)
-    );
-  }, [locale, t]);
+  // --- ЛОГИКА ФИЛЬТРАЦИИ И СОРТИРОВКИ ---
+  const filteredAndSortedServices = useMemo(() => {
+    let filtered = services;
+    const qLower = debouncedQuery.trim().toLowerCase();
+    
+    if (qLower) {
+      filtered = filtered.filter(s => s.name.toLowerCase().includes(qLower) || s.description?.toLowerCase().includes(qLower) || s.categoryName?.toLowerCase().includes(qLower));
+    }
+    if (selectedCategory) {
+      // Обновленная логика для массива categoryIds
+      filtered = filtered.filter(s => s.categoryIds?.includes(selectedCategory));
+    }
+    
+    filtered = filtered.filter(s => s.isActive);
+    
+    filtered.sort((a, b) => {
+      if (a.isPromoted && !b.isPromoted) return -1;
+      if (!a.isPromoted && b.isPromoted) return 1;
+      switch (sortBy) {
+        case 'price': return a.price - b.price;
+        case 'duration': return a.durationMinutes - b.durationMinutes;
+        default: return a.name.localeCompare(b.name);
+      }
+    });
+    
+    return filtered;
+  }, [services, debouncedQuery, selectedCategory, sortBy]);
 
+  const salonsForMap = useMemo(() => {
+    return allSalons;
+  }, [allSalons]);
+
+  // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
   const handleCityChange = useCallback((city: string) => { setManualCity(city); setSelectedSalonId(null); }, []);
   const handleSalonClick = useCallback((salonId: string) => { setSelectedSalonId(salonId); setMobileView('list'); }, []);
-  const clearAllFilters = useCallback(() => { 
-    setManualCity(null); 
-    setSelectedSalonId(null); 
-    setSearchQuery(""); 
-    setSelectedCategory(null);
-    setSortBy('promoted');
-    setShowFilters(false);
-  }, []);
 
+  // --- РЕНДЕРИНГ ---
   return (
     <div className="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
-      {/* --- ЛЕВАЯ КОЛОНКА (СПИСОК И ФИЛЬТРЫ) --- */}
-      <div className={`w-full md:w-2/5 lg:w-1/3 flex flex-col h-full bg-white border-r border-gray-200 ${mobileView === 'list' ? 'flex' : 'hidden'} md:flex`}>
-        <div className="p-4 border-b border-gray-200">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("searchPlaceholder")} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500" />
-          </div>
-          <div className="mt-3 flex gap-2">
-            <CitySelector currentCity={currentCity} onCityChange={handleCityChange} locale={locale} />
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-3 border rounded-xl text-sm font-medium transition-all duration-200 shadow-sm ${
-                showFilters || selectedCategory
-                  ? 'bg-rose-50 border-rose-200 text-rose-700'
-                  : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              {t('filters')}
-              {selectedCategory && (
-                <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full text-xs">
-                  1
-                </span>
-              )}
-            </button>
-          </div>
-          
-          {/* Панель фильтров */}
-          {showFilters && (
-            <div className="mt-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="space-y-3">
-                {/* Фильтр по категориям */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('category')}
-                  </label>
-                  <select
-                    value={selectedCategory || ''}
-                    onChange={(e) => setSelectedCategory(e.target.value || null)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-                  >
-                    <option value="">{t('allCategories')}</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {/* Сортировка */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('sortBy')}
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
-                  >
-                    <option value="promoted">{t('promoted')}</option>
-                    <option value="relevance">{t('relevance')}</option>
-                    <option value="price">{t('priceAsc')}</option>
-                    <option value="duration">{t('durationAsc')}</option>
-                  </select>
-                </div>
-                
-                {/* Кнопка очистки фильтров */}
-                {(selectedCategory || sortBy !== 'promoted') && (
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSortBy('promoted');
-                    }}
-                    className="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    {t('clearFilters')}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {/* Активные фильтры */}
-        {(selectedSalonId || selectedCategory) && (
-          <div className="p-3 bg-rose-50 border-b border-rose-200">
-            <div className="flex flex-wrap gap-2">
-              {selectedSalonId && (
-                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm border border-rose-200">
-                  <Store className="w-3 h-3 text-rose-600" />
-                  <span className="text-rose-800 font-medium">
-                    {allSalons.find(s => s.id === selectedSalonId)?.name || ''}
-                  </span>
-                  <button 
-                    onClick={() => setSelectedSalonId(null)} 
-                    className="p-0.5 hover:bg-rose-100 rounded-full"
-                  >
-                    <X className="w-3 h-3 text-rose-600" />
-                  </button>
-                </div>
-              )}
-              {selectedCategory && (
-                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full text-sm border border-rose-200">
-                  <Tag className="w-3 h-3 text-rose-600" />
-                  <span className="text-rose-800 font-medium">
-                    {categories.find(c => c.id === selectedCategory)?.name || ''}
-                  </span>
-                  <button 
-                    onClick={() => setSelectedCategory(null)} 
-                    className="p-0.5 hover:bg-rose-100 rounded-full"
-                  >
-                    <X className="w-3 h-3 text-rose-600" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="text-center text-gray-500 p-10">{t("loading")}</div>
-          ) : (
-            filteredServices.length === 0 ? (
-              <div className="text-center text-gray-500 p-10">
-                <p className="font-medium">{t("noResults")}</p>
-                <p className="text-sm mt-1">{currentCity ? t("noServicesInCityMessage", { city: currentCity }) : ""}</p>
-              </div>
-            ) : (
-              <div>
-                
-                
-                {filteredServices.map((service) => (
-                  <ServiceCard 
-                    key={service.id} 
-                    service={service} 
-                    locale={locale} 
-                    salonRating={service.salon ? salonRatings[service.salon.id] : undefined}
-                  />
-                ))}
-              </div>
-            )
-          )}
-        </div>
-      </div>
-
-      <div className={`flex-1 h-full min-w-0 ${mobileView === 'map' ? 'block' : 'hidden'} md:block`}>
-        <SalonsMap salons={salonsForMap} onSalonClick={handleSalonClick} locale={locale} />
-      </div>
-
-      {/* --- ПЛАВАЮЩАЯ КНОПКА ДЛЯ МОБИЛЬНЫХ --- */}
-      <div className="md:hidden fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setMobileView(prev => prev === 'list' ? 'map' : 'list')}
-          className="w-14 h-14 bg-rose-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-rose-700 transition-all"
-        >
-          {mobileView === 'list' ? <MapIcon className="w-6 h-6" /> : <List className="w-6 h-6" />}
-        </button>
-      </div>
+      <SearchAndFilterPanel
+        mobileView={mobileView}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        currentCity={currentCity}
+        handleCityChange={handleCityChange}
+        locale={locale}
+        showFilters={showFilters}
+        setShowFilters={setShowFilters}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        categories={categories}
+        selectedSalonId={selectedSalonId}
+        allSalons={allSalons}
+        setSelectedSalonId={setSelectedSalonId}
+        loading={loading}
+        geoLoading={geoLoading}
+        filteredAndSortedServices={filteredAndSortedServices}
+        salonRatings={salonRatings}
+        loaderRef={loaderRef}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
+        services={services}
+      />
+      <MapPanel
+        mobileView={mobileView}
+        salonsForMap={salonsForMap}
+        handleSalonClick={handleSalonClick}
+        locale={locale}
+        position={position}
+      />
+      <MobileViewToggle
+        mobileView={mobileView}
+        setMobileView={setMobileView}
+      />
     </div>
   )
 }

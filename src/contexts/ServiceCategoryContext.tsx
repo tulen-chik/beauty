@@ -1,6 +1,7 @@
 import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
 
-import { getAllServiceCategories,serviceCategoryOperations } from '@/lib/firebase/database';
+import { serviceCategoryOperations } from '@/lib/firebase/database';
+import { getServiceCategoriesBySalonId } from '@/lib/firebase/serviceCategories';
 
 import type { ServiceCategory } from '@/types/database';
 
@@ -10,7 +11,6 @@ interface ServiceCategoryContextType {
   updateCategory: (categoryId: string, data: Partial<ServiceCategory>) => Promise<ServiceCategory>;
   deleteCategory: (categoryId: string) => Promise<void>;
   getCategoriesBySalon: (salonId: string) => Promise<ServiceCategory[]>;
-  getAllCategories: () => Promise<ServiceCategory[]>;
   loading: boolean;
   error: string | null;
 }
@@ -87,29 +87,9 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await getAllServiceCategories();
-      const result = Object.entries(all)
-        .map(([id, data]) => ({ ...(data as any), id }))
-        .filter((c) => c.salonId === salonId);
+      const categories = await getServiceCategoriesBySalonId(salonId);
       setLoading(false);
-      return result;
-    } catch (e: any) {
-      setError(e.message);
-      setLoading(false);
-      return [];
-    }
-  }, []);
-
-  // Получить все категории без фильтрации
-  const getAllCategories = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const all = await getAllServiceCategories();
-      const result = Object.entries(all)
-        .map(([id, data]) => ({ ...(data as any), id }));
-      setLoading(false);
-      return result;
+      return categories;
     } catch (e: any) {
       setError(e.message);
       setLoading(false);
@@ -123,7 +103,6 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
-    getAllCategories,
     loading,
     error,
   }), [
@@ -132,7 +111,6 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
-    getAllCategories,
     loading,
     error,
   ]);

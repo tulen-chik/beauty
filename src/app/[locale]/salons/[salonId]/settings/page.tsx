@@ -285,7 +285,7 @@ export default function SalonSettingsPage() {
             business: {
               ...prev.business,
               ...(salonData.settings?.business || {}),
-              coordinates: salonData.settings?.business?.coordinates
+              coordinates: salonData.coordinates
             },
             notifications: {
               ...prev.notifications,

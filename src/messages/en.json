@@ -591,6 +591,8 @@
   "search": {
     "title": "Search",
     "details": "Details",
+    "noMoreServices": "No more services",
+    "tryChangingFilters": "Try changing search parameters",
     "subtitle": "Find the services and salons you need",
     "searchPlaceholder": "Search for services, salons...",
     "filters": "Filters",

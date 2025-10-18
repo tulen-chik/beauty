@@ -11,19 +11,26 @@ import {
   Star, 
   X} from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useEffect, useMemo,useState } from "react"
+import { useEffect, useMemo, useState, useCallback } from "react"
 
-import { useAdmin } from "@/contexts/AdminContext"
+// Контексты
 import { useSalonRating } from "@/contexts/SalonRatingContext"
+import { useSalon } from "@/contexts/SalonContext" // <-- Изменено
+// import { useAuth } from "@/contexts/AuthContext" // <-- Предполагаемый импорт для получения пользователя
 
-import type { SalonRating } from "@/types/database"
+import type { Salon, SalonRating } from "@/types/database"
 
 type ReviewStatus = 'all' | 'pending' | 'approved' | 'rejected'
 
 export default function AdminReviewsPage() {
   const t = useTranslations('admin')
-  const { ratings, getRatingsBySalon, approveRating, rejectRating, loading } = useSalonRating()
-  const { salons, loadSalons } = useAdmin()
+  const { ratings, getRatingsBySalon, approveRating, rejectRating, loading: ratingsLoading } = useSalonRating()
+  
+  // --- Использование нового контекста ---
+  const { fetchUserSalons, fetchSalon, loading: salonsLoading } = useSalon()
+  // const { user } = useAuth() // <-- Предполагается, что у вас есть доступ к текущему пользователю
+  
+  const [adminSalons, setAdminSalons] = useState<Salon[]>([])
   
   // Flatten the ratings object into an array
   const allRatings = useMemo(() => {
@@ -31,34 +38,53 @@ export default function AdminReviewsPage() {
   }, [ratings])
   
   const [selectedSalonId, setSelectedSalonId] = useState<string>('all')
-
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState<ReviewStatus>('all')
   const [expandedReview, setExpandedReview] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState("")
   const [showRejectDialog, setShowRejectDialog] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadSalons()
-  }, [loadSalons])
+  // --- Новая логика загрузки салонов ---
+  const loadAdminSalons = useCallback(async () => {
+    // Замените 'user.id' на реальный ID пользователя из вашего контекста аутентификации
+    const userId = 'current_user_id'; // <-- ЗАМЕНИТЬ
+    if (!userId) return;
+
+    try {
+      const userSalonsData = await fetchUserSalons(userId);
+      if (userSalonsData && userSalonsData.salons) {
+        const salonPromises = userSalonsData.salons.map(s => fetchSalon(s.salonId));
+        const fetchedSalons = await Promise.all(salonPromises);
+        setAdminSalons(fetchedSalons.filter((s): s is Salon => s !== null));
+      }
+    } catch (error) {
+      console.error("Failed to load admin salons:", error);
+    }
+  }, [fetchUserSalons, fetchSalon]);
 
   useEffect(() => {
-    if (selectedSalonId !== 'all') {
-      getRatingsBySalon(selectedSalonId)
-    } else {
-      // Load all salons first, then get ratings for each
-      const loadAllRatings = async () => {
-        await loadSalons()
-        // Get ratings for each salon
-        for (const salon of salons) {
-          await getRatingsBySalon(salon.id)
-        }
+    loadAdminSalons();
+  }, [loadAdminSalons]);
+
+  // --- Обновленная логика загрузки отзывов ---
+  useEffect(() => {
+    if (selectedSalonId === 'all') {
+      // Загружаем отзывы для всех салонов, которыми управляет админ
+      if (adminSalons.length > 0) {
+        adminSalons.forEach(salon => {
+          getRatingsBySalon(salon.id);
+        });
       }
-    //   loadAllRatings()
+    } else {
+      // Загружаем отзывы для конкретного выбранного салона
+      getRatingsBySalon(selectedSalonId);
     }
-  }, [selectedSalonId, salons])
+  }, [selectedSalonId, adminSalons, getRatingsBySalon]);
+
 
   const filteredReviews = allRatings.filter((rating: SalonRating) => {
+    const matchesSalon = selectedSalonId === 'all' || rating.salonId === selectedSalonId;
+
     const matchesSearch = 
       (rating.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (rating.review?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false))
@@ -69,7 +95,7 @@ export default function AdminReviewsPage() {
       (statusFilter === 'approved' && rating.approvedAt) ||
       (statusFilter === 'rejected' && rating.rejectedAt)
     
-    return matchesSearch && matchesStatus
+    return matchesSalon && matchesSearch && matchesStatus
   })
 
   const handleApprove = async (ratingId: string) => {
@@ -105,12 +131,12 @@ export default function AdminReviewsPage() {
     ))
   }
 
-  if (loading) {
+  if (ratingsLoading || salonsLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Загрузка отзывов...</p>
+          <p className="mt-4 text-gray-600">Загрузка данных...</p>
         </div>
       </div>
     )
@@ -155,7 +181,8 @@ export default function AdminReviewsPage() {
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="all">Все салоны</option>
-              {salons.map(salon => (
+              {/* --- Использование нового списка салонов --- */}
+              {adminSalons.map(salon => (
                 <option key={salon.id} value={salon.id}>
                   {salon.name}
                 </option>

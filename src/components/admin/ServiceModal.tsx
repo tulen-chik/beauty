@@ -72,6 +72,7 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, salonId
     const serviceData: SalonService = {
       id: service?.id || crypto.randomUUID(),
       name: formData.name!,
+      city: formData.city!,
       description: formData.description,
       price: formData.price!,
       durationMinutes: formData.durationMinutes!,

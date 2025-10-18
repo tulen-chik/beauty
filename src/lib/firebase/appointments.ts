@@ -1,4 +1,4 @@
-import { endAt as fbEndAt, get, orderByChild, query, ref, startAt as fbStartAt } from 'firebase/database';
+import { endAt as fbEndAt, get, orderByChild, query, ref, startAt as fbStartAt, equalTo } from 'firebase/database';
 
 import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
 import { db } from './init';
@@ -84,6 +84,56 @@ export const appointmentOperations = {
       return filtered;
     } catch (error) {
       console.error(`❌ Error in listBySalon:`, error);
+      return [];
+    }
+  },
+
+  listByUser: async (userId: string): Promise<any[]> => {
+    try {
+      // Ссылка на корневой узел 'appointments', содержащий все салоны.
+      const appointmentsRef = ref(db, 'appointments');
+      
+      // Получаем снимок всего узла 'appointments'.
+      // ВНИМАНИЕ: Это может загрузить большой объем данных, если у вас много салонов и записей.
+      // Для крупномасштабных приложений рекомендуется денормализация данных.
+      const snapshot = await get(appointmentsRef);
+  
+      if (!snapshot.exists()) {
+        console.log(`📊 В базе данных не найдено ни одной записи о встречах.`);
+        return [];
+      }
+  
+      // Данные представляют собой объект, где ключи - это salonId.
+      const allSalonsData = snapshot.val() as Record<string, Record<string, Appointment>>;
+      
+      const userAppointments: any[] = [];
+
+      // Перебираем каждый salonId в полученных данных.
+      for (const salonId in allSalonsData) {
+        const salonAppointments = allSalonsData[salonId];
+        
+        // Перебираем каждую запись (appointmentId) внутри салона.
+        for (const appointmentId in salonAppointments) {
+          const appointment = salonAppointments[appointmentId];
+
+          // Проверяем, принадлежит ли запись искомому пользователю.
+          if (appointment.customerUserId === userId) {
+            // Добавляем найденную запись в массив результатов,
+            // обогащая ее собственным ID и ID салона.
+            userAppointments.push({
+              ...appointment,
+              id: appointmentId,
+              salonId: salonId 
+            });
+          }
+        }
+      }
+      
+      console.log(`📊 Найдено ${userAppointments.length} записей для пользователя ${userId}`, userAppointments);
+      return userAppointments;
+
+    } catch (error) {
+      console.error(`❌ Ошибка в функции listByUser для пользователя ${userId}:`, error);
       return [];
     }
   },

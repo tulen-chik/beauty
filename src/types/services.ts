@@ -17,6 +17,7 @@ export interface ServiceImage {
 export interface SalonService {
   id: string;
   salonId: string;
+  city: string; 
   categoryIds?: string[];
   name: string;
   description?: string;

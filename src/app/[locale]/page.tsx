@@ -176,7 +176,7 @@ export default function Home() {
           >
             <motion.div variants={itemVariants} whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href="/register"
+                href="/search"
                 className="group inline-flex items-center justify-center px-12 py-4 text-lg font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <span className="mr-2">{t("getStartedClient")}</span>

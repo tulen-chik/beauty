@@ -30,6 +30,7 @@ interface AppointmentContextType {
   // Queries
   listAppointments: (salonId: string, options?: ListOptions) => Promise<Appointment[]>;
   listAppointmentsByDay: (salonId: string, date: Date) => Promise<Appointment[]>;
+  listAppointmentsByCustomer: (userId: string) => Promise<Appointment[]>;
 
   // Availability
   isTimeSlotAvailable: (
@@ -178,6 +179,21 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const listAppointmentsByCustomer = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Используем новый метод из appointmentOperations
+      const list = await appointmentOperations.listByUser(userId);
+      return list;
+    } catch (e: any) {
+      setError(e.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const bookIfAvailable = useCallback(async (
     salonId: string,
     appointmentId: string,
@@ -215,6 +231,7 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     listAppointments,
     listAppointmentsByDay,
     isTimeSlotAvailable,
+    listAppointmentsByCustomer,
     bookIfAvailable,
     loading,
     error,
@@ -226,6 +243,7 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     listAppointments,
     listAppointmentsByDay,
     isTimeSlotAvailable,
+    listAppointmentsByCustomer,
     bookIfAvailable,
     loading,
     error,

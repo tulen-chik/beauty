@@ -13,3 +13,4 @@ export { SalonServiceProvider,useSalonService } from './SalonServiceContext';
 export { ServiceCategoryProvider,useServiceCategory } from './ServiceCategoryContext';
 export { SubscriptionProvider, useSubscription } from './SubscriptionContext'
 export { UserProvider,useUser } from './UserContext';
+export { GeolocationProvider,useGeolocation } from './GeolocationContext'

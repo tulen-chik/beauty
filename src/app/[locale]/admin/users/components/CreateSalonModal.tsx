@@ -41,13 +41,36 @@ const MapSelector = ({
           console.error('Invalid or missing Google Maps API key');
           return reject(new Error('Invalid or missing Google Maps API key'));
         }
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=${navigator.language || 'en'}`;
         script.async = true;
         script.defer = true;
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('Failed to load Google Maps'));
         document.head.appendChild(script);
       });
+    };
+
+    const getDefaultLocation = (): { lat: number; lng: number } => {
+      // Use provided coordinates if available
+      if (initialCoordinates) return initialCoordinates;
+      
+      // Try to get user's current location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            return { lat: latitude, lng: longitude };
+          },
+          (error) => {
+            console.warn('Could not get user location:', error);
+            // Fallback to a more neutral location (center of the world map)
+            return { lat: 20, lng: 0 };
+          }
+        );
+      }
+      
+      // Default fallback to center of the world map
+      return { lat: 20, lng: 0 };
     };
 
     const initializeMap = async () => {
@@ -59,8 +82,9 @@ const MapSelector = ({
           return;
         }
 
-        const initialLat = initialCoordinates?.lat || 53.895042;
-        const initialLng = initialCoordinates?.lng || 27.571326;
+        const defaultLocation = getDefaultLocation();
+        const initialLat = initialCoordinates?.lat || defaultLocation.lat;
+        const initialLng = initialCoordinates?.lng || defaultLocation.lng;
 
         const newMap = new (window as any).google.maps.Map(mapRef.current, {
           center: { lat: initialLat, lng: initialLng },

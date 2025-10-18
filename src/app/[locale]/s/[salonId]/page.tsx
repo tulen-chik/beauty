@@ -15,45 +15,8 @@ import { useSalonRating } from "@/contexts"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
-
-// 2. Определены интерфейсы для улучшения типобезопасности
-type AnyService = {
-  id: string
-  salonId: string
-  name: string
-  description?: string
-  price: number
-  durationMinutes: number
-}
-
-interface Salon {
-  name: string
-  address?: string
-  phone?: string
-  settings?: {
-    business?: {
-      coordinates?: {
-        lat: number
-        lng: number
-      }
-    }
-  }
-}
-
-interface ScheduleDay {
-  day: string
-  isOpen: boolean
-  times?: Array<{
-    start: string
-    end: string
-  }>
-}
-
-interface Schedule {
-  salonId: string
-  weeklySchedule: ScheduleDay[]
-  updatedAt: string
-}
+import { Salon, SalonSchedule, SalonWorkDay,  } from "@/types/salon"
+import { SalonService } from "@/types/services"
 
 export default function SalonPublicPage() {
   const params = useParams() as { salonId:string; locale:string }
@@ -71,8 +34,8 @@ export default function SalonPublicPage() {
 
   // 3. Используются строгие типы вместо `any`
   const [salon, setSalon] = useState<Salon | null>(null)
-  const [schedule, setSchedule] = useState<Schedule | null>(null)
-  const [services, setServices] = useState<AnyService[]>([])
+  const [schedule, setSchedule] = useState<SalonSchedule | null>(null)
+  const [services, setServices] = useState<SalonService[]>([])
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({})
   const [ratingStats, setRatingStats] = useState<any>(null)
 
@@ -268,7 +231,7 @@ export default function SalonPublicPage() {
                     <h3 className="text-lg font-bold text-gray-900">{t('mapTitle')}</h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                    {schedule.weeklySchedule.map((day: ScheduleDay) => (
+                    {schedule.weeklySchedule.map((day: SalonWorkDay) => (
                       <div key={day.day} className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg p-2">
                         <span className="font-medium capitalize">{day.day}</span>
                         <span className="text-gray-700">
@@ -294,7 +257,7 @@ export default function SalonPublicPage() {
                 </div>
               )}
 
-              {salon?.settings?.business?.coordinates && (
+              {salon?.coordinates && (
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
                   <div className="flex items-center gap-2 mb-3">
                     <MapIcon className="w-5 h-5 text-rose-600" />
@@ -310,7 +273,7 @@ export default function SalonPublicPage() {
                       allowFullScreen
                       referrerPolicy="no-referrer-when-downgrade"
                       src={`https://www.google.com/maps?q=${encodeURIComponent(
-                        `${salon.settings.business.coordinates.lat},${salon.settings.business.coordinates.lng}`
+                        `${salon.coordinates.lat},${salon.coordinates.lng}`
                       )}&z=15&output=embed`}
                     />
                   </div>

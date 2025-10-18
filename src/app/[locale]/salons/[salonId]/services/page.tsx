@@ -142,8 +142,6 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         isActive: form.isActive,
         isApp: !!form.isApp,
         categoryIds: form.categoryIds,
-        createdAt: editingService ? (services.find(s => s.id === editingService.id)?.createdAt ?? new Date().toISOString()) : new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       });
       
       const svc = await getServicesBySalon(salonId);

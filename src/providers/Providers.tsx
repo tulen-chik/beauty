@@ -8,6 +8,7 @@ import {
    BlogAdminProvider,
    ChatProvider,
    DatabaseProvider,
+   GeolocationProvider,
    PromotionProvider,
    SalonInvitationProvider,
    SalonProvider,
@@ -16,11 +17,13 @@ import {
    SalonServiceProvider,
    ServiceCategoryProvider,
    SubscriptionProvider,
-   UserProvider   } from '@/contexts';
+   UserProvider
+  } from '@/contexts';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <DatabaseProvider>
+      <GeolocationProvider locale="ru"> 
       <UserProvider>
         <SalonProvider>
           <SalonInvitationProvider>
@@ -48,6 +51,7 @@ export function Providers({ children }: { children: ReactNode }) {
           </SalonInvitationProvider>
         </SalonProvider>
       </UserProvider>
+      </GeolocationProvider>
     </DatabaseProvider>
   );
 } 

@@ -72,13 +72,6 @@ export default function AdminDashboard() {
       href: "/admin/salons"
     },
     {
-      title: "Услуги",
-      value: stats?.totalServices || 0,
-      icon: Scissors,
-      color: "purple",
-      href: "/admin/services"
-    },
-    {
       title: "Категории",
       value: stats?.totalCategories || 0,
       icon: Tag,

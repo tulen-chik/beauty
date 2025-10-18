@@ -1,6 +1,7 @@
-import { get, ref } from 'firebase/database';
+import { get, ref, orderByKey, limitToFirst, startAt, query } from 'firebase/database';
 
 import { db } from './init';
+import { SalonService } from '@/types/services';
 
 export const getAllSalonInvitations = async () => {
   const snapshot = await get(ref(db, 'salonInvitations'));
@@ -12,12 +13,8 @@ export const getAllServiceCategories = async () => {
   return snapshot.exists() ? snapshot.val() : {};
 };
 
-export const getAllSalonServices = async () => {
-  const snapshot = await get(ref(db, 'salonServices'));
-  return snapshot.exists() ? snapshot.val() : {};
-};
-
 export const getAllSalons = async () => {
   const snapshot = await get(ref(db, 'salons'));
   return snapshot.exists() ? snapshot.val() : {};
 };
+

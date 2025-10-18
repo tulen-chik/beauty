@@ -24,13 +24,8 @@ export interface SalonSettings {
     name: string;
     email?: string;
     phone?: string;
-    address: string;
     timezone: string;
     currency: string;
-    coordinates?: {
-      lat: number;
-      lng: number;
-    };
   };
   notifications?: {
     email: boolean;
@@ -55,6 +50,7 @@ export interface Salon {
   name: string;
   address: string;
   phone?: string;
+  city?: string;
   description?: string;
   createdAt: string;
   updatedAt: string;

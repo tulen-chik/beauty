@@ -8,7 +8,7 @@ export * from './chatParticipants';
 export * from './crud';
 export * from './promotions';
 export * from './ratings';
-export * from './rawGetters';
 export * from './salons';
+export * from './serviceCategories';
 export * from './storage';
 export * from './users';

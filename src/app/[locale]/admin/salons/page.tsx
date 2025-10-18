@@ -15,9 +15,10 @@ import {
   XCircle} from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
-import { useAdmin } from "@/contexts/AdminContext"
+// --- Измененные импорты ---
+import { useSalon } from "@/contexts/SalonContext"
 import { useUser } from "@/contexts/UserContext"
 
 import type { Salon } from "@/types/database"
@@ -25,14 +26,18 @@ import type { Salon } from "@/types/database"
 export default function AdminSalonsPage() {
   const t = useTranslations('admin')
   const { currentUser } = useUser()
+  
+  // --- Использование нового контекста ---
   const { 
-    salons, 
-    loadSalons, 
-    updateSalon, 
+    fetchUserSalons,
+    fetchSalon,
     deleteSalon, 
     loading, 
     error 
-  } = useAdmin()
+  } = useSalon()
+
+  // --- Локальное состояние для хранения салонов ---
+  const [adminSalons, setAdminSalons] = useState<Salon[]>([])
 
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -42,29 +47,51 @@ export default function AdminSalonsPage() {
   const [showSuspendModal, setShowSuspendModal] = useState(false)
   const [suspendReason, setSuspendReason] = useState("")
 
+  // --- Новая логика загрузки салонов ---
+  const loadAdminSalons = useCallback(async () => {
+    if (!currentUser?.userId) return;
+
+    try {
+      const userSalonsData = await fetchUserSalons(currentUser.userId);
+      if (userSalonsData && userSalonsData.salons) {
+        const salonPromises = userSalonsData.salons.map(s => fetchSalon(s.salonId));
+        const fetchedSalons = await Promise.all(salonPromises);
+        // Фильтруем null значения на случай, если салон был удален, но ссылка осталась
+        setAdminSalons(fetchedSalons.filter((s): s is Salon => s !== null));
+      }
+    } catch (err) {
+      console.error("Failed to load admin salons:", err);
+      // Можно добавить обработку ошибок, например, показать уведомление
+    }
+  }, [currentUser, fetchUserSalons, fetchSalon]);
+
   useEffect(() => {
-    loadSalons()
-  }, [loadSalons])
+    loadAdminSalons()
+  }, [loadAdminSalons])
 
-
-
-  const filteredSalons = salons.filter(salon => {
+  // --- Фильтрация по локальному состоянию adminSalons ---
+  const filteredSalons = adminSalons.filter(salon => {
     const matchesSearch = salon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          salon.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (salon.settings?.business?.phone && salon.settings.business.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+    
+    // Логика для статуса может быть добавлена позже, если у салона появится поле status
     const matchesStatus = statusFilter === "all" 
     
     return matchesSearch && matchesStatus
   })
 
-
+  // --- Обновленная функция удаления ---
   const handleDeleteSalon = async (salonId: string) => {
     try {
       await deleteSalon(salonId)
+      // Обновляем локальное состояние для мгновенного отражения изменений
+      setAdminSalons(prevSalons => prevSalons.filter(s => s.id !== salonId));
       setShowDeleteModal(false)
       setSelectedSalon(null)
     } catch (error) {
       console.error('Error deleting salon:', error)
+      // Можно добавить обработку ошибок
     }
   }
 
@@ -78,7 +105,7 @@ export default function AdminSalonsPage() {
     })
   }
 
-  if (loading) {
+  if (loading && adminSalons.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -149,12 +176,16 @@ export default function AdminSalonsPage() {
                       <span className="truncate">{salon.address}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="relative">
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                    </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setSelectedSalon(salon);
+                        setShowDeleteModal(true);
+                      }}
+                      className="text-gray-400 hover:text-red-600 p-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
 
@@ -208,18 +239,17 @@ export default function AdminSalonsPage() {
                       Настройки
                     </Link>
                   </div>
-                  
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {filteredSalons.length === 0 && (
+        {filteredSalons.length === 0 && !loading && (
           <div className="text-center py-12">
             <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Салоны не найдены</h3>
-            <p className="text-gray-500">Попробуйте изменить параметры поиска</p>
+            <p className="text-gray-500">Попробуйте изменить параметры поиска или добавить новый салон.</p>
           </div>
         )}
       </div>
@@ -227,7 +257,7 @@ export default function AdminSalonsPage() {
       {/* Salon Details Modal */}
       {showSalonModal && selectedSalon && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Информация о салоне</h3>
@@ -298,10 +328,10 @@ export default function AdminSalonsPage() {
         </div>
       )}
 
-      {/* Suspend Confirmation Modal */}
+      {/* Suspend Confirmation Modal (логика не реализована, но оставил для примера) */}
       {showSuspendModal && selectedSalon && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-center w-12 h-12 mx-auto bg-yellow-100 rounded-full mb-4">
                 <XCircle className="h-6 w-6 text-yellow-600" />
@@ -348,7 +378,7 @@ export default function AdminSalonsPage() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedSalon && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
@@ -373,7 +403,7 @@ export default function AdminSalonsPage() {
                   onClick={() => handleDeleteSalon(selectedSalon.id)}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
                 >
-                  Удалить
+                  {loading ? 'Удаление...' : 'Удалить'}
                 </button>
               </div>
             </div>

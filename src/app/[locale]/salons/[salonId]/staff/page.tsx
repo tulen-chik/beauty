@@ -70,7 +70,7 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       return;
     }
     
-    const invitationId = `${salonId}-${email}`;
+    const invitationId = `${salonId}`;
     try {
       await createInvitation(invitationId, {
         salonId,

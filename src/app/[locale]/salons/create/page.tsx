@@ -233,11 +233,9 @@ export default function CreateSalonPage() {
         settings: {
           business: {
             name,
-            address,
             phone,
             timezone: 'Europe/Moscow',
             currency: 'RUB',
-            coordinates
           }
         }
       }, userId);

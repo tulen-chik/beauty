@@ -1,18 +1,23 @@
 "use client"
 
-import { AlertCircle, Building2, Calendar, CheckCircle, Clock, LogOut,MapPin, MessageCircle, MessageSquare, Scissors, Search, XCircle } from "lucide-react"
+import { AlertCircle, Building2, Calendar, CheckCircle, Clock, LogOut, MapPin, MessageCircle, MessageSquare, Scissors, Search, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
-import { appointmentOperations, getAllSalonInvitations,getAllSalons, getAllSalonServices, salonInvitationOperations, userOperations } from "@/lib/firebase/database"
-
 import RatingCard from "@/components/RatingCard"
 import RatingForm from "@/components/RatingForm"
 
-import { useSalonInvitation,useSalonRating } from "@/contexts"
+import { 
+  useSalonInvitation, 
+  useSalonRating, 
+  useSalonService,
+  useAppointment,
+  useSalon 
+} from "@/contexts"
 import { useUser } from "@/contexts/UserContext"
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 
 type AnySalon = { id: string; name: string; address?: string }
 type AnyService = { id: string; salonId: string; name: string; durationMinutes: number }
@@ -24,13 +29,17 @@ type FormErrors = {
 
 export default function ProfilePage() {
   const t = useTranslations('profilePage')
-  const router = useRouter() // ИЗМЕНЕНИЕ: Инициализируем роутер
-  // ИЗМЕНЕНИЕ: Получаем функцию logout из контекста
+  const router = useRouter()
   const { currentUser, loading: userLoading, updateProfile, logout } = useUser()
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
-  const { updateInvitation } = useSalonInvitation();
+  const { 
+    updateInvitation, 
+    getInvitationsByEmail 
+  } = useSalonInvitation();
+  const { getAllServices } = useSalonService();
+  const { listAppointmentsByCustomer } = useAppointment();
+  const { fetchUserSalons } = useSalon();
 
-  // ... состояния остаются без изменений ...
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<AnySalon[]>([])
   const [services, setServices] = useState<AnyService[]>([])
@@ -46,37 +55,26 @@ export default function ProfilePage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [invitations, setInvitations] = useState<any[]>([]);
 
-  // ... useEffect и другие функции остаются без изменений ...
   const loadInvitations = useCallback(async (userEmail: string) => {
     try {
-      const allInvitations = await getAllSalonInvitations();
-      const userInvitations = Object.entries(allInvitations || {})
-        .map(([id, inv]: [string, any]) => ({ ...inv, id }))
-        .filter((inv) => inv.email === userEmail && inv.status === 'pending');
-      setInvitations(userInvitations);
+      const userInvitations = await getInvitationsByEmail(userEmail);
+      setInvitations(userInvitations.filter((inv: any) => inv.status === 'pending'));
     } catch (error) {
       console.error("Error loading invitations:", error);
+      setErrors({ general: "Не удалось загрузить приглашения. Пожалуйста, обновите страницу." });
     }
-  }, []);
+  }, [getInvitationsByEmail]);
 
   const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
     try {
-      // Get the current invitation to update
-      const invitation = await salonInvitationOperations.read(invitationId);
-      if (!invitation) throw new Error('Приглашение не найдено');
-      
-      // Update the invitation status
-      await salonInvitationOperations.update(invitationId, {
-        ...invitation,
+      await updateInvitation(invitationId, {
         status: accept ? 'accepted' : 'declined'
-      });
+      } as any);
       
-      // If accepted, refresh the page to show the updated salon list
       if (accept) {
         window.location.reload();
       } else {
-        // If declined, just remove from the list
-        setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+        setInvitations((prev: any[]) => prev.filter(inv => inv.id !== invitationId));
       }
       
       setMsg(accept ? "Приглашение принято!" : "Приглашение отклонено.");
@@ -93,33 +91,50 @@ export default function ProfilePage() {
       setLoading(true);
       setErrors({});
       try {
-        // Load invitations if user is logged in
         if (currentUser.email) {
           await loadInvitations(currentUser.email);
         }
         
-        const [rawSalons, rawServices] = await Promise.all([
-          getAllSalons(),
-          getAllSalonServices(),
+        // Загружаем только салоны пользователя и услуги
+        const [userSalons, { services: rawServices }] = await Promise.all([
+          fetchUserSalons(currentUser.userId),
+          getAllServices({ limit: 10000 }), // Получаем все услуги с большим лимитом
         ]);
-        const salonsList: AnySalon[] = Object.entries(rawSalons || {}).map(([id, s]: any) => ({ id, ...s }));
-        const servicesList: AnyService[] = Object.entries(rawServices || {}).map(([id, s]: any) => ({ id, ...s }));
+
+        // Преобразуем данные салонов в нужный формат
+        const salonsList: AnySalon[] = userSalons 
+          ? Object.entries(userSalons).map(([id, salonData]: [string, any]) => ({
+              id,
+              name: salonData.name,
+              address: salonData.address,
+            }))
+          : [];
+
+        // Фильтруем услуги только для салонов пользователя
+        const userSalonIds = salonsList.map(s => s.id);
+        const servicesList: AnyService[] = rawServices
+          .filter((s: any) => userSalonIds.includes(s.salonId))
+          .map((s: any) => ({
+            id: s.id,
+            salonId: s.salonId,
+            name: s.name,
+            durationMinutes: s.durationMinutes,
+          }));
+        
         setSalons(salonsList);
         setServices(servicesList);
 
-        const allSalonIds = salonsList.map(s => s.id);
-        const chunks = await Promise.all(allSalonIds.map(async (salonId) => {
-          const appts = await appointmentOperations.listBySalon(salonId, { customerUserId: currentUser.userId });
-          return appts.map(a => ({ ...a, salonId }));
-        }));
-        const flat = chunks.flat();
-        flat.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
-        setAppointments(flat);
+        // Получаем и сортируем записи пользователя
+        const userAppointments = await listAppointmentsByCustomer(currentUser.userId);
+        const sortedAppointments = [...userAppointments].sort(
+          (a: any, b: any) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+        );
+        
+        setAppointments(sortedAppointments);
 
-        if (currentUser) {
-          const ratings = await getRatingsByCustomer(currentUser.userId);
-          setUserRatings(ratings);
-        }
+        // Загружаем оценки пользователя
+        const ratings = await getRatingsByCustomer(currentUser.userId);
+        setUserRatings(ratings);
       } catch (e) {
         console.error("Failed to load profile data:", e);
         setErrors({ general: "Не удалось загрузить данные профиля. Пожалуйста, обновите страницу." });
@@ -128,7 +143,7 @@ export default function ProfilePage() {
       }
     }
     if (!userLoading) load()
-  }, [currentUser, userLoading, getRatingsByCustomer])
+  }, [currentUser, userLoading, getRatingsByCustomer, getAllServices, loadInvitations]) // ИЗМЕНЕНИЕ: Добавляем getAllServices в зависимости
 
   const salonsById = useMemo(() => Object.fromEntries(salons.map(s => [s.id, s])), [salons])
   const servicesById = useMemo(() => Object.fromEntries(services.map(s => [s.id, s])), [services])
@@ -167,21 +182,6 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSavePreferences = async () => {
-    if (!currentUser) return
-    setSaving(true); setMsg(null); setErrors({})
-    try {
-      await userOperations.update(currentUser.userId, {
-        settings: { language, notifications }
-      } as any)
-      setMsg("Настройки успешно сохранены")
-    } catch (e: any) {
-      console.error("Preferences save error:", e)
-      setErrors({ general: e?.message || "Не удалось сохранить настройки. Попробуйте еще раз." })
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const handleCreateRating = async (appointmentId: string, salonId: string, serviceId: string, data: {
     rating: number;
@@ -223,11 +223,9 @@ export default function ProfilePage() {
     }
   }
 
-  // ИЗМЕНЕНИЕ: Новая функция для обработки выхода из аккаунта
   const handleLogout = async () => {
     try {
       await logout();
-      // Перенаправляем на главную страницу после успешного выхода
       router.push('/');
     } catch (error) {
       console.error("Failed to log out:", error);
@@ -239,7 +237,6 @@ export default function ProfilePage() {
     return userRatings.some(rating => rating.appointmentId === appointmentId)
   }
 
-  // Render Invitations Section
   const renderInvitations = () => {
     if (invitations.length === 0) return null;
 
@@ -289,7 +286,6 @@ export default function ProfilePage() {
     );
   };
 
-  // Helper function to get role label
   const getRoleLabel = (role: string) => {
     const roles: Record<string, string> = {
       owner: 'Владелец',
@@ -301,7 +297,7 @@ export default function ProfilePage() {
   };
 
   if (userLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">{t('loading')}</div>
+    return <LoadingSpinner />
   }
   if (!currentUser) {
     return (
@@ -324,7 +320,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-3 sm:p-4">
-        {/* ... остальная разметка без изменений ... */}
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{t('title')}</h1>
           <div className="text-sm sm:text-base text-gray-600 mt-1">{currentUser.displayName} • {currentUser.email}</div>
@@ -420,7 +415,6 @@ export default function ProfilePage() {
               </button>
             </div>
 
-            {/* ИЗМЕНЕНИЕ: Добавлен блок с кнопкой выхода */}
             <div className="pt-4 mt-4 border-t border-gray-200">
               <button
                 onClick={handleLogout}
@@ -433,7 +427,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ... остальная разметка без изменений ... */}
         <div className="bg-white border border-gray-200 rounded-2xl">
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('appointments.title')}</h2>

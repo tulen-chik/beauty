@@ -1,13 +1,12 @@
 "use client"
-import { BarChart2, ChevronDown, DollarSign, FileDown,Loader2, TrendingUp } from "lucide-react";
+import { BarChart2, ChevronDown, DollarSign, FileDown, Loader2, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo,useState } from "react";
-import * as XLSX from 'xlsx'; // Импортируем библиотеку для работы с Excel
+import { useEffect, useMemo, useState } from "react";
+import * as XLSX from 'xlsx';
 
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 
-// Определяем тип для структурированных данных аналитики
 interface ServiceAnalyticsData {
     id: string;
     name: string;
@@ -18,20 +17,17 @@ interface ServiceAnalyticsData {
 }
 
 export default function SalonAnalyticsPage({ params }: { params: { salonId: string } }) {
-    // --- ИНИЦИАЛИЗАЦИЯ ХУКОВ ---
     const t = useTranslations("SalonAnalyticsPage");
     const { salonId } = params;
     const { listAppointments, loading: appointmentsLoading } = useAppointment();
     const { getServicesBySalon, loading: servicesLoading } = useSalonService();
 
-    // --- СОСТОЯНИЯ КОМПОНЕНТА ---
     const [tableData, setTableData] = useState<ServiceAnalyticsData[]>([]);
     const [year, setYear] = useState(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = useState<number>(-1); // -1 означает "Весь год"
+    const [selectedMonth, setSelectedMonth] = useState<number>(-1);
     const [totalRevenue, setTotalRevenue] = useState(0);
-    const [expandedRowId, setExpandedRowId] = useState<string | null>(null); // ID раскрытой строки в таблице
+    const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
-    // --- МЕМОИЗИРОВАННЫЕ ДАННЫЕ (для оптимизации) ---
     const monthLabels = useMemo(() => [
         t("months.full.jan"), t("months.full.feb"), t("months.full.mar"),
         t("months.full.apr"), t("months.full.may"), t("months.full.jun"),
@@ -46,7 +42,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
         t("months.short.oct"), t("months.short.nov"), t("months.short.dec")
     ], [t]);
 
-    // --- ЗАГРУЗКА И ОБРАБОТКА ДАННЫХ ---
     useEffect(() => {
         const fetchAndProcessData = async () => {
             const startDate = new Date(year, 0, 1).toISOString();
@@ -80,7 +75,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
         fetchAndProcessData();
     }, [salonId, year, getServicesBySalon, listAppointments]);
 
-    // --- РАСЧЕТ РЕЙТИНГОВ (мемоизированный) ---
     const topByQuantity = useMemo(() => {
         return [...tableData]
             .map(service => ({
@@ -103,7 +97,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
             }));
     }, [tableData]);
 
-    // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
     const handleToggleRow = (rowId: string) => {
         setExpandedRowId(prevId => (prevId === rowId ? null : rowId));
     };
@@ -122,7 +115,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
         ]);
 
         const footer = [
-            ...Array(4 + 12).fill(""), // Пустые ячейки до итогов
+            ...Array(4 + 12).fill(""),
             t("table.grandTotal"), totalRevenue
         ];
 
@@ -141,13 +134,13 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
     return (
         <div className="min-h-screen bg-gradient-soft py-8 px-4">
             <div className="max-w-7xl mx-auto">
-                {/* Заголовок и фильтры */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-foreground mb-2">{t("header.title")}</h1>
                         <p className="text-muted-foreground">{t("header.subtitle")}</p>
                     </div>
-                    <div className="flex items-center gap-3 self-start sm:self-center">
+                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы flex-wrap и sm:justify-end --- */}
+                    <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3">
                         <button
                             onClick={handleExportToExcel}
                             disabled={loading || tableData.length === 0}
@@ -166,7 +159,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                     </div>
                 </div>
 
-                {/* Основной блок данных */}
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm mb-8">
                     {loading ? (
                         <div className="flex items-center justify-center h-96">
@@ -181,7 +173,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                         </div>
                     ) : (
                         <div>
-                            {/* --- МОБИЛЬНОЕ ПРЕДСТАВЛЕНИЕ (КАРТОЧКИ) --- */}
                             <div className="md:hidden p-4 space-y-4">
                                 {tableData.map((item) => (
                                     <div key={item.id} className="border rounded-lg p-4 bg-background shadow-soft">
@@ -215,7 +206,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                                 </div>
                             </div>
 
-                            {/* --- ДЕСКТОПНОЕ ПРЕДСТАВЛЕНИЕ (ИНТЕРАКТИВНАЯ ТАБЛИЦА) --- */}
                             <div className="hidden md:block">
                                 <table className="w-full text-sm text-left">
                                     <thead className="bg-muted/50">
@@ -272,10 +262,8 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                     )}
                 </div>
 
-                {/* --- БЛОКИ РЕЙТИНГОВ --- */}
                 {!loading && tableData.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Рейтинг по количеству */}
                         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
                             <div className="flex items-center gap-3 mb-4">
                                 <TrendingUp className="h-6 w-6 text-rose-500" />
@@ -297,7 +285,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                             )}
                         </div>
 
-                        {/* Рейтинг по доходу */}
                         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
                             <div className="flex items-center gap-3 mb-4">
                                 <DollarSign className="h-6 w-6 text-green-500" />

@@ -24,7 +24,6 @@ export default function AdminServicesPage() {
   const { currentUser } = useUser()
   const { 
     services, 
-    loadServices, 
     updateService, 
     deleteService, 
     loading, 
@@ -38,9 +37,6 @@ export default function AdminServicesPage() {
   const [showServiceModal, setShowServiceModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  useEffect(() => {
-    loadServices()
-  }, [loadServices])
 
 
 

@@ -12,6 +12,7 @@ import ChatButton from "@/components/ChatButton"
 import RatingDisplay from "@/components/RatingDisplay"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+import ImageCarouselModal from "./components/ImageCarouselModal" // <-- Импортируем новый компонент
 
 import { useSalonRating } from "@/contexts"
 import { useChat } from "@/contexts/ChatContext"
@@ -52,6 +53,7 @@ export default function ServicePublicPage() {
   const [schedule, setSchedule] = useState<any>(null)
   const [ratingStats, setRatingStats] = useState<any>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isModalOpen, setIsModalOpen] = useState(false) // <-- Состояние для модального окна
 
   const coverUrl = useMemo(() => images[0]?.url || "/placeholder.svg", [images])
 
@@ -76,7 +78,6 @@ export default function ServicePublicPage() {
           const imgs = await getImages(serviceId)
           if (!cancelled) setImages(imgs || [])
         } catch (e) {
-          // ИСПРАВЛЕНО: Добавлена обработка ошибки
           console.error("Не удалось загрузить изображения:", e)
         }
 
@@ -85,14 +86,12 @@ export default function ServicePublicPage() {
             const salonData = await fetchSalon(s.salonId)
             if (!cancelled) setSalon(salonData)
           } catch (e) {
-            // ИСПРАВЛЕНО: Добавлена обработка ошибки
             console.error("Не удалось загрузить данные салона:", e)
           }
           try {
             const sch = await getSchedule(s.salonId)
             if (!cancelled) setSchedule(sch)
           } catch (e) {
-            // ИСПРАВЛЕНО: Добавлена обработка ошибки
             console.error("Не удалось загрузить расписание:", e)
           }
           
@@ -113,12 +112,10 @@ export default function ServicePublicPage() {
     return () => {
       cancelled = true
     }
-  }, [serviceId, getService, getImages, fetchSalon, getSchedule])
+  }, [serviceId, getService, getImages, fetchSalon, getSchedule, getRatingStats])
 
   if (loading) {
-    return (
-      <LoadingSpinner/>
-    )
+    return <LoadingSpinner />
   }
 
   if (error || !service) {
@@ -138,277 +135,301 @@ export default function ServicePublicPage() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Top bar */}
-      <section className="py-6 bg-gray-50 border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/${locale}/search`}
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors duration-300 font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t('results')}
-            </Link>
-            {salon?.id && (
-              <Link
-                href={`/${locale}/s/${salon.id}`}
-                className="text-rose-600 hover:text-rose-700 font-semibold"
-              >
-                Перейти в салон
-              </Link>
-            )}
+  const renderSalonInfo = () => (
+    <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-rose-600 rounded-xl">
+          <Building2 className="w-5 h-5 text-white" />
+        </div>
+        <div>
+          <div className="text-sm text-gray-500">Салон</div>
+          <div className="text-base font-semibold text-gray-900">{salon?.name || "Салон"}</div>
+        </div>
+      </div>
+      {salon?.address && (
+        <div className="flex items-start gap-2 text-gray-700 mb-3">
+          <MapPin className="w-4 h-4 mt-0.5 text-gray-500" />
+          <span className="text-sm font-medium">{salon.address}</span>
+        </div>
+      )}
+      
+      {ratingStats && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="w-4 h-4 text-yellow-500" />
+            <span className="text-sm font-medium text-gray-700">Рейтинг салона</span>
+          </div>
+          <RatingDisplay rating={ratingStats.averageRating} showValue size="sm" />
+          <div className="text-xs text-gray-500 mt-1">
+            {ratingStats.totalRatings} отзывов
           </div>
         </div>
-      </section>
+      )}
+      
+      <div className="grid grid-cols-1 gap-3">
+        <Link
+          href={`/${locale}/s/${salon?.id || service.salonId}`}
+          className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
+        >
+          {t('aboutSalon')}
+        </Link>
 
-      {/* Hero */}
-      <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="max-w-5xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+        {service?.isApp === true && (
+          <Link
+            href={`/${locale}/book/${service.id}`}
+            className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
           >
-            <div className="relative h-72 md:h-96 rounded-3xl overflow-hidden shadow-xl border border-gray-200">
-              <Image src={coverUrl} alt={service.name} fill className="object-cover" />
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            {t('book')}
+          </Link>
+        )}
 
-      {/* Content */}
-      <section className="py-6 md:py-10 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main */}
-            <div className="lg:col-span-2">
-              <div className="mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-600 text-white rounded-full text-sm font-semibold">
-                  <Scissors className="w-4 h-4" />
-                  {t('servicesTitle')}
-                </div>
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-4 mb-3">{service.name}</h1>
-                <div className="flex flex-wrap items-center gap-4 text-gray-600">
-                  <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span className="font-medium">{service.durationMinutes} мин</span></div>
-                  {typeof service.price === "number" && (
-                    <div className="font-bold text-rose-600 text-lg">{service.price} ₽</div>
-                  )}
-                </div>
-              </div>
+        {service?.isApp === false && currentUser && salon && (
+          <ChatButton
+            salonId={salon.id}
+            customerUserId={currentUser.userId}
+            customerName={currentUser.displayName}
+            serviceId={service.id}
+            className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
+            variant="button"
+          />
+        )}
 
-              {service.description && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">{t('description') || 'Описание'}</h3>
-                  <p className="text-gray-700 leading-relaxed font-medium">{service.description}</p>
-                </div>
+        {service?.isApp === undefined && (
+          <>
+            {currentUser && salon && (
+              <ChatButton
+                salonId={salon.id}
+                customerUserId={currentUser.userId}
+                customerName={currentUser.displayName}
+                serviceId={service.id}
+                className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
+                variant="button"
+              />
+            )}
+            <Link
+              href={`/${locale}/book/${service.id}`}
+              className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
+            >
+              {t('book')}
+            </Link>
+          </>
+        )}
+      </div>
+
+      <div className="mt-4 text-xs text-gray-500 flex items-center gap-1">
+        <Calendar className="w-3 h-3" />
+        <span>{t('tryDifferent')}</span>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Модальное окно с каруселью */}
+      {isModalOpen && images.length > 0 && (
+        <ImageCarouselModal
+          images={images}
+          startIndex={currentSlide}
+          onClose={() => setIsModalOpen(false)}
+          setCurrentSlide={setCurrentSlide}
+        />
+      )}
+
+      <div className="min-h-screen bg-white">
+        {/* Top bar */}
+        <section className="py-6 bg-gray-50 border-b border-gray-200">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between">
+              <Link
+                href={`/${locale}/search`}
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors duration-300 font-medium"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t('results')}
+              </Link>
+              {salon?.id && (
+                <Link
+                  href={`/${locale}/s/${salon.id}`}
+                  className="text-rose-600 hover:text-rose-700 font-semibold"
+                >
+                  Перейти в салон
+                </Link>
               )}
+            </div>
+          </div>
+        </section>
 
-              {images.length > 1 && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Images className="w-5 h-5 text-rose-600" />
-                    <h3 className="text-lg font-bold text-gray-900">{t('preview') || 'Галерея'}</h3>
+        {/* Hero */}
+        <section className="py-8 bg-white">
+          <div className="container mx-auto px-4">
+            <motion.div
+              className="max-w-5xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <div className="relative h-72 md:h-96 rounded-3xl overflow-hidden shadow-xl border border-gray-200">
+                <Image src={coverUrl} alt={service.name} fill className="object-cover" />
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Mobile Salon Info */}
+        <section className="lg:hidden py-6 bg-gray-50">
+          <div className="container mx-auto px-4">
+            {renderSalonInfo()}
+          </div>
+        </section>
+
+        {/* Content */}
+        <section className="py-6 md:py-10 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main */}
+              <div className="lg:col-span-2">
+                <div className="mb-6">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-600 text-white rounded-full text-sm font-semibold">
+                    <Scissors className="w-4 h-4" />
+                    {t('servicesTitle')}
                   </div>
-                  
-                  {/* Слайдер с адаптивными размерами */}
-                  <div className="relative">
-                    {/* Основное изображение - адаптивное по размеру */}
-                    <div className="relative w-full aspect-video max-h-96 rounded-xl overflow-hidden border border-gray-200 mb-4 bg-gray-100">
-                      <Image
-                        src={images[currentSlide].url}
-                        alt={`service image ${currentSlide + 1}`}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mt-4 mb-3">{service.name}</h1>
+                  <div className="flex flex-wrap items-center gap-4 text-gray-600">
+                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /><span className="font-medium">{service.durationMinutes} мин</span></div>
+                    {typeof service.price === "number" && (
+                      <div className="font-bold text-rose-600 text-lg">{service.price} Br</div>
+                    )}
+                  </div>
+                </div>
+
+                {service.description && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">{t('description') || 'Описание'}</h3>
+                    <p className="text-gray-700 leading-relaxed font-medium">{service.description}</p>
+                  </div>
+                )}
+
+                {images.length > 1 && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Images className="w-5 h-5 text-rose-600" />
+                      <h3 className="text-lg font-bold text-gray-900">{t('preview') || 'Галерея'}</h3>
+                    </div>
+                    
+                    <div className="relative">
+                      {/* Обертка для основного изображения, чтобы сделать его кликабельным */}
+                      <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="relative w-full aspect-video max-h-96 rounded-xl overflow-hidden border border-gray-200 mb-4 bg-gray-100 cursor-pointer group"
+                        aria-label="Открыть галерею"
+                      >
+                        <Image
+                          src={images[currentSlide].url}
+                          alt={`service image ${currentSlide + 1}`}
+                          fill
+                          className="object-contain group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </button>
+
+                      {images.length > 1 && (
+                        <div className="flex items-center justify-center gap-4 mb-4">
+                          <button
+                            onClick={() => setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                            className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                            aria-label="Предыдущее изображение"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          
+                          <div className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                            {currentSlide + 1} / {images.length}
+                          </div>
+
+                          <button
+                            onClick={() => setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                            className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                            aria-label="Следующее изображение"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                        {images.map((img, index) => (
+                          <button
+                            key={img.id}
+                            onClick={() => setCurrentSlide(index)}
+                            className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                              index === currentSlide
+                                ? 'border-rose-600 ring-2 ring-rose-100 scale-105'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <Image
+                              src={img.url}
+                              alt={`thumbnail ${index + 1}`}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 20vw, (max-width: 768px) 15vw, 10vw"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {schedule && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-3">{t('mapTitle')}</h3>
+                    <SalonScheduleDisplay schedule={schedule} />
+                    <div className="mt-3 text-xs text-gray-600 flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>{t('loadingMap')}</span>
+                    </div>
+                  </div>
+                )}
+                {salon?.settings?.business?.coordinates && (
+                  <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapIcon className="w-5 h-5 text-rose-600" />
+                      <h3 className="text-lg font-bold text-gray-900">{t('mapTitle')}</h3>
+                    </div>
+                    <div className="w-full h-64 rounded-xl border border-gray-200 overflow-hidden">
+                      <iframe
+                        title="map"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(
+                          `${salon.settings.business.coordinates.lat},${salon.settings.business.coordinates.lng}`
+                        )}&z=15&output=embed`}
                       />
                     </div>
-
-                    {/* Навигация */}
-                    {images.length > 1 && (
-                      <div className="flex items-center justify-center gap-4 mb-4">
-                        <button
-                          onClick={() => setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                          className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
-                          aria-label="Предыдущее изображение"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                          </svg>
-                        </button>
-                        
-                        <div className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
-                          {currentSlide + 1} / {images.length}
-                        </div>
-
-                        <button
-                          onClick={() => setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                          className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
-                          aria-label="Следующее изображение"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Миниатюры с адаптивными размерами */}
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                      {images.map((img, index) => (
-                        <button
-                          key={img.id}
-                          onClick={() => setCurrentSlide(index)}
-                          className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                            index === currentSlide
-                              ? 'border-rose-600 ring-2 ring-rose-100 scale-105'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <Image
-                            src={img.url}
-                            alt={`thumbnail ${index + 1}`}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 640px) 20vw, (max-width: 768px) 15vw, 10vw"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {schedule && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-3">{t('mapTitle')}</h3>
-                  <SalonScheduleDisplay schedule={schedule} />
-                  <div className="mt-3 text-xs text-gray-600 flex items-center gap-2">
-                    <CheckCircle className="w-3 h-3" />
-                    <span>{t('loadingMap')}</span>
-                  </div>
-                </div>
-              )}
-              {salon?.settings?.business?.coordinates && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapIcon className="w-5 h-5 text-rose-600" />
-                    <h3 className="text-lg font-bold text-gray-900">{t('mapTitle')}</h3>
-                  </div>
-                  <div className="w-full h-64 rounded-xl border border-gray-200 overflow-hidden">
-                    <iframe
-                      title="map"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(
-                        `${salon.settings.business.coordinates.lat},${salon.settings.business.coordinates.lng}`
-                      )}&z=15&output=embed`}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-rose-600 rounded-xl">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="text-sm text-gray-500">Салон</div>
-                    <div className="text-base font-semibold text-gray-900">{salon?.name || "Салон"}</div>
-                  </div>
-                </div>
-                {salon?.address && (
-                  <div className="flex items-start gap-2 text-gray-700 mb-3">
-                    <MapPin className="w-4 h-4 mt-0.5 text-gray-500" />
-                    <span className="text-sm font-medium">{salon.address}</span>
                   </div>
                 )}
-                
-                {ratingStats && (
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Star className="w-4 h-4 text-yellow-500" />
-                      <span className="text-sm font-medium text-gray-700">Рейтинг салона</span>
-                    </div>
-                    <RatingDisplay rating={ratingStats.averageRating} showValue size="sm" />
-                    <div className="text-xs text-gray-500 mt-1">
-                      {ratingStats.totalRatings} отзывов
-                    </div>
-                  </div>
-                )}
-                {/* show only booking button when service.isApp === true,
-                    only chat button when service.isApp === false.
-                    if isApp is undefined (legacy), show both */}
-                <div className="grid grid-cols-1 gap-3">
-                  <Link
-                    href={`/${locale}/s/${salon?.id || service.salonId}`}
-                    className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
-                  >
-                    {t('aboutSalon')}
-                  </Link>
+              </div>
 
-                  {service?.isApp === true && (
-                    <Link
-                      href={`/${locale}/book/${service.id}`}
-                      className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
-                    >
-                      {t('book')}
-                    </Link>
-                  )}
-
-                  {service?.isApp === false && currentUser && salon && (
-                    <ChatButton
-                      salonId={salon.id}
-                      customerUserId={currentUser.userId}
-                      customerName={currentUser.displayName}
-                      serviceId={service.id}
-                      className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
-                      variant="button"
-                    />
-                  )}
-
-                  {/* legacy: if isApp is undefined, show both options */}
-                  {service?.isApp === undefined && (
-                    <>
-                      {currentUser && salon && (
-                        <ChatButton
-                          salonId={salon.id}
-                          customerUserId={currentUser.userId}
-                          customerName={currentUser.displayName}
-                          serviceId={service.id}
-                          className="w-full py-3 px-4 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium transition-colors duration-200"
-                          variant="button"
-                        />
-                      )}
-                      <Link
-                        href={`/${locale}/book/${service.id}`}
-                        className="w-full py-3 px-4 text-center rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 transition-colors duration-200"
-                      >
-                        {t('book')}
-                      </Link>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-4 text-xs text-gray-500 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>{t('tryDifferent')}</span>
+              {/* Sidebar */}
+              <div className="hidden lg:block lg:col-span-1">
+                <div className="sticky top-6">
+                  {renderSalonInfo()}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </>
   )
 }

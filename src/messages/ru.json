@@ -164,6 +164,8 @@
   },
   "search": {
     "title": "Поиск",
+    "noMoreServices": "Больше услуг не найдено",
+    "tryChangingFilters": "Попробуйте изменить параметры поиска",
     "description": "Описание",
     "subtitle": "Найдите нужные услуги и салоны",
     "details": "Подробности",
@@ -185,6 +187,7 @@
     "servicesCountFew": "{count} услуги",
     "servicesCountMany": "{count} услуг",
     "showMap": "Показать карту",
+    "preview": "Предпросмотр",
     "hideMap": "Скрыть карту",
     "mapTitle": "Карта салонов",
     "mapInstructions": "Кликните на маркер салона для просмотра его услуг",
@@ -353,7 +356,6 @@
       "userDisabled": "Аккаунт отключен",
       "operationNotAllowed": "Эта операция не разрешена",
       "accountExistsWithDifferentCredential": "Аккаунт с таким email уже существует"
-    
     }
   },
   "notifications": {

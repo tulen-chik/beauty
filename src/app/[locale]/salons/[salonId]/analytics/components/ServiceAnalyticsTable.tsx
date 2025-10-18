@@ -58,10 +58,10 @@ export function ServiceAnalyticsTable({
               >
                 <td className="p-3">{index + 1}</td>
                 <td className="p-3 font-medium">{item.name}</td>
-                <td className="p-3 text-right">{item.price.toFixed(2)} ₽</td>
+                <td className="p-3 text-right">{item.price.toFixed(2)} руб.</td>
                 <td className="p-3 text-right">{item.totalYearlyCount}</td>
                 <td className="p-3 text-right font-semibold text-rose-600">
-                  {item.totalYearlyRevenue.toFixed(2)} ₽
+                  {item.totalYearlyRevenue.toFixed(2)} руб.
                 </td>
                 <td className="p-3 text-right">
                   {expandedRowId === item.id ? (

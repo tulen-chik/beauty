@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, CheckCircle, ChevronLeft, ChevronRight,Clock, Shield, User } from "lucide-react"
+import { Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Shield, User } from "lucide-react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -28,13 +28,25 @@ type Service = {
   durationMinutes: number
 }
 
+// --- ИЗМЕНЕНИЕ 1: Обновляем тип TimeSlot ---
+// Добавляем displayTime для отображения (e.g., "10:00 - 10:45")
+// и startTime для логики (e.g., "10:00")
 type TimeSlot = {
-  time: string
+  displayTime: string
+  startTime: string
   available: boolean
   reason?: string
 }
 
 type DayAvailabilityStatus = 'loading' | 'available' | 'unavailable' | 'unchecked';
+
+// --- ИЗМЕНЕНИЕ 2: Вспомогательная функция для форматирования времени ---
+const formatTime = (date: Date): string => {
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 
 export default function BookServicePage() {
   const params = useParams() as { serviceId: string; locale: string }
@@ -244,7 +256,7 @@ export default function BookServicePage() {
     };
   }, [calendarDays, salonSchedule, service, isTimeSlotAvailable]);
 
-
+  // --- ИЗМЕНЕНИЕ 3: Обновляем логику генерации слотов ---
   const generateTimeSlots = async () => {
     if (!selectedDate || !service || !salonSchedule || !isTimeSlotAvailable) {
       setAvailableTimeSlots([])
@@ -264,6 +276,7 @@ export default function BookServicePage() {
       }
 
       const slots: TimeSlot[] = []
+      const serviceDuration = service.durationMinutes;
       
       for (const timeRange of daySchedule.times) {
         const [startHour] = timeRange.start.split(':').map(Number)
@@ -272,22 +285,34 @@ export default function BookServicePage() {
         let currentHour = startHour
         
         while (currentHour < endHour) {
-          const timeString = `${currentHour.toString().padStart(2, '0')}:00`
           const slotDate = new Date(selectedDate)
           slotDate.setHours(currentHour, 0, 0, 0)
+
+          // Рассчитываем время окончания
+          const endDate = new Date(slotDate.getTime() + serviceDuration * 60000);
+          
+          const startTimeString = formatTime(slotDate);
+          const endTimeString = formatTime(endDate);
+          const displayTimeString = `${startTimeString} - ${endTimeString}`;
           
           if (slotDate <= new Date()) {
-            slots.push({ time: timeString, available: false, reason: 'Время прошло' })
+            slots.push({ 
+              displayTime: displayTimeString, 
+              startTime: startTimeString, 
+              available: false, 
+              reason: 'Время прошло' 
+            })
           } else {
             const isAvailable = await isTimeSlotAvailable(
               service.salonId,
               slotDate.toISOString(),
-              service.durationMinutes,
+              serviceDuration,
               employeeId || undefined
             )
             
             slots.push({
-              time: timeString,
+              displayTime: displayTimeString,
+              startTime: startTimeString,
               available: isAvailable,
               reason: isAvailable ? undefined : "Занято"
             })
@@ -389,24 +414,42 @@ export default function BookServicePage() {
       }
 
       const appointmentId = Date.now().toString()
-      
-      await createAppointment(service!.salonId, appointmentId, {
+
+      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+      // 1. Создаем базовый объект с обязательными полями
+      const appointmentData: any = {
         salonId: service!.salonId,
         serviceId: service!.id,
-        employeeId: employeeId || undefined,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        customerUserId: currentUser?.userId || undefined,
         startAt,
         durationMinutes: service!.durationMinutes,
         status: "confirmed",
-        notes: notes || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      })
+      };
+
+      // 2. Условно добавляем необязательные поля, только если у них есть значение
+      if (employeeId) {
+        appointmentData.employeeId = employeeId;
+      }
+      if (customerName) {
+        appointmentData.customerName = customerName;
+      }
+      if (customerPhone) {
+        appointmentData.customerPhone = customerPhone;
+      }
+      if (currentUser?.userId) {
+        appointmentData.customerUserId = currentUser.userId;
+      }
+      if (notes) {
+        appointmentData.notes = notes;
+      }
+      
+      // 3. Передаем в функцию уже "чистый" объект без undefined полей
+      await createAppointment(service!.salonId, appointmentId, appointmentData)
 
       setSuccess(t('successMessage'))
     } catch (e: any) {
+      console.error(e)
       setSubmissionError(e.message || t('messages.errorGeneric'))
     } finally {
       setSubmitting(false)
@@ -474,7 +517,7 @@ export default function BookServicePage() {
               )}
             </div>
             {service?.price !== undefined && (
-              <div className="text-rose-600 font-bold">{service.price} {t('header.currency')}</div>
+              <div className="text-rose-600 font-bold">{service.price} {"Br"}</div>
             )}
           </div>
 
@@ -490,7 +533,6 @@ export default function BookServicePage() {
               <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">{submissionError}</div>
             )}
 
-            {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
             {salonSchedule && salonSchedule.weeklySchedule && salonSchedule.weeklySchedule.length > 0 ? (
               <div className="bg-gray-50 rounded-lg p-4">
                 <SalonScheduleDisplay schedule={salonSchedule} />
@@ -596,13 +638,14 @@ export default function BookServicePage() {
                     {loadingTimeSlots ? (
                       <LoadingSpinnerSmall />
                     ) : availableTimeSlots.length > 0 ? (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2">
+                      // --- ИЗМЕНЕНИЕ 4: Обновляем JSX для отображения слотов ---
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-2">
                         {availableTimeSlots.map((slot, index) => (
                           <button
                             key={index}
                             onClick={() => { 
                               if (slot.available) {
-                                setSelectedTime(slot.time);
+                                setSelectedTime(slot.startTime); // Сохраняем только время начала
                                 if (formErrors.selectedTime) {
                                   setFormErrors(prev => ({ ...prev, selectedTime: '' }));
                                 }
@@ -612,15 +655,15 @@ export default function BookServicePage() {
                             className={`
                               p-3 text-sm rounded-lg border transition-colors
                               ${slot.available 
-                                ? selectedTime === slot.time
+                                ? selectedTime === slot.startTime // Сравниваем с временем начала
                                   ? 'bg-rose-600 text-white border-rose-600'
                                   : 'bg-white text-gray-700 border-gray-300 hover:border-rose-400 hover:bg-rose-50'
                                 : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                               }
                             `}
-                            title={slot.reason || `Время: ${slot.time}`}
+                            title={slot.reason || `${t('timeSelector.slotLabel')}: ${slot.displayTime}`}
                           >
-                            {slot.time}
+                            {slot.displayTime} {/* Отображаем полный интервал */}
                           </button>
                         ))}
                       </div>
@@ -688,7 +731,7 @@ export default function BookServicePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('fields.customerPhoneLabel')} <span className="text-red-500">*</span>
+                  {"+375 (29) 123-45-67"} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"

@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
 
-import { getAllSalonInvitations,salonInvitationOperations } from '@/lib/firebase/database';
+import { salonInvitationOperations } from '@/lib/firebase/database';
 
 import type { SalonInvitation } from '@/types/database';
 
@@ -87,12 +87,9 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await getAllSalonInvitations();
-      const result = Object.entries(all)
-        .map(([id, data]) => ({ ...(data as any), id }))
-        .filter((inv) => inv.email === email);
+      const all = await salonInvitationOperations.getInvitationsByEmail(email);
       setLoading(false);
-      return result;
+      return all;
     } catch (e: any) {
       setError(e.message);
       setLoading(false);
@@ -105,12 +102,9 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await getAllSalonInvitations();
-      const result = Object.entries(all)
-        .map(([id, data]) => ({ ...(data as any), id }))
-        .filter((inv) => inv.salonId === salonId);
+      const all = await salonInvitationOperations.getInvitationsBySalonId(salonId);
       setLoading(false);
-      return result;
+      return all;
     } catch (e: any) {
       setError(e.message);
       setLoading(false);
