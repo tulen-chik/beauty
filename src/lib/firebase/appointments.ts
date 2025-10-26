@@ -200,11 +200,6 @@ export const appointmentOperations = {
           console.log(`🚫 Excluding appointment ${a.id} (employee mismatch: ${a.employeeId} vs ${employeeId})`);
           return false;
         }
-        // Only consider active bookings
-        if (a.status === 'cancelled' || a.status === 'no_show') {
-          console.log(`🚫 Excluding appointment ${a.id} (status: ${a.status})`);
-          return false;
-        }
         console.log(`✅ Including appointment ${a.id} (employee: ${a.employeeId}, status: ${a.status})`);
         return true;
       });

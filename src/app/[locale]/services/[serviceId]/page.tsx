@@ -12,7 +12,7 @@ import ChatButton from "@/components/ChatButton"
 import RatingDisplay from "@/components/RatingDisplay"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
-import ImageCarouselModal from "./components/ImageCarouselModal" // <-- Импортируем новый компонент
+import ImageCarouselModal from "./components/ImageCarouselModal"
 
 import { useSalonRating } from "@/contexts"
 import { useChat } from "@/contexts/ChatContext"
@@ -53,9 +53,7 @@ export default function ServicePublicPage() {
   const [schedule, setSchedule] = useState<any>(null)
   const [ratingStats, setRatingStats] = useState<any>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isModalOpen, setIsModalOpen] = useState(false) // <-- Состояние для модального окна
-
-  const coverUrl = useMemo(() => images[0]?.url || "/placeholder.svg", [images])
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -225,7 +223,6 @@ export default function ServicePublicPage() {
 
   return (
     <>
-      {/* Модальное окно с каруселью */}
       {isModalOpen && images.length > 0 && (
         <ImageCarouselModal
           images={images}
@@ -268,8 +265,21 @@ export default function ServicePublicPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="relative h-72 md:h-96 rounded-3xl overflow-hidden shadow-xl border border-gray-200">
-                <Image src={coverUrl} alt={service.name} fill className="object-cover" />
+              <div className="relative h-72 md:h-96 rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100">
+                {images.length > 0 ? (
+                  <Image 
+                    src={images[0].url} 
+                    alt={service.name} 
+                    fill 
+                    className="object-cover"
+                    priority
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                    <Images className="w-16 h-16 mb-4" strokeWidth={1} />
+                    <span className="font-medium text-lg">Фотография отсутствует</span>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -309,7 +319,7 @@ export default function ServicePublicPage() {
                   </div>
                 )}
 
-                {images.length > 1 && (
+                {images.length > 0 && (
                   <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Images className="w-5 h-5 text-rose-600" />
@@ -317,7 +327,6 @@ export default function ServicePublicPage() {
                     </div>
                     
                     <div className="relative">
-                      {/* Обертка для основного изображения, чтобы сделать его кликабельным */}
                       <button
                         onClick={() => setIsModalOpen(true)}
                         className="relative w-full aspect-video max-h-96 rounded-xl overflow-hidden border border-gray-200 mb-4 bg-gray-100 cursor-pointer group"
@@ -334,54 +343,56 @@ export default function ServicePublicPage() {
                       </button>
 
                       {images.length > 1 && (
-                        <div className="flex items-center justify-center gap-4 mb-4">
-                          <button
-                            onClick={() => setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                            className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
-                            aria-label="Предыдущее изображение"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                          </button>
-                          
-                          <div className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
-                            {currentSlide + 1} / {images.length}
+                        <>
+                          <div className="flex items-center justify-center gap-4 mb-4">
+                            <button
+                              onClick={() => setCurrentSlide((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
+                              className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                              aria-label="Предыдущее изображение"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                              </svg>
+                            </button>
+                            
+                            <div className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                              {currentSlide + 1} / {images.length}
+                            </div>
+
+                            <button
+                              onClick={() => setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
+                              className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
+                              aria-label="Следующее изображение"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
                           </div>
 
-                          <button
-                            onClick={() => setCurrentSlide((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                            className="p-3 rounded-full bg-white border border-gray-300 hover:bg-gray-50 transition-colors shadow-sm"
-                            aria-label="Следующее изображение"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                        </div>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                            {images.map((img, index) => (
+                              <button
+                                key={img.id}
+                                onClick={() => setCurrentSlide(index)}
+                                className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                  index === currentSlide
+                                    ? 'border-rose-600 ring-2 ring-rose-100 scale-105'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <Image
+                                  src={img.url}
+                                  alt={`thumbnail ${index + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 640px) 20vw, (max-width: 768px) 15vw, 10vw"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
-
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                        {images.map((img, index) => (
-                          <button
-                            key={img.id}
-                            onClick={() => setCurrentSlide(index)}
-                            className={`relative w-full aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                              index === currentSlide
-                                ? 'border-rose-600 ring-2 ring-rose-100 scale-105'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                          >
-                            <Image
-                              src={img.url}
-                              alt={`thumbnail ${index + 1}`}
-                              fill
-                              className="object-cover"
-                              sizes="(max-width: 640px) 20vw, (max-width: 768px) 15vw, 10vw"
-                            />
-                          </button>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 )}

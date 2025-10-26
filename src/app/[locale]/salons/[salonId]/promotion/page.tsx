@@ -358,27 +358,33 @@ export default function SalonServicePromotionsPage() {
 
               <div className="space-y-4">
                 <h3 className="font-medium">Доступные планы:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      onClick={() => setSelectedPlanId(plan.id)}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                    >
-                      <h4 className="font-semibold text-lg">{plan.name}</h4>
-                      {/* OPTIMIZATION: Responsive text size for price */}
-                      <p className="text-xl sm:text-2xl font-bold my-2">
-                        {plan.price} {plan.currency}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Длительность: {plan.durationDays} дней</p>
-                      <ul className="mt-3 text-sm space-y-1 list-disc list-inside">
-                        {plan.features.map((feature, i) => (
-                          <li key={i}>{feature}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
+                {plans.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {plans.map((plan) => (
+                      <div
+                        key={plan.id}
+                        onClick={() => setSelectedPlanId(plan.id)}
+                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                      >
+                        <h4 className="font-semibold text-lg">{plan.name}</h4>
+                        {/* OPTIMIZATION: Responsive text size for price */}
+                        <p className="text-xl sm:text-2xl font-bold my-2">
+                          {plan.price} {plan.currency}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Длительность: {plan.durationDays} дней</p>
+                        <ul className="mt-3 text-sm space-y-1 list-disc list-inside">
+                          {plan.features.map((feature, i) => (
+                            <li key={i}>{feature}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground bg-muted/50 rounded-lg">
+                    <p>Нет доступных планов для продвижения.</p>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-start gap-3 pt-6 border-t">

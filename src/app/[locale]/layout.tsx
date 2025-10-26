@@ -124,7 +124,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             <SiteHeader locale={locale} />
-            <main className="min-h-screen px-3 sm:px-0">{children}</main>
+            <main className="px-3 sm:px-0" style={{ height: 'calc(100vh - 4rem - 1px)' }}>{children}</main>
           </Providers>
         </NextIntlClientProvider>
       </body>

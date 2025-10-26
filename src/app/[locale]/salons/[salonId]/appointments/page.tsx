@@ -30,7 +30,7 @@ type Appointment = {
   customerUserId?: string;
   startAt: string;
   durationMinutes: number;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+  status: "pending" | "in_progress" | "completed";
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -240,16 +240,12 @@ export default function SalonAppointmentsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800";
       case "completed":
+        return "bg-green-100 text-green-800";
+      case "in_progress":
         return "bg-blue-100 text-blue-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "no_show":
-        return "bg-orange-100 text-orange-800";
+        return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -257,16 +253,12 @@ export default function SalonAppointmentsPage() {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case "confirmed":
-        return t("status.confirmed");
       case "completed":
         return t("status.completed");
-      case "cancelled":
-        return t("status.cancelled");
+      case "in_progress":
+        return t("status.in_progress");
       case "pending":
         return t("status.pending");
-      case "no_show":
-        return t("status.no_show");
       default:
         return status;
     }
@@ -331,10 +323,8 @@ export default function SalonAppointmentsPage() {
             >
               <option value="all">{t("filters.allStatuses")}</option>
               <option value="pending">{t("filters.pending")}</option>
-              <option value="confirmed">{t("filters.confirmed")}</option>
+              <option value="in_progress">{t("filters.in_progress")}</option>
               <option value="completed">{t("filters.completed")}</option>
-              <option value="cancelled">{t("filters.cancelled")}</option>
-              <option value="no_show">{t("status.no_show")}</option>
             </select>
           </div>
 
@@ -428,7 +418,7 @@ export default function SalonAppointmentsPage() {
                               <span>{appointment.durationMinutes} мин</span>
                             </div>
                             <div className="font-semibold text-rose-600">
-                              {service?.price} ₽
+                              {service?.price} Br
                             </div>
                           </div>
                         </div>
@@ -481,16 +471,12 @@ export default function SalonAppointmentsPage() {
                         className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                       >
                         <option value="pending">{t("status.pending")}</option>
-                        <option value="confirmed">
-                          {t("status.confirmed")}
+                        <option value="in_progress">
+                          {t("status.in_progress")}
                         </option>
                         <option value="completed">
                           {t("status.completed")}
                         </option>
-                        <option value="cancelled">
-                          {t("status.cancelled")}
-                        </option>
-                        <option value="no_show">{t("status.no_show")}</option>
                       </select>
                       {appointment.customerUserId && (
                         <ChatButton

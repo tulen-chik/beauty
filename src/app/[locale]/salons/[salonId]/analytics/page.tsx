@@ -179,11 +179,11 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                                         <div className="flex justify-between items-start mb-3">
                                             <div className="flex-1 pr-2">
                                                 <h3 className="font-bold text-lg">{item.name}</h3>
-                                                <p className="text-sm text-muted-foreground">{t("table.servicePrice")}: {item.price.toFixed(2)} ₽</p>
+                                                <p className="text-sm text-muted-foreground">{t("table.servicePrice")}: {item.price.toFixed(2)} Br</p>
                                                 <p className="text-sm text-muted-foreground">{t("table.yearlyCount")}: {item.totalYearlyCount}</p>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-bold text-lg text-rose-600">{item.totalYearlyRevenue.toFixed(2)} ₽</p>
+                                                <p className="font-bold text-lg text-rose-600">{item.totalYearlyRevenue.toFixed(2)} Br</p>
                                                 <p className="text-xs text-muted-foreground">{t("table.yearlyTotal")}</p>
                                             </div>
                                         </div>
@@ -295,7 +295,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                                     {topByProfit.map((item, index) => (
                                         <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md odd:bg-muted/50">
                                             <span>{item.name}</span>
-                                            <span className="font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{item.revenue.toFixed(2)} ₽</span>
+                                            <span className="font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">{item.revenue.toFixed(2)} Br</span>
                                         </li>
                                     ))}
                                 </ol>

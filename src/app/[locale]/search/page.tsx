@@ -265,7 +265,10 @@ export default function SearchPage() {
 
   // --- РЕНДЕРИНГ ---
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-gray-50 overflow-hidden">
+  <div
+    className="flex flex-col md:flex-row bg-gray-50 overflow-hidden"
+    style={{ height: 'calc(100vh - 4rem - 1px)' }} // 4rem - стандартная высота хедера (h-16 в Tailwind)
+  >
       <SearchAndFilterPanel
         mobileView={mobileView}
         searchQuery={searchQuery}

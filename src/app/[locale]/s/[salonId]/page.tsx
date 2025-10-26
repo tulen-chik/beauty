@@ -1,13 +1,12 @@
 "use client"
 
-// 1. Импорты отсортированы для чистоты кода
 import { motion } from "framer-motion"
-import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star } from "lucide-react"
+import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star, Images } from "lucide-react" // Добавлена иконка Images
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 
 import RatingStats from "@/components/RatingStats"
 
@@ -32,18 +31,13 @@ export default function SalonPublicPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 3. Используются строгие типы вместо `any`
   const [salon, setSalon] = useState<Salon | null>(null)
   const [schedule, setSchedule] = useState<SalonSchedule | null>(null)
   const [services, setServices] = useState<SalonService[]>([])
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({})
   const [ratingStats, setRatingStats] = useState<any>(null)
 
-  const heroImage = useMemo(() => {
-    const firstService = services[0]
-    const firstImg = firstService ? serviceImages[firstService.id] : undefined
-    return firstImg || "/placeholder.svg"
-  }, [services, serviceImages])
+  // Удален useMemo, логика перенесена в JSX для ясности
 
   useEffect(() => {
     let cancelled = false
@@ -64,7 +58,6 @@ export default function SalonPublicPage() {
           const sch = await getSchedule(salonId)
           if (!cancelled) setSchedule(sch)
         } catch (err) {
-          // 4. Пустые catch-блоки заменены на логирование ошибок
           console.error("Не удалось загрузить расписание:", err)
         }
 
@@ -80,21 +73,23 @@ export default function SalonPublicPage() {
           if (!cancelled) setServices(list)
           
           const imagesMap: Record<string, string> = {}
-          for (const svc of list) {
+          // Используем Promise.all для параллельной загрузки изображений
+          await Promise.all(list.map(async (svc) => {
             try {
               const imgs = await getImages(svc.id)
-              if (imgs && imgs[0]) imagesMap[svc.id] = imgs[0].url
+              if (imgs && imgs[0]) {
+                imagesMap[svc.id] = imgs[0].url
+              }
             } catch (err) {
-              // 4. Пустые catch-блоки заменены на логирование ошибок
               console.error(`Не удалось загрузить изображения для услуги ${svc.id}:`, err)
             }
-          }
+          }));
+
           if (!cancelled) setServiceImages(imagesMap)
         } catch (err) {
-          // 4. Пустые catch-блоки заменены на логирование ошибок
           console.error("Не удалось загрузить услуги:", err)
         }
-      } catch (e: unknown) { // 5. Тип ошибки изменен с `any` на `unknown` для безопасности
+      } catch (e: unknown) {
         if (e instanceof Error) {
           setError(e.message)
         } else {
@@ -108,7 +103,8 @@ export default function SalonPublicPage() {
     return () => {
       cancelled = true
     }
-  }, [salonId, fetchSalon, getSchedule, getServicesBySalon, getImages])
+  }, [salonId, fetchSalon, getSchedule, getServicesBySalon, getImages, getRatingStats])
+
 
   if (loading) {
     return (
@@ -134,6 +130,11 @@ export default function SalonPublicPage() {
       </div>
     )
   }
+
+  // Определяем URL для главного изображения
+  const heroImageUrl = services.length > 0 && serviceImages[services[0].id] 
+    ? serviceImages[services[0].id] 
+    : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -161,8 +162,16 @@ export default function SalonPublicPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl border border-gray-200">
-              <Image src={heroImage} alt={salon.name || "salon"} fill className="object-cover" />
+            {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: ПЛЕЙСХОЛДЕР ДЛЯ ГЛАВНОГО ИЗОБРАЖЕНИЯ --- */}
+            <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100">
+              {heroImageUrl ? (
+                <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                  <Building2 className="w-16 h-16 mb-4" strokeWidth={1} />
+                  <span className="font-medium text-lg">Фотография салона отсутствует</span>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -196,10 +205,15 @@ export default function SalonPublicPage() {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {services.map((svc) => (
-                      <div key={svc.id} className="group border border-gray-200 rounded-xl p-4 hover:shadow transition-all">
+                      <div key={svc.id} className="group border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300">
                         <div className="flex gap-3">
-                          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                            <Image src={serviceImages[svc.id] || "/placeholder.svg"} alt={svc.name} fill className="object-cover" />
+                          {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: ПЛЕЙСХОЛДЕР ДЛЯ УСЛУГИ --- */}
+                          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                            {serviceImages[svc.id] ? (
+                              <Image src={serviceImages[svc.id]} alt={svc.name} fill className="object-cover" />
+                            ) : (
+                              <Scissors className="w-8 h-8 text-gray-300" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <Link href={`/${locale}/services/${svc.id}`} className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2">
@@ -210,7 +224,7 @@ export default function SalonPublicPage() {
                             )}
                             <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
                               <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{svc.durationMinutes} мин</div>
-                              <div className="font-semibold text-rose-600">{svc.price} ₽</div>
+                              <div className="font-semibold text-rose-600">{svc.price} Br</div>
                             </div>
                           </div>
                         </div>

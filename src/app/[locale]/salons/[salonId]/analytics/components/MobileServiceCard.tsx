@@ -31,7 +31,7 @@ export function MobileServiceCard({ service, monthLabels, index }: MobileService
             <h3 className="font-bold text-lg">{service.name}</h3>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {t("table.servicePrice")}: {service.price.toFixed(2)} ₽
+            {t("table.servicePrice")}: {service.price.toFixed(2)} Br
           </p>
           <p className="text-sm text-muted-foreground">
             {t("table.yearlyCount")}: {service.totalYearlyCount}
@@ -39,7 +39,7 @@ export function MobileServiceCard({ service, monthLabels, index }: MobileService
         </div>
         <div className="text-right">
           <p className="font-bold text-lg text-rose-600">
-            {service.totalYearlyRevenue.toFixed(2)} ₽
+            {service.totalYearlyRevenue.toFixed(2)} Br
           </p>
           <p className="text-xs text-muted-foreground">{t("table.yearlyTotal")}</p>
         </div>

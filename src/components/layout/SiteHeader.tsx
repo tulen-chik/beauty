@@ -177,7 +177,7 @@ export default function SiteHeader({ locale }: Props) {
             }`}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <span className="font-bold text-lg">{t('brand.name')}</span>
+              <Link href={`/${locale}`}><span className="font-bold text-lg">{t('brand.name')}</span></Link>
               <button
                 onClick={() => setIsMenuOpen(false)}
                 className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-lg"

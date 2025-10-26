@@ -345,8 +345,10 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
     return Object.keys(errors).length === 0;
   };
 
-  const handleBook = async () => {
-    if (!validateForm() || !service) return;
+    const handleBook = async () => {
+    if (!validateForm()) {
+      return;
+    }
     
     setSubmitting(true)
     setSubmissionError(null)
@@ -354,7 +356,13 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
     
     try {
       const startAt = combineDateTimeToIso(selectedDate, selectedTime)
-      const ok = await isTimeSlotAvailable(service.salonId, startAt, service.durationMinutes, employeeId || undefined)
+      
+      const ok = await isTimeSlotAvailable(
+        service!.salonId,
+        startAt,
+        service!.durationMinutes,
+        employeeId || undefined
+      )
       
       if (!ok) {
         setSubmissionError(t('messages.errorSlotTaken'))
@@ -364,26 +372,42 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
       }
 
       const appointmentId = Date.now().toString()
-      await createAppointment(service.salonId, appointmentId, {
-        salonId: service.salonId,
-        serviceId: service.id,
-        employeeId: employeeId || undefined,
-        customerName: customerName || undefined,
-        customerPhone: customerPhone || undefined,
-        customerUserId: undefined,
+
+      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+      // 1. Создаем базовый объект с обязательными полями
+      const appointmentData: any = {
+        salonId: service!.salonId,
+        serviceId: service!.id,
         startAt,
-        durationMinutes: service.durationMinutes,
+        durationMinutes: service!.durationMinutes,
         status: "confirmed",
-        notes: notes || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-      })
+      };
+
+      // 2. Условно добавляем необязательные поля, только если у них есть значение
+      if (employeeId) {
+        appointmentData.employeeId = employeeId;
+      }
+      if (customerName) {
+        appointmentData.customerName = customerName;
+      }
+      if (customerPhone) {
+        appointmentData.customerPhone = customerPhone;
+      }
+      if (currentUser?.userId) {
+        appointmentData.customerUserId = currentUser.userId;
+      }
+      if (notes) {
+        appointmentData.notes = notes;
+      }
+      
+      // 3. Передаем в функцию уже "чистый" объект без undefined полей
+      await createAppointment(service!.salonId, appointmentId, appointmentData)
 
       setSuccess(t('successMessage'))
-      setTimeout(() => {
-        onBookingSuccess();
-      }, 1500);
     } catch (e: any) {
+      console.error(e)
       setSubmissionError(e.message || t('messages.errorGeneric'))
     } finally {
       setSubmitting(false)
@@ -428,7 +452,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
               >
                 <option value="" disabled>{t('fields.servicePlaceholder')}</option>
                 {services.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} - {s.price} {t('header.currency')}</option>
+                  <option key={s.id} value={s.id}>{s.name} - {s.price} Br</option>
                 ))}
               </select>
               {formErrors.service && <p className="mt-1 text-xs text-red-600">{formErrors.service}</p>}
@@ -438,9 +462,9 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
             {service ? (
               <>
                 <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50">
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                  {/* <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
                     <Image src={previewUrl || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
-                  </div>
+                  </div> */}
                   <div className="flex-1">
                     <div className="text-lg font-bold text-gray-900 dark:text-white">{service.name}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">{salon.name}</div>
@@ -449,7 +473,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                       <span>{service.durationMinutes} {t('header.minutes')}</span>
                     </div>
                   </div>
-                  <div className="text-rose-600 font-bold">{service.price} {t('header.currency')}</div>
+                  <div className="text-rose-600 font-bold">{service.price} Br</div>
                 </div>
 
                 <div className="p-3 sm:p-4 space-y-6">

@@ -133,7 +133,7 @@ export const appointmentSchema = z.object({
   customerUserId: z.string().optional(),
   startAt: z.string(),
   durationMinutes: z.number().int().positive(),
-  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'no_show']),
+  status: z.enum(['pending', 'confirmed', 'completed', 'cancelled', 'in_progress']),
   notes: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

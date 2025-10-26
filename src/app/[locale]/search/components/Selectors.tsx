@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown, Filter, Globe, List, Map as MapIcon, Search, Star, Store, Tag, X } from "lucide-react"
+import { ChevronDown, Filter, Globe, List, Map as MapIcon, Scissors, Search, Star, Store, Tag, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
@@ -13,8 +13,6 @@ import { SalonsMap } from "./SalonsMap"
 // --- 1. ИМПОРТ СУЩЕСТВУЮЩИХ ТИПОВ ---
 import type { Salon, SalonService, ServiceCategory } from "@/types/database"
 
-// --- 2. ОБНОВЛЕННЫЙ ИНТЕРФЕЙС ДЛЯ ОБРАБОТАННЫХ ДАННЫХ ---
-// Он расширяет официальный SalonService, добавляя поля для отображения
 interface ProcessedService extends SalonService {
   salon: { id: string; name: string; address: string } | null
   imageUrl: string
@@ -93,43 +91,58 @@ export const ServiceCard = React.memo(({ service, locale, salonRating }: { servi
   const formatAddress = (fullAddress: string) => { if (!fullAddress) return ""; return fullAddress.split(",").slice(0, 2).join(",").trim() };
 
   return (
-    <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-rose-50 to-pink-50 border-l-4 border-l-rose-400' : ''}`}>
-      {service.isPromoted && (
-        <div className="absolute top-2 right-2 bg-rose-400 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-          <Star className="w-3 h-3 fill-current" />
-          Рекомендуем
-        </div>
-      )}
-      <div className="flex items-start gap-4">
-        <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-          <Image src={service.imageUrl || "/service-placeholder.svg"} alt={service.name} fill className={service.imageUrl ? "object-cover" : "object-contain p-2"} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <Link href={`/${locale}/services/${service.id}`}><h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3></Link>
-          {service.categoryName && (
-            <div className="flex items-center gap-1 mb-1">
-              <Tag className="w-3 h-3 text-gray-400" />
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{service.categoryName}</span>
+    <Link href={`/${locale}/services/${service.id}`}>
+      <div className={`border-b border-gray-100 p-4 hover:bg-gray-50 transition-colors duration-200 group relative ${service.isPromoted ? 'bg-gradient-to-r from-rose-50 to-pink-50 border-l-4 border-l-rose-400' : ''}`}>
+        {service.isPromoted && (
+          <div className="absolute top-2 right-2 bg-rose-400 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+            <Star className="w-3 h-3 fill-current" />
+            Рекомендуем
+          </div>
+        )}
+        <div className="flex items-start gap-4">
+          {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
+          <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+            {service.imageUrl ? (
+              <Image 
+                src={service.imageUrl} 
+                alt={service.name} 
+                fill 
+                className="object-cover"
+                sizes="(max-width: 768px) 20vw, 10vw"
+              />
+            ) : (
+              // Полноценный плейсхолдер с иконкой
+              <Scissors className="w-8 h-8 text-gray-300" />
+            )}
+          </div>
+          {/* --- КОНЕЦ ИЗМЕНЕНИЯ --- */}
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2 mb-1">{service.name}</h3>
+            {service.categoryName && (
+              <div className="flex items-center gap-1 mb-1">
+                <Tag className="w-3 h-3 text-gray-400" />
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{service.categoryName}</span>
+              </div>
+            )}
+            {service.salon && (
+              <div className="mb-2">
+                <p className="text-sm text-gray-600 line-clamp-1">{service.salon.name}・{formatAddress(service.salon.address)}</p>
+                {salonRating && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <RatingDisplay rating={salonRating.averageRating} size="sm" />
+                    <span className="text-xs text-gray-500">({salonRating.totalRatings} отзывов)</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <div className="text-base font-bold text-gray-800">{service.price} Br</div>
+              <div className="text-sm text-gray-500">{service.durationMinutes} мин</div>
             </div>
-          )}
-          {service.salon && (
-            <div className="mb-2">
-              <p className="text-sm text-gray-600">{service.salon.name}・{formatAddress(service.salon.address)}</p>
-              {salonRating && (
-                <div className="flex items-center gap-2 mt-1">
-                  <RatingDisplay rating={salonRating.averageRating} size="sm" />
-                  <span className="text-xs text-gray-500">({salonRating.totalRatings} отзывов)</span>
-                </div>
-              )}
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <div className="text-base font-bold text-gray-800">{service.price} Br</div>
-            <div className="text-sm text-gray-500">{service.durationMinutes} мин</div>
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 });
 ServiceCard.displayName = 'ServiceCard';

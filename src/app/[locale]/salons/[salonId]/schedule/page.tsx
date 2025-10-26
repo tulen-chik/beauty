@@ -43,7 +43,7 @@ type Appointment = {
   customerUserId?: string;
   startAt: string;
   durationMinutes: number;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+  status: "pending" | "in_progress" | "completed";
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -81,11 +81,11 @@ const TIME_SLOTS = [
 ];
 
 // --- CALENDAR GRID CONSTANTS ---
-const SLOT_HEIGHT_IN_REM = 6;
+const SLOT_HEIGHT_IN_REM = 6; // Corresponds to h-24 in Tailwind
 const MINUTES_PER_SLOT = 30;
 const REM_IN_PX = 16;
-const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX;
-const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
+const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX; // 6 * 16 = 96px
+const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT; // 96px / 30min = 3.2px/min
 
 // --- HELPER FUNCTIONS ---
 const timeToMinutes = (timeString: string) => {
@@ -269,11 +269,9 @@ export default function SalonSchedulePage() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      confirmed: "bg-blue-100 text-blue-800 border-blue-300",
       completed: "bg-green-100 text-green-800 border-green-300",
-      cancelled: "bg-red-100 text-red-800 border-red-300",
+      in_progress: "bg-blue-100 text-blue-800 border-blue-300",
       pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      no_show: "bg-orange-100 text-orange-800 border-orange-300",
     };
     return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-300";
   };
@@ -408,7 +406,7 @@ export default function SalonSchedulePage() {
         onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
         style={{ 
           top: `${top}px`, 
-          height: `calc(${height}px - 2px)`
+          height: `calc(${height}px - 2px)` // Subtract 2px for a small gap
         }}
         className={`absolute left-1 right-1 p-1.5 rounded-lg border flex flex-col overflow-hidden text-left transition-all hover:shadow-md hover:border-rose-400 ${getStatusColor(appointment.status)}`}
       >
@@ -564,10 +562,8 @@ export default function SalonSchedulePage() {
                       className={`w-full px-3 py-2 border rounded-lg font-semibold transition-colors ${getStatusColor(selectedAppointment.status)}`}
                   >
                       <option value="pending">{t("status.pending")}</option>
-                      <option value="confirmed">{t("status.confirmed")}</option>
+                      <option value="in_progress">{t("status.in_progress")}</option>
                       <option value="completed">{t("status.completed")}</option>
-                      <option value="cancelled">{t("status.cancelled")}</option>
-                      <option value="no_show">{t("status.no_show")}</option>
                   </select>
               </div>
             )}
@@ -664,10 +660,8 @@ export default function SalonSchedulePage() {
             >
               <option value="all">{t("filters.allStatuses")}</option>
               <option value="pending">{t("status.pending")}</option>
-              <option value="confirmed">{t("status.confirmed")}</option>
+              <option value="in_progress">{t("status.in_progress")}</option>
               <option value="completed">{t("status.completed")}</option>
-              <option value="cancelled">{t("status.cancelled")}</option>
-              <option value="no_show">{t("status.no_show")}</option>
             </select>
             <select
               value={serviceFilter}
@@ -717,17 +711,13 @@ export default function SalonSchedulePage() {
                             </div>
                         </div>
                         <div className="relative">
-                            {TIME_SLOTS.map((time) => {
-                                const isWorking = isTimeInWorkingHours(dayData, time);
-                                return (
+                            {/* Background grid to ensure container height and provide visual guide */}
+                            {TIME_SLOTS.map((time) => (
                                 <div
                                     key={time}
-                                    className={`h-24 border-b border-dashed ${
-                                    isWorking ? "bg-blue-50/50" : "bg-gray-50/50"
-                                    }`}
+                                    className="h-24 border-b border-gray-100 border-dashed"
                                 ></div>
-                                );
-                            })}
+                            ))}
                             <div className="absolute inset-0">
                                 {dayAppointments.map((apt) => (
                                     <PositionedAppointmentCard key={apt.id} appointment={apt} />
