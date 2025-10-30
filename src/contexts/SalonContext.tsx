@@ -4,8 +4,11 @@ import React, { createContext, ReactNode, useCallback, useContext, useMemo, useS
 import { salonOperations, userSalonsOperations, getSalonsByCityPaginated } from '@/lib/firebase/database';
 import { useGeolocation } from './index';
 
+import { ref, update } from "firebase/database"; 
+import { db } from '@/lib/firebase/init';
+
 // Импортируем ваши новые типы
-import type { Salon, SalonRole, UserSalons } from '@/types/database';
+import type { Salon, SalonRole, UserSalons, SalonMember } from '@/types/database';
 
 // Интерфейс контекста остается без изменений, так как он уже соответствует типам
 interface SalonContextType {
@@ -16,6 +19,7 @@ interface SalonContextType {
   createSalon: (salonId: string, data: Omit<Salon, 'id'>, userId: string) => Promise<Salon>;
   updateSalon: (salonId: string, data: Partial<Salon>) => Promise<Salon>;
   deleteSalon: (salonId: string) => Promise<void>;
+  updateSalonMembers: (salonId: string, updatedMembers: SalonMember[]) => Promise<void>;
   fetchSalonsByCity: (options: { city: string; limit: number; startAfterKey?: string }) => Promise<{ salons: Salon[]; nextKey: string | null }>;
   loading: boolean;
   error: string | null;
@@ -74,6 +78,8 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
       return null;
     }
   }, []);
+
+
 
   const saveSalonToCache = useCallback((salonId: string, salonData: Salon | null) => {
     try {
@@ -152,10 +158,24 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
         setUserSalons(cachedUserSalons);
         return cachedUserSalons;
       }
+      
       const userSalonsData = await userSalonsOperations.read(userId);
+
+      // --- НАЧАЛО: КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+      // Проверяем, существуют ли данные и есть ли в них непустой массив салонов.
+      // Если нет - считаем, что для клиента данных нет (null).
+      if (!userSalonsData || !userSalonsData.salons || userSalonsData.salons.length === 0) {
+        setUserSalons(null);
+        saveUserSalonsToCache(userId, null); // Также сохраняем null в кеш
+        return null;
+      }
+      // --- КОНЕЦ: КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ---
+
+      // Если проверка пройдена, значит у пользователя есть салоны.
       setUserSalons(userSalonsData);
-      if (userSalonsData) saveUserSalonsToCache(userId, userSalonsData);
+      saveUserSalonsToCache(userId, userSalonsData);
       return userSalonsData;
+      
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -301,10 +321,114 @@ const createSalon = useCallback(async (salonId: string, data: Omit<Salon, 'id'>,
     }
   }, []);
 
+  const updateSalonMembers = useCallback(async (salonId: string, updatedMembers: SalonMember[]) => {
+    console.log(`[updateSalonMembers] START: Обновление участников для салона ${salonId}`);
+    setLoading(true);
+    setError(null);
+
+    try {
+      // --- ШАГ 1: Получение исходных данных ---
+      const originalSalon = salons.find(s => s.id === salonId) || await fetchSalon(salonId);
+      if (!originalSalon) {
+        throw new Error(`Салон с ID ${salonId} не найден.`);
+      }
+      
+      const originalMembers = originalSalon.members || [];
+      console.log('[updateSalonMembers] Исходные участники:', JSON.stringify(originalMembers, null, 2));
+      console.log('[updateSalonMembers] Новые (обновленные) участники:', JSON.stringify(updatedMembers, null, 2));
+
+      // --- ШАГ 2: Определение всех затронутых пользователей ---
+      const originalUserIds = originalMembers.map(m => m.userId);
+      const newUserIds = updatedMembers.map(m => m.userId);
+      const allAffectedUserIds = Array.from(new Set([...originalUserIds, ...newUserIds]));
+      
+      console.log(`[updateSalonMembers] Всего затронуто пользователей: ${allAffectedUserIds.length}. ID:`, allAffectedUserIds);
+
+      // --- ШАГ 3: Подготовка объекта для атомарного обновления ---
+      // Это базовый объект, который будет расширен
+      const updates: { [key: string]: any } = {};
+      updates[`salons/${salonId}/members`] = updatedMembers;
+      
+      console.log('[updateSalonMembers] Подготовлен базовый объект updates:', { [`salons/${salonId}/members`]: updatedMembers });
+
+      // --- ШАГ 4: Асинхронная подготовка обновлений для каждого пользователя ---
+      // ИСПРАВЛЕНИЕ: Мы будем собирать промисы, которые ВОЗВРАЩАЮТ нужные данные,
+      // а не мутировать внешний объект `updates`.
+      const userUpdatePromises = allAffectedUserIds.map(async (userId) => {
+        try {
+          console.log(`[UserUpdate] -> Начало обработки для пользователя ${userId}`);
+          const userSalonsData = await userSalonsOperations.read(userId);
+          const newMemberInfo = updatedMembers.find(m => m.userId === userId);
+          let updatedUserSalonsList = userSalonsData?.salons || [];
+
+          if (newMemberInfo) {
+            // Пользователь остался в салоне (или был добавлен)
+            const existingEntryIndex = updatedUserSalonsList.findIndex(s => s.salonId === salonId);
+            if (existingEntryIndex > -1) {
+              console.log(`[UserUpdate] -> Пользователь ${userId} уже в списке, обновляем роль на "${newMemberInfo.role}".`);
+              updatedUserSalonsList[existingEntryIndex].role = newMemberInfo.role;
+            } else {
+              console.log(`[UserUpdate] -> Пользователь ${userId} добавляется в список салонов.`);
+              updatedUserSalonsList.push({ salonId, role: newMemberInfo.role, joinedAt: newMemberInfo.joinedAt });
+            }
+          } else {
+            // Пользователя удалили из салона
+            console.warn(`[UserUpdate] -> Пользователь ${userId} удаляется из списка салонов.`);
+            updatedUserSalonsList = updatedUserSalonsList.filter(s => s.salonId !== salonId);
+          }
+          
+          // Возвращаем путь и данные для этого конкретного пользователя
+          return { path: `userSalons/${userId}/salons`, data: updatedUserSalonsList };
+
+        } catch (userError: any) {
+            console.error(`[UserUpdate] -> ОШИБКА при обработке пользователя ${userId}:`, userError.message);
+            // Возвращаем null, чтобы можно было отфильтровать и не прерывать всю операцию
+            return null;
+        }
+      });
+
+      // Дожидаемся выполнения всех промисов
+      const userUpdateResults = await Promise.all(userUpdatePromises);
+
+      // --- ШАГ 5: Финальная сборка объекта `updates` ---
+      // Теперь мы безопасно собираем все результаты в один объект
+      userUpdateResults.forEach(result => {
+        if (result) { // Проверяем, что не было ошибки
+          updates[result.path] = result.data;
+        }
+      });
+
+      console.log('%c[updateSalonMembers] ФИНАЛЬНЫЙ ОБЪЕКТ ДЛЯ ЗАПИСИ В FIREBASE:', 'color: blue; font-weight: bold;', JSON.stringify(updates, null, 2));
+
+      // --- ШАГ 6: Выполнение атомарной записи ---
+      console.log('[updateSalonMembers] Отправка запроса в Firebase...');
+      await update(ref(db), updates);
+      console.log('%c[updateSalonMembers] SUCCESS: Данные успешно обновлены в Firebase!', 'color: green; font-weight: bold;');
+
+      // --- ШАГ 7: Обновление локального состояния и кеша (только после успешной записи) ---
+      setSalons(prev => prev.map(s => s.id === salonId ? { ...s, members: updatedMembers } : s));
+      saveSalonToCache(salonId, { ...originalSalon, members: updatedMembers });
+      allAffectedUserIds.forEach(userId => clearUserSalonsCache(userId));
+      console.log('[updateSalonMembers] Локальное состояние и кеш обновлены.');
+
+    } catch (e: any) {
+      // --- Обработка ошибок ---
+      console.error('%c[updateSalonMembers] FATAL ERROR: Произошла ошибка во время выполнения операции.', 'color: red; font-weight: bold;');
+      console.error('Текст ошибки:', e.message);
+      console.error('Полный объект ошибки:', e);
+      setError(e.message);
+      throw e; // Пробрасываем ошибку дальше для обработки в UI
+    } finally {
+      // --- Завершение ---
+      setLoading(false);
+      console.log('[updateSalonMembers] END: Операция завершена.');
+    }
+  }, [salons, fetchSalon, saveSalonToCache, clearUserSalonsCache, userSalonsOperations]); // Добавьте userSalonsOperations в зависимости
+  
   const value: SalonContextType = useMemo(() => ({
-    salons, userSalons, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
+    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
   }), [
-    salons, userSalons, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
+    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
   ]);
 
   return <SalonContext.Provider value={value}>{children}</SalonContext.Provider>;

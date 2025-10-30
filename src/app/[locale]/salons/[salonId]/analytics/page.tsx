@@ -7,6 +7,124 @@ import * as XLSX from 'xlsx';
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 
+// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
+// Скелет для мобильной карточки
+const MobileCardSkeleton = () => (
+    <div className="border rounded-lg p-4 bg-background shadow-soft">
+        <div className="flex justify-between items-start mb-3">
+            <div className="flex-1 pr-2 space-y-2">
+                <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
+                <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+                <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+            </div>
+            <div className="text-right space-y-2">
+                <div className="h-6 w-24 bg-gray-300 rounded"></div>
+                <div className="h-3 w-16 bg-gray-200 rounded ml-auto"></div>
+            </div>
+        </div>
+        <div className="border-t pt-3">
+            <div className="h-4 w-1/3 bg-gray-200 rounded mb-2"></div>
+            <div className="grid grid-cols-4 gap-2 text-center">
+                {[...Array(12)].map((_, i) => (
+                    <div key={i} className="rounded-md bg-muted/50 p-1 space-y-1">
+                        <div className="h-3 w-4 mx-auto bg-gray-200 rounded"></div>
+                        <div className="h-5 w-6 mx-auto bg-gray-300 rounded"></div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+// Скелет для строки таблицы
+const TableRowSkeleton = () => (
+    <tr className="border-t">
+        <td className="p-4"><div className="h-5 w-5 bg-gray-200 rounded"></div></td>
+        <td className="p-4"><div className="h-5 w-3/4 bg-gray-300 rounded"></div></td>
+        <td className="p-4"><div className="h-5 w-16 bg-gray-200 rounded"></div></td>
+        <td className="p-4"><div className="h-5 w-8 bg-gray-300 rounded"></div></td>
+        <td className="p-4 text-right"><div className="h-5 w-20 bg-gray-300 rounded ml-auto"></div></td>
+        <td className="p-4 text-center"><div className="h-5 w-5 bg-gray-200 rounded-full mx-auto"></div></td>
+    </tr>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonAnalyticsPageSkeleton = () => {
+    const t = useTranslations("SalonAnalyticsPage");
+    return (
+        <div className="min-h-screen bg-gradient-soft py-8 px-4 animate-pulse">
+            <div className="max-w-7xl mx-auto">
+                {/* Header Skeleton */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                    <div className="space-y-2">
+                        <div className="h-9 w-64 bg-gray-300 rounded-lg"></div>
+                        <div className="h-5 w-80 bg-gray-200 rounded-md"></div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3">
+                        <div className="h-10 w-32 bg-gray-200 rounded-md"></div>
+                        <div className="h-10 w-36 bg-gray-200 rounded-md"></div>
+                        <div className="h-10 w-24 bg-gray-200 rounded-md"></div>
+                    </div>
+                </div>
+
+                {/* Main Content Skeleton */}
+                <div className="rounded-lg border bg-card text-card-foreground shadow-sm mb-8">
+                    {/* Mobile Skeleton */}
+                    <div className="md:hidden p-4 space-y-4">
+                        <MobileCardSkeleton />
+                        <MobileCardSkeleton />
+                    </div>
+                    {/* Desktop Skeleton */}
+                    <div className="hidden md:block">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-muted/50">
+                                <tr>
+                                    <th className="p-4 w-12"><div className="h-5 w-5 bg-gray-300 rounded"></div></th>
+                                    <th className="p-4"><div className="h-5 w-1/4 bg-gray-300 rounded"></div></th>
+                                    <th className="p-4"><div className="h-5 w-1/4 bg-gray-300 rounded"></div></th>
+                                    <th className="p-4"><div className="h-5 w-1/4 bg-gray-300 rounded"></div></th>
+                                    <th className="p-4 text-right"><div className="h-5 w-1/4 bg-gray-300 rounded ml-auto"></div></th>
+                                    <th className="p-4 w-16"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <TableRowSkeleton />
+                                <TableRowSkeleton />
+                                <TableRowSkeleton />
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Summary Cards Skeleton */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="rounded-lg border bg-card p-6 space-y-3">
+                        <div className="h-7 w-3/4 bg-gray-300 rounded-lg"></div>
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="flex justify-between items-center p-2">
+                                <div className="h-5 w-1/2 bg-gray-200 rounded"></div>
+                                <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="rounded-lg border bg-card p-6 space-y-3">
+                        <div className="h-7 w-3/4 bg-gray-300 rounded-lg"></div>
+                        {[...Array(3)].map((_, i) => (
+                            <div key={i} className="flex justify-between items-center p-2">
+                                <div className="h-5 w-1/2 bg-gray-200 rounded"></div>
+                                <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
 interface ServiceAnalyticsData {
     id: string;
     name: string;
@@ -131,6 +249,11 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
     const loading = appointmentsLoading || servicesLoading;
     const availableYears = Array.from({ length: 1 }, (_, i) => new Date().getFullYear() - i);
 
+    // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
+    if (loading) {
+        return <SalonAnalyticsPageSkeleton />;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-soft py-8 px-4">
             <div className="max-w-7xl mx-auto">
@@ -139,7 +262,6 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                         <h1 className="text-3xl font-bold text-foreground mb-2">{t("header.title")}</h1>
                         <p className="text-muted-foreground">{t("header.subtitle")}</p>
                     </div>
-                    {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлены классы flex-wrap и sm:justify-end --- */}
                     <div className="flex flex-wrap items-center justify-start sm:justify-end gap-3">
                         <button
                             onClick={handleExportToExcel}
@@ -160,12 +282,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                 </div>
 
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm mb-8">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-96">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                            <span className="ml-2">{t("loading")}</span>
-                        </div>
-                    ) : tableData.length === 0 ? (
+                    {tableData.length === 0 ? (
                         <div className="text-center py-12">
                             <BarChart2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-xl font-semibold mb-2">{t("emptyState.title")}</h3>
@@ -212,9 +329,9 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
                                         <tr>
                                             <th className="p-4 font-medium w-12">№</th>
                                             <th className="p-4 font-medium">{t("table.serviceName")}</th>
-                                            <th className="p-4 font-medium">{t("table.servicePrice")}</th>
+                                            <th className="p-4 font-medium">{t("table.servicePrice") + " Br"}</th>
                                             <th className="p-4 font-medium">{t("table.yearlyCount")}</th>
-                                            <th className="p-4 font-medium text-right">{t("table.yearlyTotal")}</th>
+                                            <th className="p-4 font-medium text-right">{t("table.yearlyTotal") + " Br"}</th>
                                             <th className="p-4 font-medium w-16 text-center">{t("table.details")}</th>
                                         </tr>
                                     </thead>

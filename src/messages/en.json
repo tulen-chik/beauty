@@ -947,7 +947,13 @@
 "role": "Your role: {role}",
 "joined": "Joined: {date}",
 "goToCRM": "Go to Management",
-"failedToLoadName": "Failed to load name"
+"failedToLoadName": "Failed to load name",
+"roles": {
+      "owner": "Owner",
+      "manager": "Manager",
+      "employee": "Employee",
+      "viewer": "Viewer"
+    }
 },
 "SalonServicesPage": {
     "header": {

@@ -128,12 +128,6 @@ export default function SalonChatsPage() {
             >
               {t('retry')}
             </button>
-            <Link
-              href={`/salons/${salonId}`}
-              className="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 font-medium"
-            >
-              {t('backToSalon')}
-            </Link>
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ interface SalonInvitationContextType {
   deleteInvitation: (invitationId: string) => Promise<void>;
   getInvitationsByEmail: (email: string) => Promise<SalonInvitation[]>;
   getInvitationsBySalon: (salonId: string) => Promise<SalonInvitation[]>;
+  acceptInvitation: (options: { invitationId: string; userId: string }) => Promise<void>; // Новый метод
   loading: boolean;
   error: string | null;
 }
@@ -52,6 +53,19 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
       setError(e.message);
       setLoading(false);
       return null;
+    }
+  }, []);
+
+    const acceptInvitation = useCallback(async (options: { invitationId: string; userId: string }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await salonInvitationOperations.acceptInvitation(options);
+    } catch (e: any) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -121,6 +135,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     getInvitationsBySalon,
     loading,
     error,
+    acceptInvitation,
   }), [
     createInvitation,
     getInvitation,
@@ -130,6 +145,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     getInvitationsBySalon,
     loading,
     error,
+    acceptInvitation,
   ]);
 
   return (

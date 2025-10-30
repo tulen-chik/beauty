@@ -7,6 +7,80 @@ import { useUser } from "@/contexts/UserContext";
 
 import type { SalonMember, SalonRole, User } from "@/types/database";
 
+// --- НАЧАЛО: КОМПОНЕНТЫ SKELETON (без изменений) ---
+
+// Скелет для элемента списка в разделе "Ожидающие приглашения"
+const InvitationListItemSkeleton = () => (
+  <li className="py-3 sm:py-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex-1 space-y-2">
+        <div className="h-5 w-2/3 bg-gray-200 rounded-md"></div>
+        <div className="h-4 w-1/2 bg-gray-200 rounded-md"></div>
+      </div>
+      <div className="h-8 w-20 bg-gray-200 rounded-xl mt-1 sm:mt-0"></div>
+    </div>
+  </li>
+);
+
+// Скелет для элемента списка в разделе "Текущие сотрудники"
+const StaffListItemSkeleton = () => (
+  <li className="py-4 sm:py-3">
+    <div className="flex flex-col gap-3">
+      <div className="space-y-2">
+        <div className="h-6 w-1/2 bg-gray-300 rounded-lg"></div>
+        <div className="h-4 w-3/4 bg-gray-200 rounded-md"></div>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1 space-y-1">
+          <div className="h-4 w-12 bg-gray-200 rounded-md"></div>
+          <div className="h-10 w-full bg-gray-200 rounded-lg"></div>
+        </div>
+        <div className="mt-2 sm:mt-0 space-y-1">
+          <div className="h-4 w-24 bg-gray-200 rounded-md"></div>
+          <div className="h-4 w-16 bg-gray-200 rounded-md"></div>
+        </div>
+      </div>
+      <div className="mt-2">
+        <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-xl"></div>
+      </div>
+    </div>
+  </li>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonStaffPageSkeleton = () => (
+  <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-3 sm:px-4 flex items-center justify-center">
+    <div className="w-full max-w-2xl bg-white p-4 sm:p-6 md:p-8 mx-2 sm:mx-4 animate-pulse">
+      {/* Заголовок */}
+      <div className="h-8 w-3/4 bg-gray-300 rounded-lg mb-4"></div>
+      {/* Счетчик сотрудников */}
+      <div className="h-5 w-1/3 bg-gray-200 rounded-md mb-6"></div>
+      
+      {/* Форма приглашения */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 sm:mb-8">
+        <div className="h-12 flex-1 bg-gray-200 rounded-xl"></div>
+        <div className="h-12 w-full sm:w-40 bg-gray-200 rounded-xl"></div>
+        <div className="h-12 w-full sm:w-32 bg-gray-300 rounded-xl"></div>
+      </div>
+      
+      {/* Ожидающие приглашения */}
+      <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-3 mt-6"></div>
+      <ul className="divide-y divide-gray-100 mb-8">
+        <InvitationListItemSkeleton />
+        <InvitationListItemSkeleton />
+      </ul>
+      
+      {/* Текущие сотрудники */}
+      <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-3 mt-6"></div>
+      <ul className="divide-y divide-gray-100">
+        <StaffListItemSkeleton />
+      </ul>
+    </div>
+  </div>
+);
+
+// --- КОНЕЦ: КОМПОНЕНТЫ SKELETON (без изменений) ---
+
 const ROLES: { value: SalonRole; label: string }[] = [
   { value: "owner", label: "Владелец" },
   { value: "manager", label: "Менеджер" },
@@ -16,9 +90,11 @@ const ROLES: { value: SalonRole; label: string }[] = [
 
 export default function SalonStaffPage({ params }: { params: { salonId: string } }) {
   const { salonId } = params;
-  const { fetchSalon, updateSalon, loading, error: salonError } = useSalon();
+  // --- ИЗМЕНЕНИЕ: Получаем новый метод `updateSalonMembers` из контекста ---
+  const { fetchSalon, updateSalonMembers, loading, error: salonError } = useSalon();
   const { getInvitationsBySalon, createInvitation, deleteInvitation, loading: invitationLoading } = useSalonInvitation();
   const { getUserById } = useUser();
+  
   const [members, setMembers] = useState<SalonMember[]>([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<SalonRole>("employee");
@@ -27,13 +103,13 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
   const [invitations, setInvitations] = useState<any[]>([]);
   const [userDataMap, setUserDataMap] = useState<Record<string, {name: string, email: string}>>({});
 
+  // --- useEffect остается без изменений ---
   useEffect(() => {
     const fetchData = async () => {
       const salon = await fetchSalon(salonId);
       if (salon?.members) {
         setMembers(salon.members);
         
-        // Fetch user data for each member
         const userPromises = salon.members.map(member => 
           getUserById(member.userId).then(user => 
             user ? { ...user, id: member.userId } : null
@@ -59,24 +135,25 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
     getInvitationsBySalon(salonId).then(setInvitations);
   }, [salonId, fetchSalon, getInvitationsBySalon, getUserById]);
 
+  // --- handleInvite и handleCancelInvite остаются без изменений ---
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     
-    // Check if we've reached the maximum number of employees (3)
     if (members.length >= 3) {
       setError("Максимальное количество сотрудников - 3");
       setTimeout(() => setError(""), 3000);
       return;
     }
     
-    const invitationId = `${salonId}`;
+    // --- ИЗМЕНЕНИЕ: Генерируем более уникальный ID для приглашения ---
+    const invitationId = `inv_${salonId}_${Date.now()}`;
     try {
       await createInvitation(invitationId, {
         salonId,
         email,
         role,
-        invitedBy: "admin",
+        invitedBy: "admin", // Здесь должен быть ID текущего пользователя
         status: "pending",
         createdAt: new Date().toISOString(),
       });
@@ -85,7 +162,8 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       setSuccess(true);
       getInvitationsBySalon(salonId).then(setInvitations);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (error: any) {
+    } catch (error: any)
+     {
       setError(error.message || "Ошибка при отправке приглашения");
       setTimeout(() => setError(""), 3000);
     }
@@ -96,10 +174,16 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
     getInvitationsBySalon(salonId).then(setInvitations);
   };
 
+  // --- ИЗМЕНЕНИЕ: Упрощаем handleRoleChange, используя метод из контекста ---
   const handleRoleChange = async (idx: number, newRole: SalonRole) => {
     try {
+      // 1. Готовим новый массив участников
       const updated = members.map((m, i) => i === idx ? { ...m, role: newRole } : m);
-      await updateSalon(salonId, { members: updated });
+      
+      // 2. Вызываем единый метод из контекста, который сделает всю сложную работу
+      await updateSalonMembers(salonId, updated);
+      
+      // 3. Обновляем локальное состояние для мгновенного отклика UI
       setMembers(updated);
     } catch (error: any) {
       setError(error.message || "Ошибка при изменении роли");
@@ -107,16 +191,29 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
     }
   };
 
+  // --- ИЗМЕНЕНИЕ: Упрощаем handleRemove, используя метод из контекста ---
   const handleRemove = async (idx: number) => {
     try {
+      // 1. Готовим новый массив участников
       const updated = members.filter((_, i) => i !== idx);
-      await updateSalon(salonId, { members: updated });
+      
+      // 2. Вызываем единый метод из контекста
+      await updateSalonMembers(salonId, updated);
+      
+      // 3. Обновляем локальное состояние
       setMembers(updated);
     } catch (error: any) {
       setError(error.message || "Ошибка при удалении сотрудника");
       setTimeout(() => setError(""), 3000);
     }
   };
+
+  // --- Логика скелета и рендеринг остаются без изменений ---
+  const isInitialLoading = (loading || invitationLoading) && members.length === 0 && invitations.length === 0;
+
+  if (isInitialLoading) {
+    return <SalonStaffPageSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-3 sm:px-4 flex items-center justify-center">
@@ -235,4 +332,4 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       </div>
     </div>
   );
-} 
+}

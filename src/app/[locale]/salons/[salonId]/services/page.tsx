@@ -17,6 +17,70 @@ import { useEffect, useState } from "react";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
 
+// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
+// Скелет для одной карточки услуги
+const ServiceCardSkeleton = () => (
+  <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div className="p-0">
+      {/* Image Placeholder */}
+      <div className="h-48 bg-gray-200"></div>
+      <div className="p-6 space-y-4">
+        {/* Header Placeholder */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2">
+            <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
+            <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+          </div>
+          <div className="h-7 w-1/4 bg-gray-300 rounded"></div>
+        </div>
+        {/* Description Placeholder */}
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+        </div>
+        {/* Categories Placeholder */}
+        <div className="flex flex-wrap gap-2">
+          <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+          <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+        </div>
+        {/* Divider */}
+        <div className="shrink-0 bg-gray-200 h-[1px] w-full"></div>
+        {/* Image Management Placeholder */}
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-1/3 bg-gray-200 rounded"></div>
+          <div className="h-9 w-28 bg-gray-300 rounded-md"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonServicesPageSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-gradient-soft py-8 px-4 animate-pulse">
+      <div className="max-w-6xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="space-y-2">
+            <div className="h-9 w-64 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 w-80 bg-gray-200 rounded-md"></div>
+          </div>
+          <div className="h-12 w-full sm:w-48 bg-gray-300 rounded-md"></div>
+        </div>
+
+        {/* Services Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => <ServiceCardSkeleton key={i} />)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
 interface ServiceFormData {
   id: string;
   name: string;
@@ -192,7 +256,6 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
   const toggleCategory = (categoryId: string) => {
     setForm(prev => {
-      // If category is already selected, remove it
       if (prev.categoryIds.includes(categoryId)) {
         return {
           ...prev,
@@ -200,13 +263,11 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         };
       }
       
-      // Check if we've reached the maximum number of categories (6)
       if (prev.categoryIds.length >= 6) {
         setFormError(t("modal.errors.maxCategories"));
         return prev;
       }
       
-      // Add the new category
       return {
         ...prev,
         categoryIds: [...prev.categoryIds, categoryId]
@@ -255,7 +316,6 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     try {
       const newCategoryId = `cat_${Date.now()}`;
       
-      // ИЗМЕНЕНИЕ: Добавлено обязательное поле 'createdAt'
       const categoryData = {
         salonId: salonId,
         name: newCategoryName.trim(),
@@ -283,15 +343,9 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
   const selectedCategories = categories.filter(cat => form.categoryIds?.includes(cat.id));
 
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (serviceLoading && services.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>{t("loading")}</span>
-        </div>
-      </div>
-    );
+    return <SalonServicesPageSkeleton />;
   }
 
   return (

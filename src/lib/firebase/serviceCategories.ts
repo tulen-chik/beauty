@@ -26,6 +26,36 @@ export const getServiceCategoriesBySalonId = async (salonId: string): Promise<Se
   }));
 };
 
+/**
+ * Fetches a specified number of random service categories from the database.
+ * @param limit The number of random categories to fetch.
+ * @returns A promise that resolves to an array of random service categories.
+ */
+export const getRandomServiceCategories = async (limit: number = 15): Promise<ServiceCategory[]> => {
+  const categoriesRef = ref(db, 'serviceCategories');
+  const snapshot = await get(categoriesRef);
+
+  if (!snapshot.exists()) {
+    return [];
+  }
+
+  const categoriesData = snapshot.val();
+  const allCategories: ServiceCategory[] = Object.entries(categoriesData).map(([id, data]) => ({
+    ...(data as Omit<ServiceCategory, 'id'>),
+    id,
+  }));
+
+  // Перемешиваем массив для получения случайного порядка (алгоритм Фишера–Йейтса)
+  for (let i = allCategories.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allCategories[i], allCategories[j]] = [allCategories[j], allCategories[i]];
+  }
+
+  // Возвращаем первые 'limit' элементов из перемешанного массива
+  return allCategories.slice(0, limit);
+};
+
+
 export const serviceCategoryOperations = {
   create: (categoryId: string, data: Omit<ServiceCategory, 'id'>) =>
     createOperation(`serviceCategories/${categoryId}`, data, serviceCategorySchema),
@@ -33,4 +63,6 @@ export const serviceCategoryOperations = {
   update: (categoryId: string, data: Partial<ServiceCategory>) =>
     updateOperation(`serviceCategories/${categoryId}`, data, serviceCategorySchema),
   delete: (categoryId: string) => deleteOperation(`serviceCategories/${categoryId}`),
+  // Вы также можете добавить новый метод сюда для единообразия
+  getRandom: (limit: number = 15) => getRandomServiceCategories(limit),
 };

@@ -1,16 +1,93 @@
 'use client';
 
-import { CheckCircle, Clock,Filter, Star, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Filter, Star, XCircle } from 'lucide-react';
 import { useParams } from 'next/navigation';
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import RatingCard from '@/components/RatingCard';
 import RatingStats from '@/components/RatingStats';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+// --- ИЗМЕНЕНИЕ: УДАЛЕН ИМПОРТ СПИННЕРА ---
+// import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 import { useSalonRating } from '@/contexts';
 import { useUser } from '@/contexts';
 
+// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
+// Скелет для карточки отзыва
+const RatingCardSkeleton = () => (
+  <div className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0"></div>
+      <div className="flex-1 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="h-5 w-1/3 bg-gray-300 rounded"></div>
+          <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+        </div>
+        <div className="h-6 w-1/2 bg-gray-200 rounded"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Скелет для блока статистики
+const RatingStatsSkeleton = () => (
+  <div className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
+    <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-6"></div>
+    <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex-1 space-y-3">
+        <div className="h-8 w-32 bg-gray-200 rounded-lg"></div>
+        <div className="h-5 w-24 bg-gray-200 rounded-md"></div>
+      </div>
+      <div className="flex-1 space-y-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+            <div className="h-3 w-full bg-gray-200 rounded-full"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonRatingsPageSkeleton = () => (
+  <div className="min-h-screen bg-gray-50">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header Skeleton */}
+      <div className="mb-8 space-y-2">
+        <div className="h-9 w-3/4 bg-gray-300 rounded-lg"></div>
+        <div className="h-5 w-1/2 bg-gray-200 rounded-md"></div>
+      </div>
+
+      {/* Stats Skeleton */}
+      <RatingStatsSkeleton />
+
+      {/* Filters Skeleton */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 my-6">
+        <div className="flex items-center gap-4">
+          <div className="h-5 w-16 bg-gray-200 rounded"></div>
+          <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
+          <div className="h-8 w-32 bg-gray-200 rounded-full"></div>
+          <div className="h-8 w-28 bg-gray-200 rounded-full"></div>
+        </div>
+      </div>
+
+      {/* Ratings List Skeleton */}
+      <div className="space-y-6">
+        <RatingCardSkeleton />
+        <RatingCardSkeleton />
+      </div>
+    </div>
+  </div>
+);
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 export default function SalonRatingsPage() {
   const params = useParams();
@@ -44,7 +121,6 @@ export default function SalonRatingsPage() {
   const loadRatings = async () => {
     const salonRatings = await getRatingsBySalon(salonId);
     
-    // Загружаем ответы для каждого отзыва
     const responsesData: Record<string, any[]> = {};
     for (const rating of salonRatings) {
       const ratingResponses = await getResponsesByRating(rating.id);
@@ -106,10 +182,9 @@ export default function SalonRatingsPage() {
     }
   };
 
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
-    return (
-      <LoadingSpinner/>
-    );
+    return <SalonRatingsPageSkeleton />;
   }
 
   return (

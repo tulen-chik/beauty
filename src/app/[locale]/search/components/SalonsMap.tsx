@@ -2,9 +2,21 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
 
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
 import { loadGoogleMapsApi } from "@/lib/googleMapsLoader"; 
 import type { Salon } from "@/types/database";
+
+// --- НОВЫЙ КОМПОНЕНТ SKELETON ДЛЯ КАРТЫ ---
+const MapSkeleton = () => (
+  <div className="w-full h-full bg-gray-200 animate-pulse rounded-lg relative overflow-hidden border border-gray-200">
+    {/* Placeholder for UI elements to make it look more like a map interface */}
+    <div className="absolute top-4 right-4 space-y-2">
+      <div className="w-10 h-10 bg-gray-300 rounded-md"></div>
+      <div className="w-10 h-10 bg-gray-300 rounded-md"></div>
+    </div>
+    <div className="absolute bottom-4 right-4 w-12 h-12 bg-gray-300 rounded-full"></div>
+    <div className="absolute top-4 left-4 w-48 h-12 bg-gray-300 rounded-lg"></div>
+  </div>
+);
 
 export const SalonsMap = React.memo(({
   salons,
@@ -18,15 +30,10 @@ export const SalonsMap = React.memo(({
   userPosition: { latitude: number; longitude: number } | null
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  // 1. Заменяем useState для маркеров на useRef.
-  // Это позволит нам хранить маркеры без вызова повторных рендеров.
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
 
-  // 2. Удаляем onSalonClick из зависимостей useCallback, если она не меняется.
-  // Если onSalonClick обернута в useCallback в родительском компоненте, ее можно оставить.
-  // Для безопасности, предполагаем, что она может меняться.
   const initializeMap = useCallback(async () => {
     setMapLoading(true);
     setMapError(null);
@@ -35,13 +42,12 @@ export const SalonsMap = React.memo(({
       await loadGoogleMapsApi();
       if (!mapRef.current || !window.google?.maps) return;
 
-      // Очищаем старые маркеры перед отрисовкой новых
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
 
       const salonsWithCoords = salons.filter((s) => s.coordinates?.lat && s.coordinates?.lng);
       
-      let center = { lat: 53.9045, lng: 27.5615 }; // Центр по умолчанию (Минск)
+      let center = { lat: 53.9045, lng: 27.5615 }; // Default center (Minsk)
       if (userPosition) {
         center = { lat: userPosition.latitude, lng: userPosition.longitude };
       } else if (salonsWithCoords.length > 0) {
@@ -71,7 +77,6 @@ export const SalonsMap = React.memo(({
         return marker;
       });
 
-      // 3. Сохраняем новые маркеры в ref, а не в state.
       markersRef.current = newMarkers;
 
     } catch (error) {
@@ -84,17 +89,14 @@ export const SalonsMap = React.memo(({
   useEffect(() => {
     initializeMap();
 
-    // 4. Функция очистки теперь тоже использует ref.
-    // Она будет вызвана при размонтировании компонента.
     return () => {
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
     };
-  // 5. Убираем 'markers' из зависимостей. Теперь эффект зависит только от initializeMap,
-  // которая, в свою очередь, зависит от пропсов. Цикл разорван.
   }, [initializeMap]);
 
-  if (mapLoading) return <div className="w-full h-full flex items-center justify-center bg-gray-100"><LoadingSpinner/></div>;
+  // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Замена спиннера на скелет ---
+  if (mapLoading) return <MapSkeleton />;
   
   if (mapError) return <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-center"><p className="text-red-800 text-sm font-medium mb-2">Не удалось загрузить карту</p><p className="text-red-700 text-xs mb-4">Ошибка: {mapError}</p><button onClick={initializeMap} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Попробовать снова</button></div>;
   

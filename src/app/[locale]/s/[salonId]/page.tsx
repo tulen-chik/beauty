@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star, Images } from "lucide-react" // Добавлена иконка Images
+import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star, Images } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -16,6 +16,83 @@ import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { Salon, SalonSchedule, SalonWorkDay,  } from "@/types/salon"
 import { SalonService } from "@/types/services"
+
+// --- 1. НОВЫЙ КОМПОНЕНТ SKELETON ---
+const SalonPageSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-white animate-pulse">
+      {/* Top bar skeleton */}
+      <section className="py-6 bg-gray-50 border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="h-6 w-32 bg-gray-200 rounded-md"></div>
+        </div>
+      </section>
+
+      {/* Hero skeleton */}
+      <section className="py-8 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="h-64 md:h-80 rounded-3xl bg-gray-200"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* Content skeleton */}
+      <section className="py-6 md:py-10 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main content skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              <div>
+                <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
+                <div className="h-10 w-3/4 bg-gray-300 rounded-lg mt-4"></div>
+                <div className="h-5 w-1/2 bg-gray-200 rounded-md mt-2"></div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="h-7 w-1/3 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="border border-gray-200 rounded-xl p-4">
+                      <div className="flex gap-3">
+                        <div className="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-5 bg-gray-300 rounded w-full"></div>
+                          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="h-7 w-1/4 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="h-40 bg-gray-200 rounded-lg"></div>
+              </div>
+            </div>
+
+            {/* Sidebar skeleton */}
+            <div className="hidden lg:block lg:col-span-1">
+              <div className="sticky top-6 bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+                    <div className="h-5 w-1/2 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+                <div className="h-5 w-3/4 bg-gray-200 rounded"></div>
+                <div className="h-5 w-full bg-gray-200 rounded"></div>
+                <div className="h-10 w-full bg-gray-300 rounded-lg mt-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
 
 export default function SalonPublicPage() {
   const params = useParams() as { salonId:string; locale:string }
@@ -36,8 +113,6 @@ export default function SalonPublicPage() {
   const [services, setServices] = useState<SalonService[]>([])
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({})
   const [ratingStats, setRatingStats] = useState<any>(null)
-
-  // Удален useMemo, логика перенесена в JSX для ясности
 
   useEffect(() => {
     let cancelled = false
@@ -73,7 +148,6 @@ export default function SalonPublicPage() {
           if (!cancelled) setServices(list)
           
           const imagesMap: Record<string, string> = {}
-          // Используем Promise.all для параллельной загрузки изображений
           await Promise.all(list.map(async (svc) => {
             try {
               const imgs = await getImages(svc.id)
@@ -105,13 +179,9 @@ export default function SalonPublicPage() {
     }
   }, [salonId, fetchSalon, getSchedule, getServicesBySalon, getImages, getRatingStats])
 
-
+  // --- 2. ИСПОЛЬЗУЕМ SKELETON ВМЕСТО ТЕКСТА ЗАГРУЗКИ ---
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center text-gray-600">Загрузка...</div>
-      </div>
-    )
+    return <SalonPageSkeleton />;
   }
 
   if (error || !salon) {
@@ -131,7 +201,6 @@ export default function SalonPublicPage() {
     )
   }
 
-  // Определяем URL для главного изображения
   const heroImageUrl = services.length > 0 && serviceImages[services[0].id] 
     ? serviceImages[services[0].id] 
     : null;
@@ -162,7 +231,6 @@ export default function SalonPublicPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: ПЛЕЙСХОЛДЕР ДЛЯ ГЛАВНОГО ИЗОБРАЖЕНИЯ --- */}
             <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100">
               {heroImageUrl ? (
                 <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" />
@@ -207,7 +275,6 @@ export default function SalonPublicPage() {
                     {services.map((svc) => (
                       <div key={svc.id} className="group border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300">
                         <div className="flex gap-3">
-                          {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ: ПЛЕЙСХОЛДЕР ДЛЯ УСЛУГИ --- */}
                           <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
                             {serviceImages[svc.id] ? (
                               <Image src={serviceImages[svc.id]} alt={svc.name} fill className="object-cover" />

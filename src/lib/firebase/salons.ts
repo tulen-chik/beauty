@@ -11,13 +11,14 @@ import {
 import type {
   Salon,
   SalonInvitation,
+  SalonMember,
   SalonSchedule,
   SalonService,
   ServiceCategory,
   UserSalons,
 } from '@/types/database';
 
-import { ref, query, get, orderByChild, equalTo, limitToFirst, startAfter } from "firebase/database"
+import { ref, query, get, orderByChild, equalTo, limitToFirst, startAfter, update } from "firebase/database"
 
 import { db } from './init';
 import { z } from 'zod';
@@ -139,6 +140,90 @@ export const salonInvitationOperations = {
       id,
     }));
   },
+    /**
+   * Принимает приглашение в салон.
+   * Атомарно обновляет статус приглашения, добавляет пользователя в список участников салона
+   * и добавляет салон в список салонов пользователя.
+   * @param options - Объект с ID приглашения и ID пользователя.
+   * @returns Promise<void>
+   */
+  acceptInvitation: async (options: { invitationId: string; userId: string }): Promise<void> => {
+    const { invitationId, userId } = options;
+    const dbRef = ref(db);
+
+    // --- Шаг 1: Получаем все необходимые данные ---
+    const invitation = await salonInvitationOperations.read(invitationId);
+    if (!invitation) throw new Error("Invitation not found.");
+    if (invitation.status !== 'pending') {
+        console.log(`Приглашение ${invitationId} уже обработано. Статус: ${invitation.status}.`);
+        return; // Просто выходим, если приглашение уже не в статусе 'pending'
+    }
+
+    const salon = await salonOperations.read(invitation.salonId, false);
+    if (!salon) throw new Error("Salon not found.");
+
+    // --- Шаг 2: Готовим объект для многопутевого обновления ---
+    const updates: { [key: string]: any } = {};
+
+    // Проверяем, является ли пользователь уже участником
+    const isAlreadyMember = salon.members?.some(member => member.userId === userId);
+
+    if (isAlreadyMember) {
+        console.warn(`User ${userId} is already a member of salon ${salon.id}. Only updating invitation status.`);
+        // Если пользователь уже участник, нам нужно обновить ТОЛЬКО статус приглашения
+        updates[`salonInvitations/${invitationId}/status`] = 'accepted';
+    } else {
+        // Если пользователь еще не участник, готовим полное обновление
+        const userSalons = await userSalonsOperations.read(userId);
+        const now = new Date().toISOString();
+
+        const newMember: SalonMember = { userId, role: invitation.role, joinedAt: now };
+        const updatedMembers = [...(salon.members || []), newMember];
+
+        const newUserSalonEntry = { salonId: invitation.salonId, role: invitation.role, joinedAt: now };
+        const updatedUserSalonsList = [...(userSalons?.salons || []), newUserSalonEntry];
+
+        // Заполняем объект updates всеми необходимыми путями
+        updates[`salonInvitations/${invitationId}/status`] = 'accepted';
+        updates[`salons/${invitation.salonId}/members`] = updatedMembers;
+        updates[`userSalons/${userId}/salons`] = updatedUserSalonsList;
+
+        if (!userSalons) {
+            updates[`userSalons/${userId}/userId`] = userId;
+        }
+    }
+
+    // --- Шаг 3: Встроенная самодиагностика (ПРЕДПОЛЕТНАЯ ПРОВЕРКА) ---
+    // Этот блок — наш предохранитель. Он проверит все ключи перед отправкой.
+    for (const key in updates) {
+        if (key.startsWith('/')) {
+            // Если мы сюда попали, значит, в логике выше была допущена ошибка.
+            // Вместо непонятной ошибки Firebase, мы получим нашу собственную, ясную ошибку.
+            throw new Error(
+                `КРИТИЧЕСКАЯ ОШИБКА ЛОГИКИ: Попытка сгенерировать путь с ведущим слэшем: "${key}". Выполнение прервано.`
+            );
+        }
+    }
+
+    // --- Шаг 4: Выполнение единственной операции записи ---
+    // Если объект updates не пустой, выполняем атомарное обновление.
+    if (Object.keys(updates).length > 0) {
+        try {
+            console.log('Выполняется update со следующими данными:', updates);
+            await update(dbRef, updates);
+            console.log('Обновление успешно завершено.');
+        } catch (error) {
+            console.error('Произошла ошибка при выполнении `update`:', error);
+            // Если ошибка все еще здесь, то она не связана с ведущими слэшами.
+            throw error; // Пробрасываем ошибку дальше
+        }
+    } else {
+        console.log('Нечего обновлять. Выход из функции.');
+    }
+
+    // --- Шаг 5: Очистка кэша ---
+    cache.delete(`salon_${invitation.salonId}`);
+},
 };
 export const salonServiceOperations = {
   create: (serviceId: string, data: Omit<SalonService, 'id'>) =>

@@ -6,10 +6,60 @@ import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import ChatInterface from '@/components/ChatInterface';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+// --- ИЗМЕНЕНИЕ: УДАЛЕН ИМПОРТ СПИННЕРА ---
+// import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
+
+// --- НАЧАЛО: НОВЫЙ КОМПОНЕНТ SKELETON ---
+
+const ChatPageSkeleton = () => {
+  // Скелет для одного сообщения в чате
+  const MessageSkeleton = ({ align = 'left' }: { align?: 'left' | 'right' }) => (
+    <div className={`flex items-end gap-2 ${align === 'right' ? 'justify-end' : ''}`}>
+      {align === 'left' && <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0"></div>}
+      <div className={`p-3 rounded-lg max-w-xs space-y-2 ${align === 'left' ? 'bg-gray-200' : 'bg-gray-300'}`}>
+        <div className="h-4 bg-gray-300/50 rounded w-48"></div>
+        <div className="h-4 bg-gray-300/50 rounded w-32"></div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 animate-pulse">
+      <div className="max-w-4xl mx-auto p-4">
+        {/* Header Skeleton */}
+        <div className="mb-6">
+          <div className="h-6 w-36 bg-gray-200 rounded-md mb-4"></div>
+          <div className="bg-white rounded-lg p-4 shadow-sm space-y-2">
+            <div className="h-7 w-1/2 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 w-1/3 bg-gray-200 rounded-md"></div>
+          </div>
+        </div>
+
+        {/* Chat Interface Skeleton */}
+        <div className="h-[600px] bg-white rounded-lg border border-gray-200 flex flex-col">
+          {/* Messages Area */}
+          <div className="flex-1 p-4 space-y-4 overflow-hidden">
+            <MessageSkeleton align="left" />
+            <MessageSkeleton align="right" />
+            <MessageSkeleton align="left" />
+          </div>
+          {/* Input Area */}
+          <div className="p-4 border-t border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-10 bg-gray-200 rounded-lg"></div>
+              <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 export default function ChatPage() {
   const params = useParams();
@@ -31,8 +81,6 @@ export default function ChatPage() {
       if (!chatId || !currentUser) return;
 
       try {
-        // Загружаем чаты в зависимости от роли пользователя
-        // В реальном приложении нужно определить роль пользователя в салоне
         const chats = await getChatsByCustomer(currentUser.userId);
         const chat = chats.find(c => c.id === chatId);
         
@@ -48,10 +96,9 @@ export default function ChatPage() {
     loadChat();
   }, [chatId, currentUser, getChatsByCustomer, setCurrentChat]);
 
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
-    return (
-      <LoadingSpinner />
-    );
+    return <ChatPageSkeleton />;
   }
 
   if (error) {

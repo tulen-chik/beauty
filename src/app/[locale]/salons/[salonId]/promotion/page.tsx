@@ -12,22 +12,72 @@ import {
   Zap,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useEffect, useMemo,useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { usePromotion } from "@/contexts/PromotionContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 
 import type { SalonService } from "@/types/database"
-import type { PromotionAnalytics,ServicePromotion, ServicePromotionPlan } from "@/types/database"
+import type { PromotionAnalytics, ServicePromotion, ServicePromotionPlan } from "@/types/database"
+
+// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
+// Скелет для одной карточки услуги
+const ServicePromotionCardSkeleton = () => (
+  <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <div className="p-0">
+      {/* Image Placeholder */}
+      <div className="h-48 bg-gray-200"></div>
+      <div className="p-4 sm:p-6 space-y-4">
+        {/* Header Placeholder */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1 space-y-2">
+            <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
+            <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+          </div>
+          <div className="h-7 w-1/4 bg-gray-300 rounded"></div>
+        </div>
+        {/* Description Placeholder */}
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-200 rounded"></div>
+          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+        </div>
+        {/* Divider */}
+        <div className="shrink-0 bg-gray-200 h-[1px] w-full"></div>
+        {/* Action Button Placeholder */}
+        <div className="h-10 w-full bg-gray-300 rounded-md"></div>
+      </div>
+    </div>
+  </div>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonServicePromotionsPageSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-gradient-soft py-6 sm:py-8 px-4 animate-pulse">
+      <div className="max-w-6xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="space-y-2">
+            <div className="h-9 w-64 bg-gray-300 rounded-lg"></div>
+            <div className="h-5 w-80 bg-gray-200 rounded-md"></div>
+          </div>
+        </div>
+
+        {/* Services Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => <ServicePromotionCardSkeleton key={i} />)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 export default function SalonServicePromotionsPage() {
-  // Get salonId from URL params
   const { salonId } = useParams<{ salonId: string }>()
-
-  // Контекст для получения списка услуг
   const { getServicesBySalon, loading: servicesLoading, getImages } = useSalonService()
-
-  // Контекст для всей логики продвижения
   const {
     getAllServicePromotionPlans,
     findServicePromotionsBySalon,
@@ -42,18 +92,15 @@ export default function SalonServicePromotionsPage() {
   const [imagesMap, setImagesMap] = useState<Record<string, any[]>>({})
   const [imagesLoading, setImagesLoading] = useState<Record<string, boolean>>({})
 
-  // Состояние для модальных окон
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
 
-  // Данные для модальных окон
   const [serviceToPromote, setServiceToPromote] = useState<SalonService | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [promotionToView, setPromotionToView] = useState<ServicePromotion | null>(null)
   const [analyticsData, setAnalyticsData] = useState<PromotionAnalytics[]>([])
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
-  // Загрузка всех необходимых данных при инициализации
   useEffect(() => {
     const loadData = async () => {
       const [fetchedServices, fetchedPromotions, fetchedPlans] = await Promise.all([
@@ -63,7 +110,7 @@ export default function SalonServicePromotionsPage() {
       ])
       setServices(fetchedServices || [])
       setPromotions(fetchedPromotions || [])
-      setPlans(fetchedPlans.filter((p) => p.isActive) || []) // Показываем только активные планы
+      setPlans(fetchedPlans.filter((p) => p.isActive) || [])
 
       const map: Record<string, any[]> = {}
       const loadingMap: Record<string, boolean> = {}
@@ -86,7 +133,7 @@ export default function SalonServicePromotionsPage() {
 
   const handlePromoteClick = (service: SalonService) => {
     setServiceToPromote(service)
-    setSelectedPlanId(null) // Сбрасываем выбор плана
+    setSelectedPlanId(null)
     setShowPurchaseModal(true)
   }
 
@@ -114,7 +161,6 @@ export default function SalonServicePromotionsPage() {
 
       await createServicePromotion(promotionId, promotionData)
 
-      // Обновляем список продвижений
       const updatedPromotions = await findServicePromotionsBySalon(salonId)
       setPromotions(updatedPromotions)
 
@@ -139,7 +185,6 @@ export default function SalonServicePromotionsPage() {
     }
   }
 
-  // Мемоизированные данные для аналитики
   const analyticsSummary = useMemo(() => {
     if (!analyticsData || analyticsData.length === 0) {
       return { impressions: 0, clicks: 0, bookingsCount: 0 }
@@ -156,15 +201,9 @@ export default function SalonServicePromotionsPage() {
 
   const loading = servicesLoading && services.length === 0
 
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-soft flex items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Загрузка...</span>
-        </div>
-      </div>
-    )
+    return <SalonServicePromotionsPageSkeleton />;
   }
 
   return (
@@ -173,7 +212,6 @@ export default function SalonServicePromotionsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            {/* OPTIMIZATION: Responsive text size for the main header */}
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Продвижение услуг</h1>
             <p className="text-muted-foreground">Управляйте продвижением ваших услуг и отслеживайте результаты</p>
           </div>
@@ -226,7 +264,6 @@ export default function SalonServicePromotionsPage() {
                         </div>
                       )}
 
-                      {/* Status Badge */}
                       {activePromotion && (
                         <div className="absolute top-3 right-3">
                           <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-success/10 text-success border-success/20">
@@ -237,10 +274,7 @@ export default function SalonServicePromotionsPage() {
                       )}
                     </div>
 
-                    {/* OPTIMIZATION: Responsive padding for mobile */}
                     <div className="p-4 sm:p-6">
-                      {/* Service Header */}
-                      {/* OPTIMIZATION: Stack content vertically on mobile, horizontally on larger screens */}
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg text-foreground mb-1">{service.name}</h3>
@@ -262,7 +296,6 @@ export default function SalonServicePromotionsPage() {
                             )}
                           </div>
                         </div>
-                        {/* OPTIMIZATION: Align text to left on mobile, right on larger screens */}
                         <div className="text-left sm:text-right">
                           <div className="text-xl font-bold text-rose-500">{service.price} Br</div>
                           <div className="flex items-center gap-1 text-sm">
@@ -281,12 +314,10 @@ export default function SalonServicePromotionsPage() {
                         </div>
                       </div>
 
-                      {/* Description */}
                       {service.description && (
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{service.description}</p>
                       )}
 
-                      {/* Active Promotion Details */}
                       {activePromotion && (
                         <div className="p-3 bg-success/10 rounded-lg border border-success/20 text-sm space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-foreground/80">
@@ -298,7 +329,6 @@ export default function SalonServicePromotionsPage() {
 
                       <div className="shrink-0 bg-border h-[1px] w-full mb-4"></div>
 
-                      {/* Action Buttons */}
                       <div className="flex flex-col gap-2">
                         {activePromotion ? (
                           <button
@@ -337,11 +367,9 @@ export default function SalonServicePromotionsPage() {
           </div>
         )}
 
-        {/* Purchase Promotion Modal */}
         {showPurchaseModal && serviceToPromote && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
             <div
-              // OPTIMIZATION: Responsive max-width and padding for the modal
               className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-sm sm:max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-4 sm:p-6 shadow-lg duration-200 sm:rounded-lg max-h-[90vh] overflow-y-auto"
               onWheel={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -367,7 +395,6 @@ export default function SalonServicePromotionsPage() {
                         className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
                       >
                         <h4 className="font-semibold text-lg">{plan.name}</h4>
-                        {/* OPTIMIZATION: Responsive text size for price */}
                         <p className="text-xl sm:text-2xl font-bold my-2">
                           {plan.price} {plan.currency}
                         </p>
@@ -413,11 +440,9 @@ export default function SalonServicePromotionsPage() {
           </div>
         )}
 
-        {/* Analytics Modal */}
         {showAnalyticsModal && promotionToView && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
             <div
-              // OPTIMIZATION: Responsive max-width and padding for the modal
               className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-sm sm:max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-4 sm:p-6 shadow-lg duration-200 sm:rounded-lg max-h-[90vh] overflow-y-auto"
               onWheel={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -443,7 +468,6 @@ export default function SalonServicePromotionsPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
                     <div className="p-4 bg-muted/50 rounded-lg">
                       <p className="text-sm text-muted-foreground">Всего показов</p>
-                      {/* OPTIMIZATION: Responsive text size for stats */}
                       <p className="text-2xl sm:text-3xl font-bold">{analyticsSummary.impressions}</p>
                     </div>
                     <div className="p-4 bg-muted/50 rounded-lg">
@@ -457,7 +481,6 @@ export default function SalonServicePromotionsPage() {
                   </div>
 
                   <h3 className="font-medium mb-2">Статистика по дням:</h3>
-                  {/* OPTIMIZATION: Make table scrollable on mobile */}
                   <div className="border rounded-lg overflow-x-auto">
                     {analyticsData.length > 0 ? (
                       <table className="w-full text-sm whitespace-nowrap">

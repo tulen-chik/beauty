@@ -1,6 +1,6 @@
 "use client"
 
-import { Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Shield, User } from "lucide-react"
+import { ArrowLeft, Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Shield, User } from "lucide-react"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -10,14 +10,90 @@ import { getServiceImages } from "@/lib/firebase/database"
 
 import ChatButton from "@/components/ChatButton"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
-import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall"
+// --- ИЗМЕНЕНИЕ: УДАЛЕНЫ ИМПОРТЫ СПИННЕРОВ ---
+// import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+// import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall"
 
 import { useAppointment } from "@/contexts/AppointmentContext"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { useUser } from "@/contexts/UserContext"
+
+// --- НАЧАЛО: НОВЫЙ КОМПОНЕНТ SKELETON ---
+
+const BookServicePageSkeleton = () => {
+  return (
+    <div className="min-h-screen bg-gray-50 animate-pulse">
+      <div className="max-w-4xl mx-auto p-3 sm:p-4">
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          {/* Header Skeleton */}
+          <div className="p-4 border-b border-gray-200 flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-gray-200 flex-shrink-0"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
+              <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+              <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+            </div>
+            <div className="h-6 w-16 bg-gray-300 rounded"></div>
+          </div>
+
+          {/* Form Skeleton */}
+          <div className="p-3 sm:p-4 space-y-6">
+            {/* Schedule Display Skeleton */}
+            <div className="bg-gray-100 rounded-lg p-4 h-24"></div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Calendar Skeleton */}
+              <div>
+                <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 h-8 w-8 bg-gray-200 rounded-lg"></div>
+                  <div className="h-5 w-1/3 bg-gray-200 rounded"></div>
+                  <div className="p-2 h-8 w-8 bg-gray-200 rounded-lg"></div>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {[...Array(42)].map((_, i) => (
+                    <div key={i} className="h-10 bg-gray-100 rounded-lg"></div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Selection Skeleton */}
+              <div>
+                <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="h-5 w-3/4 bg-gray-200 rounded mb-3"></div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Other Form Fields Skeleton */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
+                  <div className="h-10 bg-gray-200 rounded-lg"></div>
+                </div>
+              ))}
+            </div>
+
+            {/* Buttons Skeleton */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="h-10 w-24 bg-gray-200 rounded-lg"></div>
+              <div className="h-10 w-36 bg-gray-300 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 type Service = {
   id: string
@@ -28,9 +104,6 @@ type Service = {
   durationMinutes: number
 }
 
-// --- ИЗМЕНЕНИЕ 1: Обновляем тип TimeSlot ---
-// Добавляем displayTime для отображения (e.g., "10:00 - 10:45")
-// и startTime для логики (e.g., "10:00")
 type TimeSlot = {
   displayTime: string
   startTime: string
@@ -40,7 +113,6 @@ type TimeSlot = {
 
 type DayAvailabilityStatus = 'loading' | 'available' | 'unavailable' | 'unchecked';
 
-// --- ИЗМЕНЕНИЕ 2: Вспомогательная функция для форматирования времени ---
 const formatTime = (date: Date): string => {
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -55,7 +127,6 @@ export default function BookServicePage() {
   const { currentUser } = useUser()
   const t = useTranslations('bookingPage')
   
-  // Contexts
   const { fetchSalon } = useSalon()
   const { isTimeSlotAvailable, createAppointment } = useAppointment()
   const { getSchedule } = useSalonSchedule()
@@ -73,7 +144,6 @@ export default function BookServicePage() {
   const [previewUrl, setPreviewUrl] = useState<string>("")
   const [salonSchedule, setSalonSchedule] = useState<any>(null)
 
-  // Form state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedTime, setSelectedTime] = useState<string>("")
   const [employeeId, setEmployeeId] = useState<string>("")
@@ -87,7 +157,6 @@ export default function BookServicePage() {
     }
   }, [currentUser])
 
-  // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([])
   const [loadingTimeSlots, setLoadingTimeSlots] = useState(false)
@@ -256,7 +325,6 @@ export default function BookServicePage() {
     };
   }, [calendarDays, salonSchedule, service, isTimeSlotAvailable]);
 
-  // --- ИЗМЕНЕНИЕ 3: Обновляем логику генерации слотов ---
   const generateTimeSlots = async () => {
     if (!selectedDate || !service || !salonSchedule || !isTimeSlotAvailable) {
       setAvailableTimeSlots([])
@@ -288,7 +356,6 @@ export default function BookServicePage() {
           const slotDate = new Date(selectedDate)
           slotDate.setHours(currentHour, 0, 0, 0)
 
-          // Рассчитываем время окончания
           const endDate = new Date(slotDate.getTime() + serviceDuration * 60000);
           
           const startTimeString = formatTime(slotDate);
@@ -415,8 +482,6 @@ export default function BookServicePage() {
 
       const appointmentId = Date.now().toString()
 
-      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-      // 1. Создаем базовый объект с обязательными полями
       const appointmentData: any = {
         salonId: service!.salonId,
         serviceId: service!.id,
@@ -427,7 +492,6 @@ export default function BookServicePage() {
         updatedAt: new Date().toISOString(),
       };
 
-      // 2. Условно добавляем необязательные поля, только если у них есть значение
       if (employeeId) {
         appointmentData.employeeId = employeeId;
       }
@@ -444,7 +508,6 @@ export default function BookServicePage() {
         appointmentData.notes = notes;
       }
       
-      // 3. Передаем в функцию уже "чистый" объект без undefined полей
       await createAppointment(service!.salonId, appointmentId, appointmentData)
 
       setSuccess(t('successMessage'))
@@ -472,10 +535,9 @@ export default function BookServicePage() {
     return selectedDate.toDateString() === date.toDateString()
   }
 
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
-    return (
-      <LoadingSpinner />
-    )
+    return <BookServicePageSkeleton />;
   }
 
   if (submissionError && !service) {
@@ -544,7 +606,8 @@ export default function BookServicePage() {
                 </div>
               </div>
             ) : !loading && (
-              <LoadingSpinner />
+              // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
+              <div className="bg-gray-100 rounded-lg p-4 h-24 animate-pulse"></div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -636,16 +699,20 @@ export default function BookServicePage() {
                     </div>
                     
                     {loadingTimeSlots ? (
-                      <LoadingSpinnerSmall />
+                      // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-pulse">
+                        {[...Array(6)].map((_, i) => (
+                          <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
+                        ))}
+                      </div>
                     ) : availableTimeSlots.length > 0 ? (
-                      // --- ИЗМЕНЕНИЕ 4: Обновляем JSX для отображения слотов ---
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-2">
                         {availableTimeSlots.map((slot, index) => (
                           <button
                             key={index}
                             onClick={() => { 
                               if (slot.available) {
-                                setSelectedTime(slot.startTime); // Сохраняем только время начала
+                                setSelectedTime(slot.startTime);
                                 if (formErrors.selectedTime) {
                                   setFormErrors(prev => ({ ...prev, selectedTime: '' }));
                                 }
@@ -655,7 +722,7 @@ export default function BookServicePage() {
                             className={`
                               p-3 text-sm rounded-lg border transition-colors
                               ${slot.available 
-                                ? selectedTime === slot.startTime // Сравниваем с временем начала
+                                ? selectedTime === slot.startTime
                                   ? 'bg-rose-600 text-white border-rose-600'
                                   : 'bg-white text-gray-700 border-gray-300 hover:border-rose-400 hover:bg-rose-50'
                                 : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
@@ -663,7 +730,7 @@ export default function BookServicePage() {
                             `}
                             title={slot.reason || `${t('timeSelector.slotLabel')}: ${slot.displayTime}`}
                           >
-                            {slot.displayTime} {/* Отображаем полный интервал */}
+                            {slot.displayTime}
                           </button>
                         ))}
                       </div>

@@ -218,13 +218,30 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const register = async (email: string, password: string, displayName: string) => {
+const register = async (email: string, password: string, displayName: string) => {
     try {
       setError(null);
-      await authService.register(email, password, displayName);
+      setLoading(true); // Устанавливаем загрузку в начале
+
+      // 1. Вызываем сервис регистрации и дожидаемся его полного завершения
+      // (включая создание записи в базе данных)
+      const firebaseUser = await authService.register(email, password, displayName);
+
+      // 2. Теперь, когда мы уверены, что пользователь создан и в Auth, и в DB,
+      // мы можем вручную обновить состояние приложения.
+      setFirebaseUser(firebaseUser);
+
+      // 3. Вызываем refreshUser, который теперь гарантированно найдет данные
+      // и установит currentUser.
+      await refreshUser(firebaseUser.uid);
+
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to register'));
+      // Важно пробросить ошибку дальше, чтобы компонент формы мог ее обработать
       throw err;
+    } finally {
+      // setLoading(false) можно не вызывать здесь, так как refreshUser
+      // уже управляет состоянием загрузки.
     }
   };
 

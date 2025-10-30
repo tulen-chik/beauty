@@ -1,7 +1,7 @@
 import type { SeoConfig } from '../../types/seo';
 
 export const seoConfig: SeoConfig = {
-  siteName: 'Beauty Platform',
+  siteName: 'Charming',
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://beauty-platform.com',
   description: 'Find the best beauty salons near you. Book appointments online with verified beauty professionals.',
   keywords: [
@@ -19,25 +19,25 @@ export const seoConfig: SeoConfig = {
     'cosmetology',
     'beauty platform'
   ],
-  author: 'Beauty Platform Team',
-  creator: 'Beauty Platform',
-  publisher: 'Beauty Platform',
+  author: 'Charming Team',
+  creator: 'Charming',
+  publisher: 'Charming',
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    siteName: 'Beauty Platform',
+    siteName: 'Charming',
     images: [
       {
         url: '/images/logo.jpg',
         width: 1200,
         height: 630,
-        alt: 'Beauty Platform - Find the best beauty salons near you',
+        alt: 'Charming - Find the best beauty salons near you',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    creator: '@beautyplatform',
+    creator: '@Charming',
     images: ['/og-image.jpg'],
   },
   robots: {

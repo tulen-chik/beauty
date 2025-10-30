@@ -103,10 +103,10 @@ export const ServiceCard = React.memo(({ service, locale, salonRating }: { servi
           {/* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */}
           <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
             {service.imageUrl ? (
-              <Image 
-                src={service.imageUrl} 
-                alt={service.name} 
-                fill 
+              <Image
+                src={service.imageUrl}
+                alt={service.name}
+                fill
                 className="object-cover"
                 sizes="(max-width: 768px) 20vw, 10vw"
               />
@@ -146,6 +146,25 @@ export const ServiceCard = React.memo(({ service, locale, salonRating }: { servi
   );
 });
 ServiceCard.displayName = 'ServiceCard';
+
+// --- НОВЫЙ КОМПОНЕНТ SKELETON CARD ---
+export const ServiceCardSkeleton = () => (
+    <div className="border-b border-gray-100 p-4">
+        <div className="flex items-start gap-4 animate-pulse">
+            <div className="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0"></div>
+            <div className="flex-1 min-w-0 space-y-3">
+                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                <div className="flex items-center justify-between">
+                    <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
 
 // --- 3. ИНТЕРФЕЙС ПРОПСОВ ДЛЯ ПАНЕЛИ ФИЛЬТРОВ ---
 interface SearchAndFilterPanelProps {
@@ -237,7 +256,9 @@ export const SearchAndFilterPanel = ({
 
             <div className="flex-1 overflow-y-auto">
                 {loading || geoLoading ? (
-                    <div className="text-center text-gray-500 p-10"><LoadingSpinner /></div>
+                    <div>
+                        {[...Array(5)].map((_, i) => <ServiceCardSkeleton key={i} />)}
+                    </div>
                 ) : (
                     filteredAndSortedServices.length === 0 ? (
                         <div className="text-center text-gray-500 p-10">

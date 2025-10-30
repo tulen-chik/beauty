@@ -96,6 +96,12 @@
     },
     "brand": {
       "name": "charming"
+    },
+    "roles": {
+      "owner": "Владелец",
+      "manager": "Менеджер",
+      "employee": "Сотрудник",
+      "viewer": "Просмотрщик"
     }
   },
   "salonCreation": {
@@ -990,7 +996,13 @@
       "role": "Ваша роль: {role}",
       "joined": "Присоединились: {date}",
       "goToCRM": "Перейти к управлению",
-      "failedToLoadName": "Не удалось загрузить название"
+      "failedToLoadName": "Не удалось загрузить название",
+    "roles": {
+      "owner": "Владелец",
+      "manager": "Менеджер",
+      "employee": "Сотрудник",
+      "viewer": "Наблюдатель"
+    }
     },
     "SalonServicesPage": {
       "header": {
@@ -1147,10 +1159,10 @@
       },
       "table": {
         "serviceName": "Наименование услуги",
-        "servicePrice": "Цена (руб.)",
+        "servicePrice": "Цена",
         "yearlyCount": "Кол-во за год",
         "monthlyPeriods": "Продажи по месяцам",
-        "yearlyTotal": "Итого за год (руб.)",
+        "yearlyTotal": "Итого за год",
         "grandTotal": "Общая сумма дохода",
         "details": "Детали"
       },

@@ -33,6 +33,108 @@ import ManualBookingModal from "./components/ManualBookingModal";
 // --- TYPE DEFINITIONS ---
 import { Salon, SalonWorkDay, WeekDay } from "@/types/database";
 
+// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
+// Скелет для мобильного вида (список дней)
+const MobileViewSkeleton = () => (
+  <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
+    {[...Array(3)].map((_, i) => (
+      <div key={i} className="border-b last:border-b-0 py-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 rounded-full bg-gray-200"></div>
+          <div className="space-y-2">
+            <div className="h-5 w-24 bg-gray-300 rounded"></div>
+            <div className="h-4 w-20 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+        <div className="py-6 text-center">
+          <div className="w-8 h-8 mx-auto mb-2 bg-gray-200 rounded-full"></div>
+          <div className="h-5 w-1/2 mx-auto bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Скелет для десктопного вида (сетка календаря)
+const DesktopViewSkeleton = () => (
+  <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
+    <div className="grid grid-cols-8 min-w-[1200px]">
+      {/* Time Column */}
+      <div>
+        {[...Array(10)].map((_, i) => (
+          <div key={i} className="h-24 flex items-center justify-center">
+            <div className="h-5 w-10 bg-gray-200 rounded"></div>
+          </div>
+        ))}
+      </div>
+      {/* Day Columns */}
+      {[...Array(7)].map((_, i) => (
+        <div key={i} className="border-l border-gray-200">
+          <div className="text-center py-2 border-b border-gray-200 space-y-1">
+            <div className="h-5 w-6 mx-auto bg-gray-300 rounded"></div>
+            <div className="h-7 w-8 mx-auto bg-gray-300 rounded-full"></div>
+          </div>
+          <div className="relative">
+            {[...Array(10)].map((_, j) => (
+              <div key={j} className="h-24 border-b border-gray-100"></div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// Основной компонент-скелет для всей страницы
+const SalonSchedulePageSkeleton = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-2">
+          <div className="h-8 w-64 bg-gray-300 rounded-lg"></div>
+          <div className="h-5 w-48 bg-gray-200 rounded-md"></div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-10 w-36 bg-gray-300 rounded-lg"></div>
+          <div className="h-10 w-40 bg-gray-300 rounded-lg"></div>
+        </div>
+      </div>
+
+      {/* Filters & Nav Skeleton */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="flex flex-col lg:flex-row gap-4 items-center">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
+            <div className="w-48 h-12 bg-gray-200 rounded-lg"></div>
+            <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
+          </div>
+          <div className="flex-1 h-px bg-gray-200 lg:h-auto lg:w-px"></div>
+          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Schedule View Skeleton */}
+      {isMobile ? <MobileViewSkeleton /> : <DesktopViewSkeleton />}
+    </div>
+  );
+};
+
+// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+
 type Appointment = {
   id: string;
   salonId: string;
@@ -62,7 +164,6 @@ type UserInfo = {
   email: string;
 };
 
-// --- CONSTANTS ---
 const WEEKDAYS = [
   { key: "monday", label: "Пн", fullLabel: "Понедельник", shortLabel: "Пн" },
   { key: "tuesday", label: "Вт", fullLabel: "Вторник", shortLabel: "Вт" },
@@ -80,14 +181,12 @@ const TIME_SLOTS = [
   "20:00", "20:30", "21:00",
 ];
 
-// --- CALENDAR GRID CONSTANTS ---
-const SLOT_HEIGHT_IN_REM = 6; // Corresponds to h-24 in Tailwind
+const SLOT_HEIGHT_IN_REM = 6;
 const MINUTES_PER_SLOT = 30;
 const REM_IN_PX = 16;
-const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX; // 6 * 16 = 96px
-const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT; // 96px / 30min = 3.2px/min
+const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX;
+const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
 
-// --- HELPER FUNCTIONS ---
 const timeToMinutes = (timeString: string) => {
   const [hours, minutes] = timeString.split(':').map(Number);
   return hours * 60 + minutes;
@@ -95,13 +194,11 @@ const timeToMinutes = (timeString: string) => {
 
 const DAY_START_MINUTES = timeToMinutes(TIME_SLOTS[0]);
 
-// --- MAIN COMPONENT ---
 export default function SalonSchedulePage() {
   const params = useParams() as { salonId: string; locale: string };
   const { salonId } = params;
   const t = useTranslations("salonSchedule");
 
-  // --- STATE MANAGEMENT ---
   const [salon, setSalon] = useState<Salon | null>(null);
   const [weeklySchedule, setWeeklySchedule] = useState<SalonWorkDay[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -123,18 +220,15 @@ export default function SalonSchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("");
 
-  // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
 
-  // --- HOOKS ---
   const { getSchedule, updateSchedule } = useSalonSchedule();
   const { listAppointmentsByDay, updateAppointment } = useAppointment();
   const { currentUser, getUserById } = useUser();
   const { fetchSalon } = useSalon();
   const { getServicesBySalon } = useSalonService();
 
-  // --- DATA FETCHING ---
   useEffect(() => {
     const loadSalonData = async () => {
       try {
@@ -152,7 +246,6 @@ export default function SalonSchedulePage() {
       setLoading(true);
       setError(null);
       try {
-        // 1. Load Schedule
         const schedule = await getSchedule(salonId);
         setWeeklySchedule(
           schedule?.weeklySchedule ||
@@ -163,11 +256,9 @@ export default function SalonSchedulePage() {
           }))
         );
 
-        // 2. Load Services
         const svcs = await getServicesBySalon(salonId);
         setServices(svcs);
 
-        // 3. Load Appointments for the current week view
         const weekDates = getWeekDates(currentWeekOffset);
         const allAppointments = (
           await Promise.all(
@@ -176,7 +267,6 @@ export default function SalonSchedulePage() {
         ).flat();
         setAppointments(allAppointments);
 
-        // 4. Load User data for appointments
         const userIds = new Set<string>();
         allAppointments.forEach((apt) => {
           if (apt.employeeId) userIds.add(apt.employeeId);
@@ -207,7 +297,6 @@ export default function SalonSchedulePage() {
     loadScheduleData();
   }, [salonId, currentWeekOffset, getSchedule, getServicesBySalon, listAppointmentsByDay, getUserById]);
 
-  // --- DERIVED STATE & MEMOS ---
   const isSalonOwner = useMemo(() => 
     salon?.members?.some(
       member => member.userId === currentUser?.userId && member.role === 'owner'
@@ -224,7 +313,6 @@ export default function SalonSchedulePage() {
     });
   }, [appointments, statusFilter, serviceFilter]);
 
-  // --- RESPONSIVE CHECK ---
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
     checkMobile();
@@ -232,7 +320,6 @@ export default function SalonSchedulePage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // --- HELPER & UTILITY FUNCTIONS ---
   const today = new Date();
   const isTodayDate = (date: Date) => date.toDateString() === today.toDateString();
 
@@ -278,24 +365,18 @@ export default function SalonSchedulePage() {
 
   const getStatusText = (status: string) => t(`status.${status}`) || status;
 
-  // --- EVENT HANDLERS ---
   const handleSaveSchedule = async () => {
     setModalError(null);
     try {
-      // Создаем очищенную версию расписания для отправки на сервер
       const scheduleToSave = {
         salonId,
         updatedAt: new Date().toISOString(),
         weeklySchedule: weeklySchedule.map(day => ({
           ...day,
-          // Гарантируем, что 'times' всегда является массивом.
-          // Если день открыт (isOpen: true), используем существующий массив times или создаем новый по умолчанию, если он пуст.
-          // Если день закрыт (isOpen: false), 'times' должен быть пустым массивом [].
           times: day.isOpen ? (day.times || []).filter(t => t.start && t.end) : [],
         })),
       };
 
-      // Используем очищенные данные для обновления
       await updateSchedule(salonId, scheduleToSave);
 
       setSuccess(true);
@@ -328,7 +409,6 @@ export default function SalonSchedulePage() {
   
   const handleBookingSuccess = () => {
     setIsManualBookingOpen(false);
-    // Обновляем записи, повторно вызвав эффект загрузки данных
     setCurrentWeekOffset(prev => prev); 
   };
 
@@ -363,16 +443,9 @@ export default function SalonSchedulePage() {
     ));
   };
 
-  // --- RENDER LOGIC ---
+  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">{t("loading")}</p>
-        </div>
-      </div>
-    );
+    return <SalonSchedulePageSkeleton />;
   }
 
   if (error) {
@@ -391,7 +464,6 @@ export default function SalonSchedulePage() {
     );
   }
 
-  // --- SUB-COMPONENTS ---
   const PositionedAppointmentCard = ({ appointment }: { appointment: Appointment }) => {
     const service = services.find((s) => s.id === appointment.serviceId);
     const appointmentStart = new Date(appointment.startAt);
@@ -406,7 +478,7 @@ export default function SalonSchedulePage() {
         onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
         style={{ 
           top: `${top}px`, 
-          height: `calc(${height}px - 2px)` // Subtract 2px for a small gap
+          height: `calc(${height}px - 2px)`
         }}
         className={`absolute left-1 right-1 p-1.5 rounded-lg border flex flex-col overflow-hidden text-left transition-all hover:shadow-md hover:border-rose-400 ${getStatusColor(appointment.status)}`}
       >
@@ -711,7 +783,6 @@ export default function SalonSchedulePage() {
                             </div>
                         </div>
                         <div className="relative">
-                            {/* Background grid to ensure container height and provide visual guide */}
                             {TIME_SLOTS.map((time) => (
                                 <div
                                     key={time}

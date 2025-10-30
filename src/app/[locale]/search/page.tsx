@@ -14,7 +14,7 @@ import { SearchAndFilterPanel } from "./components/Selectors"
 import { MapPanel } from "./components/Selectors"
 
 // --- ИМПОРТ ТИПОВ ДАННЫХ ---
-import type { Salon, SalonService, ServiceCategory } from "@/types/database"; // Используем существующие типы
+import type { Salon, SalonService, ServiceCategory } from "@/types/database";
 
 // --- НОВЫЙ ТИП ДЛЯ ОБРАБОТАННЫХ ДАННЫХ ---
 interface ProcessedService extends SalonService {
@@ -37,7 +37,8 @@ export default function SearchPage() {
   // --- ИСПОЛЬЗОВАНИЕ КОНТЕКСТОВ ---
   const { getRatingStats } = useSalonRating();
   const { findActiveServicePromotion } = usePromotion();
-  const { getCategoriesBySalon } = useServiceCategory();
+  // --- ИЗМЕНЕНИЕ 1: Получаем новый метод getRandomCategories из контекста ---
+  const { getCategoriesBySalon, getRandomCategories } = useServiceCategory();
   const { getServicesByCity, getServicesBySalon } = useSalonService();
   const { city: userCity, position, loading: geoLoading } = useGeolocation();
   const { fetchSalonsByCity } = useSalon();
@@ -98,15 +99,12 @@ export default function SearchPage() {
         let hasMoreSalons = true;
 
         while (hasMoreSalons) {
-          // --- ИСПРАВЛЕНИЕ ---
-          // 1. Получаем результат в одну переменную с явным типом.
           const response: { salons: Salon[]; nextKey: string | null } = await fetchSalonsByCity({
             city: currentCity,
             limit: SALON_PAGE_SIZE,
             startAfterKey: currentSalonNextKey,
           });
 
-          // 2. Теперь безопасно используем свойства из этой переменной.
           accumulatedSalons = [...accumulatedSalons, ...response.salons];
           currentSalonNextKey = response.nextKey ?? undefined;
           hasMoreSalons = !!response.nextKey;
@@ -136,19 +134,26 @@ export default function SearchPage() {
     loadDataForCity();
   }, [currentCity]);
 
+  // --- ИЗМЕНЕНИЕ 2: Обновляем логику загрузки категорий ---
   useEffect(() => {
     const loadCategories = async () => {
-        if (!selectedSalonId) {
-            setCategories([]);
-            setCategoriesById({});
-            return;
+        let categoriesData: ServiceCategory[] = [];
+        
+        if (selectedSalonId) {
+            // Если салон выбран, загружаем его категории
+            categoriesData = await getCategoriesBySalon(selectedSalonId);
+        } else {
+            // Если салон не выбран, загружаем 20 случайных категорий для общего фильтра
+            categoriesData = await getRandomCategories(20);
         }
-        const categoriesData = await getCategoriesBySalon(selectedSalonId);
+        
         setCategories(categoriesData);
         setCategoriesById(Object.fromEntries(categoriesData.map(c => [c.id, c])));
     };
+    
     loadCategories();
-  }, [selectedSalonId, getCategoriesBySalon]);
+  // --- ИЗМЕНЕНИЕ 3: Добавляем getRandomCategories в массив зависимостей ---
+  }, [selectedSalonId, getCategoriesBySalon, getRandomCategories]);
 
 
   const processServicesChunk = useCallback(async (chunk: SalonService[], currentSalonsMap: Record<string, Salon>): Promise<ProcessedService[]> => {
@@ -236,7 +241,6 @@ export default function SearchPage() {
       filtered = filtered.filter(s => s.name.toLowerCase().includes(qLower) || s.description?.toLowerCase().includes(qLower) || s.categoryName?.toLowerCase().includes(qLower));
     }
     if (selectedCategory) {
-      // Обновленная логика для массива categoryIds
       filtered = filtered.filter(s => s.categoryIds?.includes(selectedCategory));
     }
     
@@ -267,7 +271,7 @@ export default function SearchPage() {
   return (
   <div
     className="flex flex-col md:flex-row bg-gray-50 overflow-hidden"
-    style={{ height: 'calc(100vh - 4rem - 1px)' }} // 4rem - стандартная высота хедера (h-16 в Tailwind)
+    style={{ height: 'calc(100vh - 4rem - 1px)' }}
   >
       <SearchAndFilterPanel
         mobileView={mobileView}

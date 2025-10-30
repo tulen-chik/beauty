@@ -11,9 +11,66 @@ import {
   FacebookIcon,   FacebookShareButton, LinkedinIcon, LinkedinShareButton, TelegramIcon, TelegramShareButton, TwitterIcon, TwitterShareButton, WhatsappIcon,
 WhatsappShareButton,
 } from "react-share"
+const BlogPostSkeleton = () => (
+  <div className="min-h-screen bg-white animate-pulse">
+    {/* Header Skeleton */}
+    <section className="py-12 bg-gray-50 border-b border-gray-200">
+      <div className="container mx-auto px-4">
+        <div className="h-6 w-32 bg-gray-200 rounded-md mb-6"></div>
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="h-8 w-36 bg-gray-200 rounded-full mb-6 mx-auto"></div>
+          <div className="h-12 w-4/5 bg-gray-300 rounded-lg mb-6 mx-auto"></div>
+          <div className="flex items-center justify-center gap-6">
+            <div className="h-5 w-28 bg-gray-200 rounded-md"></div>
+            <div className="h-5 w-32 bg-gray-200 rounded-md"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
+    {/* Featured Image Skeleton */}
+    <section className="py-8 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="h-96 rounded-3xl bg-gray-200"></div>
+        </div>
+      </div>
+    </section>
 
+    {/* Article Content Skeleton */}
+    <section className="py-12 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+            <div className="lg:col-span-3 space-y-4">
+              <div className="h-5 bg-gray-200 rounded w-full"></div>
+              <div className="h-5 bg-gray-200 rounded w-full"></div>
+              <div className="h-5 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-5 bg-gray-200 rounded w-full mt-6"></div>
+              <div className="h-5 bg-gray-200 rounded w-4/5"></div>
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
+                <div className="h-6 w-3/4 bg-gray-300 rounded-lg mb-4"></div>
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+);
 // 1. Импортируем хук из вашего контекста и типы
 import { useBlogAdmin as useBlog } from "@/contexts/BlogAdminContext"
 
@@ -86,7 +143,7 @@ export default function BlogPostPage() {
 
   // 5. Обрабатываем состояния загрузки и "не найдено"
   if (loading && !post) {
-    return <LoadingSpinner />;
+    return <BlogPostSkeleton />;
   }
 
   if (!loading && !post) {
@@ -95,7 +152,7 @@ export default function BlogPostPage() {
   
   // Если post есть, но категории еще нет (редкий случай), можно показать заглушку
   if (!category) {
-      return <LoadingSpinner />;
+      return <BlogPostSkeleton />;
   }
 
   return (

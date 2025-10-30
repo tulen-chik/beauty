@@ -1,16 +1,18 @@
-import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
-import { serviceCategoryOperations } from '@/lib/firebase/database';
-import { getServiceCategoriesBySalonId } from '@/lib/firebase/serviceCategories';
+// --- ИЗМЕНЕНИЕ 1: Импортируем новую функцию ---
+import { getServiceCategoriesBySalonId, getRandomServiceCategories, serviceCategoryOperations } from '@/lib/firebase/database'; // Предполагается, что обе функции в одном файле
 
 import type { ServiceCategory } from '@/types/database';
 
+// --- ИЗМЕНЕНИЕ 2: Добавляем новый метод в тип контекста ---
 interface ServiceCategoryContextType {
   getCategory: (categoryId: string) => Promise<ServiceCategory | null>;
   createCategory: (categoryId: string, data: Omit<ServiceCategory, 'id'>) => Promise<ServiceCategory>;
   updateCategory: (categoryId: string, data: Partial<ServiceCategory>) => Promise<ServiceCategory>;
   deleteCategory: (categoryId: string) => Promise<void>;
   getCategoriesBySalon: (salonId: string) => Promise<ServiceCategory[]>;
+  getRandomCategories: (limit?: number) => Promise<ServiceCategory[]>; // Новый метод
   loading: boolean;
   error: string | null;
 }
@@ -31,13 +33,13 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const category = await serviceCategoryOperations.read(categoryId);
-      setLoading(false);
+      const category = await serviceCategoryOperations.read(categoryId); // Если вы используете serviceCategoryOperations
       return category;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -46,12 +48,12 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setError(null);
     try {
       const category = await serviceCategoryOperations.create(categoryId, data);
-      setLoading(false);
       return category;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -60,12 +62,12 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setError(null);
     try {
       const updated = await serviceCategoryOperations.update(categoryId, data);
-      setLoading(false);
       return updated;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -74,35 +76,52 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setError(null);
     try {
       await serviceCategoryOperations.delete(categoryId);
-      setLoading(false);
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Получить все категории по salonId
   const getCategoriesBySalon = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
       const categories = await getServiceCategoriesBySalonId(salonId);
-      setLoading(false);
       return categories;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return [];
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // --- ИЗМЕНЕНИЕ 3: Реализуем новый метод в провайдере ---
+  const getRandomCategories = useCallback(async (limit: number = 15) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const categories = await getRandomServiceCategories(limit);
+      return categories;
+    } catch (e: any) {
+      setError(e.message);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+
+  // --- ИЗМЕНЕНИЕ 4: Добавляем метод в `value` и в зависимости `useMemo` ---
   const value: ServiceCategoryContextType = useMemo(() => ({
     getCategory,
     createCategory,
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
+    getRandomCategories, // Добавлено
     loading,
     error,
   }), [
@@ -111,6 +130,7 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     updateCategory,
     deleteCategory,
     getCategoriesBySalon,
+    getRandomCategories, // Добавлено
     loading,
     error,
   ]);
@@ -120,4 +140,4 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
       {children}
     </ServiceCategoryContext.Provider>
   );
-}; 
+};
