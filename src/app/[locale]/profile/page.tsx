@@ -1,10 +1,11 @@
 "use client"
 
-import { AlertCircle, Building2, CheckCircle, LogOut, MessageCircle, Search, XCircle } from "lucide-react"
+import { AlertCircle, Building2, CheckCircle, LogOut, MessageCircle, Search, UserCircle, XCircle } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import RatingCard from "@/components/RatingCard"
 import RatingForm from "@/components/RatingForm"
@@ -21,10 +22,11 @@ import { Appointment, Salon, SalonInvitation, SalonRating, SalonService, User } 
 
 type FormErrors = {
   displayName?: string;
+  avatar?: string;
   general?: string;
 };
 
-// --- SKELETON COMPONENTS (без изменений) ---
+// --- SKELETON COMPONENTS ---
 const AppointmentCardSkeleton = () => (
   <div className="border border-gray-200 rounded-lg p-4 animate-pulse">
     <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
@@ -101,7 +103,6 @@ const ProfilePageSkeleton = () => (
   </div>
 );
 
-
 const getRoleLabel = (role: string, t: (key: string) => string) => {
   const roles: Record<string, string> = {
     owner: t('roles.owner'),
@@ -118,7 +119,16 @@ export default function ProfilePage() {
   const tRoles = useTranslations('common');
   const router = useRouter()
 
-  const { currentUser, loading: userLoading, updateProfile, logout, getUserById } = useUser()
+  const { 
+    currentUser, 
+    loading: userLoading, 
+    updateProfile, 
+    logout, 
+    getUserById,
+    uploadAvatar,
+    removeAvatar
+  } = useUser()
+  
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
   const { updateInvitation, getInvitationsByEmail, acceptInvitation } = useSalonInvitation();
   const { getService } = useSalonService();
@@ -138,9 +148,20 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState<string | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
   const [invitations, setInvitations] = useState<SalonInvitation[]>([]);
-  // Новое состояние для "обогащенных" данных
   const [enrichedInvitations, setEnrichedInvitations] = useState<(SalonInvitation & { salon: Salon | null })[]>([]);
 
+  // Состояния для управления аватаром
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarInitials = useMemo(() => {
+    const name = currentUser?.displayName || currentUser?.email || '';
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/).slice(0, 2);
+    return parts.map((p) => p[0]?.toUpperCase() || '').join('');
+  }, [currentUser]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -169,71 +190,39 @@ export default function ProfilePage() {
 
         const pendingInvitations = userInvitations.filter((inv) => inv.status === 'pending');
         setInvitations(pendingInvitations);
-        console.log("LOG 1: Полученные приглашения (pending):", pendingInvitations);
-
         setUserRatings(ratings);
 
-        const serviceIds = new Set<string>();
-        const employeeIds = new Set<string>();
-        const appointmentSalonIds = new Set<string>();
-        userAppointments.forEach(a => {
-          appointmentSalonIds.add(a.salonId);
-          serviceIds.add(a.serviceId);
-          if (a.employeeId) employeeIds.add(a.employeeId);
-        });
-
+        const serviceIds = new Set(userAppointments.map(a => a.serviceId));
+        const employeeIds = new Set(userAppointments.map(a => a.employeeId).filter(Boolean) as string[]);
+        const appointmentSalonIds = new Set(userAppointments.map(a => a.salonId));
         const invitationSalonIds = new Set(pendingInvitations.map(inv => inv.salonId));
         
         const allUniqueSalonIds = Array.from(new Set([
-            ...Array.from(appointmentSalonIds), 
-            ...Array.from(invitationSalonIds)
-        ]));
-        console.log("LOG 2: Все уникальные ID салонов для загрузки:", allUniqueSalonIds);
+          ...Array.from(appointmentSalonIds), 
+          ...Array.from(invitationSalonIds)
+      ]));
 
-        const salonPromises = allUniqueSalonIds.map(id => fetchSalon(id));
-        const servicePromises = Array.from(serviceIds).map(id => getService(id));
-        const employeePromises = Array.from(employeeIds).map(id => getUserById(id));
+        const [fetchedSalonsRaw, fetchedServices, fetchedEmployees] = await Promise.all([
+          Promise.all(allUniqueSalonIds.map(id => fetchSalon(id))),
+          Promise.all(Array.from(serviceIds).map(id => getService(id))),
+          Promise.all(Array.from(employeeIds).map(id => getUserById(id))),
+        ]);
 
-const [fetchedSalonsRaw, fetchedServices, fetchedEmployees] = await Promise.all([
-  Promise.all(salonPromises),
-  Promise.all(servicePromises),
-  Promise.all(employeePromises),
-]);
-console.log("LOG 3: Результат fetchSalon (сырые данные):", fetchedSalonsRaw);
-
-// Вручную добавляем ID к каждому полученному объекту салона
-const fetchedSalons = fetchedSalonsRaw.map((salon, index) => {
-  if (salon) {
-    // Берем ID из массива, по которому делали запросы
-    return { ...salon, id: allUniqueSalonIds[index] };
-  }
-  return null;
-});
-
-const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
-        console.log("LOG 4: Салоны после фильтрации null:", filteredSalons);
-        setSalons(filteredSalons);
+        const fetchedSalons = fetchedSalonsRaw.map((salon, index) => 
+          salon ? { ...salon, id: allUniqueSalonIds[index] } : null
+        ).filter((s): s is Salon => s !== null);
+        
+        setSalons(fetchedSalons);
         setServices(fetchedServices.filter((s): s is SalonService => s !== null));
-
-        const validEmployees = fetchedEmployees.filter((e): e is User => e !== null);
-        const employeeMap = new Map(validEmployees.map(e => [e.id, e]));
+        
+        const employeeMap = new Map(fetchedEmployees.filter((e): e is User => e !== null).map(e => [e.id, e]));
         setEmployees(Object.fromEntries(employeeMap));
 
-        // --- БЛОК ОБЪЕДИНЕНИЯ ДАННЫХ С ЛОГИРОВАНИЕМ ---
-        const salonsMap = new Map(filteredSalons.map(s => [s.id, s]));
-        console.log("LOG 5: Создана карта салонов (salonsMap):", salonsMap);
-        
-        const enriched = pendingInvitations.map(inv => {
-          const foundSalon = salonsMap.get(inv.salonId);
-          if (!foundSalon) {
-            console.warn(`WARN: Салон с ID ${inv.salonId} не найден в карте салонов для приглашения.`, inv);
-          }
-          return {
-            ...inv,
-            salon: foundSalon || null
-          }
-        });
-        console.log("LOG 6: Обогащенные приглашения (перед установкой в state):", enriched);
+        const salonsMap = new Map(fetchedSalons.map(s => [s.id, s]));
+        const enriched = pendingInvitations.map(inv => ({
+          ...inv,
+          salon: salonsMap.get(inv.salonId) || null
+        }));
         setEnrichedInvitations(enriched);
 
       } catch (e) {
@@ -284,6 +273,69 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
     }
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB
+        setErrors({ ...errors, avatar: "Размер файла не должен превышать 2 МБ." });
+        return;
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setErrors({ ...errors, avatar: "Пожалуйста, выберите изображение (JPG, PNG, WEBP)." });
+        return;
+      }
+
+      setErrors({});
+      setAvatarFile(file);
+      setAvatarPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const cancelAvatarChange = () => {
+    setAvatarFile(null);
+    setAvatarPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!avatarFile) return;
+
+    setIsAvatarUploading(true);
+    setMsg(null);
+    setErrors({});
+    try {
+      await uploadAvatar(avatarFile);
+      setMsg("Аватар успешно обновлен!");
+      cancelAvatarChange();
+    } catch (e: any) {
+      console.error("Avatar upload error:", e);
+      setErrors({ general: e?.message || "Не удалось загрузить аватар." });
+    } finally {
+      setIsAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!currentUser?.avatarUrl) return;
+
+    if (window.confirm("Вы уверены, что хотите удалить свой аватар?")) {
+      setIsAvatarUploading(true);
+      setMsg(null);
+      setErrors({});
+      try {
+        await removeAvatar();
+        setMsg("Аватар удален.");
+      } catch (e: any) {
+        console.error("Avatar removal error:", e);
+        setErrors({ general: e?.message || "Не удалось удалить аватар." });
+      } finally {
+        setIsAvatarUploading(false);
+      }
+    }
+  };
+
   const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
     if (!currentUser) {
       setErrors({ general: "Для принятия приглашения необходимо войти в аккаунт." });
@@ -298,7 +350,7 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
       } else {
         await updateInvitation(invitationId, { status: 'declined' });
         setInvitations((prev) => prev.filter(inv => inv.id !== invitationId));
-        setEnrichedInvitations((prev) => prev.filter(inv => inv.id !== invitationId)); // Также обновляем обогащенные данные
+        setEnrichedInvitations((prev) => prev.filter(inv => inv.id !== invitationId));
       }
 
       setMsg(accept ? "Приглашение принято! Страница перезагружается..." : "Приглашение отклонено.");
@@ -364,7 +416,6 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
   }
 
   const renderInvitations = () => {
-    console.log("LOG 7: Рендеринг блока приглашений с данными:", enrichedInvitations);
     if (enrichedInvitations.length === 0) return null;
 
     return (
@@ -379,7 +430,6 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
           <div className="divide-y divide-gray-100">
             {enrichedInvitations.map((invitation) => {
               const salon = invitation.salon;
-              console.log(`LOG 8: Рендеринг приглашения ID ${invitation.id}, найденный салон:`, salon);
               return (
                 <div key={invitation.id} className="p-3 sm:p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -487,7 +537,7 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
           <div className="p-3 sm:p-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-bold text-gray-900">{t('settings.title')}</h2>
           </div>
-          <div className="p-3 sm:p-4 space-y-4">
+          <div className="p-3 sm:p-4 space-y-6">
             {msg && (
               <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-sm">
                 <CheckCircle className="w-4 h-4" />
@@ -500,6 +550,96 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
                 <span>{errors.general}</span>
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Аватар</label>
+              <div className="flex items-center gap-5">
+                <div className="group relative h-24 w-24 sm:h-28 sm:w-28 rounded-full ring-2 ring-rose-200 shadow-sm overflow-hidden">
+                  {avatarPreviewUrl ? (
+                    <Image src={avatarPreviewUrl} alt="Предпросмотр аватара" fill className="object-cover" />
+                  ) : currentUser.avatarUrl ? (
+                    <Image src={currentUser.avatarUrl} alt="Текущий аватар" fill className="object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-rose-100">
+                      {avatarInitials ? (
+                        <span className="text-rose-700 font-semibold text-xl">{avatarInitials}</span>
+                      ) : (
+                        <UserCircle className="h-12 w-12 text-rose-300" />
+                      )}
+                    </div>
+                  )}
+                  {/* hover overlay */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isAvatarUploading}
+                    className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/40 text-white text-xs font-medium transition-opacity"
+                    aria-label="Изменить аватар"
+                  >
+                    Изменить
+                  </button>
+                  {/* uploading overlay */}
+                  {isAvatarUploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/60">
+                      <div className="h-6 w-6 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/png, image/jpeg, image/webp"
+                    className="hidden"
+                  />
+                  {!avatarFile ? (
+                    <>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isAvatarUploading}
+                        className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        Изменить
+                      </button>
+                      {currentUser.avatarUrl && (
+                        <button
+                          onClick={handleAvatarRemove}
+                          disabled={isAvatarUploading}
+                          className="px-3 py-1.5 text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50"
+                        >
+                          Удалить
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                       <button
+                        onClick={handleAvatarUpload}
+                        disabled={isAvatarUploading}
+                        className="px-3 py-1.5 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-rose-400"
+                      >
+                        {isAvatarUploading ? 'Сохранение...' : 'Сохранить аватар'}
+                      </button>
+                      <button
+                        onClick={cancelAvatarChange}
+                        disabled={isAvatarUploading}
+                        className="px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                      >
+                        Отмена
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP • до 2 МБ • квадратное изображение</p>
+                </div>
+              </div>
+              {errors.avatar && (
+                <div className="flex items-center gap-1 text-red-600 mt-2 text-sm">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>{errors.avatar}</span>
+                </div>
+              )}
+            </div>
 
             <div>
               <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-2">{t('settings.name')}</label>
@@ -526,7 +666,7 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
 
             <div className="flex flex-col sm:flex-row items-start gap-3 pt-2">
               <button
-                disabled={saving}
+                disabled={saving || isAvatarUploading}
                 onClick={handleSaveProfile}
                 className="px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 font-medium disabled:bg-rose-400 disabled:cursor-not-allowed"
               >
@@ -567,7 +707,6 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
                 const dateStr = start.toLocaleDateString('ru-RU');
                 const timeStr = `${start.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
 
-                const canEdit = (start.getTime() - new Date().getTime()) > 24 * 60 * 60 * 1000;
                 const isCompleted = a.status === 'completed';
                 const canReview = isCompleted && !hasRatingForAppointment(a.id);
 
@@ -600,17 +739,6 @@ const filteredSalons = fetchedSalons.filter((s): s is Salon => s !== null);
                         <AppointmentRow label="Комментарий" value={a.notes} />
                         <AppointmentRow label="Статус" value={a.status} />
                       </dl>
-
-                      {canEdit && (
-                        <div className="flex-shrink-0 text-left sm:text-right mt-4 sm:mt-0">
-                          <button className="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 font-medium">
-                            Редактировать
-                          </button>
-                          <p className="text-xs text-gray-500 mt-1 sm:max-w-[200px]">
-                            *Редактировать запись можно не позднее, чем за день до услуги
-                          </p>
-                        </div>
-                      )}
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-gray-100">

@@ -28,6 +28,7 @@ interface ChatContextType {
   updateChat: (chatId: string, data: Partial<Chat>) => Promise<Chat>;
   archiveChat: (chatId: string) => Promise<void>;
   closeChat: (chatId: string) => Promise<void>;
+  getChatById: (chatId: string) => Promise<Chat | null>;
 
   // Message operations
   sendMessage: (
@@ -364,6 +365,24 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const getChatById = useCallback(async (chatId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const chatData = await chatOperations.read(chatId);
+      if (chatData) {
+        // Важно: getById вернет только данные. Мы должны сами добавить ID в объект.
+        return { ...chatData, id: chatId } as Chat;
+      }
+      return null;
+    } catch (e: any) {
+      setError(e.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const getUnreadNotificationsByUser = useCallback(async (userId: string) => {
     setError(null);
     try {
@@ -391,6 +410,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     getChatsByCustomer,
     getChatByAppointment,
     updateChat,
+    getChatById,
     archiveChat,
     closeChat,
 
@@ -429,6 +449,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     getChatsByCustomer,
     getChatByAppointment,
     updateChat,
+    getChatById,
     archiveChat,
     closeChat,
     sendMessage,

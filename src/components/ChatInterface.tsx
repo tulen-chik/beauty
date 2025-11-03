@@ -1,8 +1,8 @@
 "use client"
 
-import { Check, CheckCheck,Clock, File, Image, MessageCircle, Send, X } from 'lucide-react';
+import { Check, CheckCheck, Clock, File, Image, MessageCircle, Send, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useRef,useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
@@ -11,11 +11,16 @@ import { useUser } from '@/contexts/UserContext';
 
 import type { ChatMessageType } from '@/types/database';
 
+/**
+ * ИЗМЕНЕНИЕ: В интерфейс добавлено новое необязательное свойство `salonName`.
+ * Оно будет передаваться из родительского компонента.
+ */
 interface ChatInterfaceProps {
   chatId: string;
   salonId: string;
   customerUserId: string;
   customerName: string;
+  salonName?: string | null; // Имя салона, может быть null или undefined во время загрузки
   appointmentId?: string;
   serviceId?: string;
 }
@@ -25,6 +30,7 @@ export default function ChatInterface({
   salonId,
   customerUserId,
   customerName,
+  salonName, // Получаем новое свойство
   appointmentId,
   serviceId
 }: ChatInterfaceProps) {
@@ -39,8 +45,9 @@ export default function ChatInterface({
     error 
   } = useChat();
 
-  const t = useTranslations('chat'); // new: translations
+  const t = useTranslations('chat');
 
+  // Состояния компонента (без изменений)
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -55,12 +62,21 @@ export default function ChatInterface({
   const messages = chatMessages[chatId] || [];
   const isCustomer = currentUser?.userId === customerUserId;
 
-  // Auto-scroll to bottom when new messages arrive
+  /**
+   * ИЗМЕНЕНИЕ: Динамическое определение имени для заголовка чата.
+   * - Если текущий пользователь - клиент, показываем ему название салона.
+   * - Если текущий пользователь - салон, показываем ему имя клиента.
+   */
+  const headerTitle = isCustomer 
+    ? salonName || t('loadingName') // Для клиента показываем имя салона или заглушку "Загрузка..."
+    : customerName;                 // Для салона показываем имя клиента
+
+  // Хук для авто-прокрутки к новым сообщениям (без изменений)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Mark messages as read when chat is opened
+  // Хук для пометки сообщений как прочитанных (без изменений)
   useEffect(() => {
     if (currentUser && messages.length > 0) {
       const unreadMessages = messages.filter(msg => 
@@ -73,14 +89,13 @@ export default function ChatInterface({
           markMessagesAsRead(chatId, currentUser.userId);
         } catch (err) {
           console.error('Error marking messages as read:', err);
-          // non-fatal - show local error optionally
           setLoadError((err as any)?.message ?? t('errorMarkRead'));
         }
       }
     }
   }, [chatId, currentUser, messages, markMessagesAsRead, t]);
 
-  // Load messages when chat is opened
+  // Хук для загрузки сообщений при открытии чата (без изменений)
   useEffect(() => {
     if (!chatId) return;
     setLoadError(null);
@@ -96,6 +111,7 @@ export default function ChatInterface({
     load();
   }, [chatId, getMessages, t]);
 
+  // Функция отправки сообщения (без изменений)
   const handleSendMessage = async () => {
     setSendError(null);
     if (!messageText.trim() && attachments.length === 0) return;
@@ -122,7 +138,7 @@ export default function ChatInterface({
         content,
         messageType,
         attachments.length > 0 ? attachments.map(file => ({
-          url: URL.createObjectURL(file), // NOTE: real upload required in production
+          url: URL.createObjectURL(file),
           filename: file.name,
           size: file.size,
           type: file.type
@@ -141,6 +157,7 @@ export default function ChatInterface({
     }
   };
 
+  // Остальные функции-обработчики (без изменений)
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -150,7 +167,7 @@ export default function ChatInterface({
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
   const ALLOWED_MIMES = [
-    'image/', // any image
+    'image/',
     'application/pdf',
     'text/plain',
     'application/msword',
@@ -203,14 +220,11 @@ export default function ChatInterface({
     });
   };
 
+  // Рендеринг состояний загрузки и ошибок (без изменений)
   if (loading) {
-    return (
-      <LoadingSpinner />
-    );
+    return <LoadingSpinner />;
   }
 
-  // show load error banner but keep component visible so user can retry
-  // error from context still shown, or local loadError
   const loadErrMsg = loadError ?? (error ? String(error) : null);
 
   return (
@@ -231,6 +245,7 @@ export default function ChatInterface({
           </div>
         </div>
       )}
+      
       {/* Chat Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
         <div className="flex items-center gap-3">
@@ -238,7 +253,8 @@ export default function ChatInterface({
             <MessageCircle className="w-5 h-5 text-rose-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">{customerName}</h3>
+            {/* ИЗМЕНЕНИЕ: Используем новую переменную `headerTitle` для заголовка */}
+            <h3 className="font-semibold text-gray-900">{headerTitle}</h3>
             <p className="text-sm text-gray-500">
               {appointmentId ? t('chatByAppointment') : t('generalChat')}
             </p>
@@ -365,14 +381,6 @@ export default function ChatInterface({
           </div>
           
           <div className="flex items-center gap-2">
-            {/* <button
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              disabled={isTyping}
-            >
-              <Paperclip className="w-5 h-5" />
-            </button> */}
-            
             <button
               onClick={handleSendMessage}
               disabled={(!messageText.trim() && attachments.length === 0) || isTyping || isSending}

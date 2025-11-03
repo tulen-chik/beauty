@@ -21,6 +21,10 @@ interface SalonContextType {
   deleteSalon: (salonId: string) => Promise<void>;
   updateSalonMembers: (salonId: string, updatedMembers: SalonMember[]) => Promise<void>;
   fetchSalonsByCity: (options: { city: string; limit: number; startAfterKey?: string }) => Promise<{ salons: Salon[]; nextKey: string | null }>;
+
+  updateAvatar: (salonId: string, file: File) => Promise<Salon>;
+  removeAvatar: (salonId: string) => Promise<void>;
+  
   loading: boolean;
   error: string | null;
 }
@@ -308,6 +312,57 @@ const createSalon = useCallback(async (salonId: string, data: Omit<Salon, 'id'>,
     }
   }, [clearSalonCache, userSalons, saveUserSalonsToCache]);
 
+  const updateAvatar = useCallback(async (salonId: string, file: File): Promise<Salon> => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Вызываем операцию, которая делает всю работу с файлами и базой данных
+      await salonOperations.updateAvatar(salonId, file);
+      
+      // После успешного обновления, нам нужно получить свежие данные салона
+      // `false` в read означает, что мы обходим кеш и берем данные напрямую из БД
+      const updatedSalon = await salonOperations.read(salonId, false);
+      if (!updatedSalon) {
+        throw new Error("Не удалось получить обновленные данные салона после загрузки аватара.");
+      }
+
+      // Обновляем локальное состояние и кеш
+      setSalons((prev) => prev.map((s) => (s.id === salonId ? updatedSalon : s)));
+      saveSalonToCache(salonId, updatedSalon);
+
+      return updatedSalon;
+    } catch (e: any) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, [saveSalonToCache]);
+
+  const removeAvatar = useCallback(async (salonId: string): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Вызываем операцию, которая удаляет файл и очищает поля в БД
+      await salonOperations.removeAvatar(salonId);
+
+      // Обновляем локальное состояние, чтобы убрать аватар
+      const updatedSalonData = { avatarUrl: '', avatarStoragePath: '' };
+      setSalons((prev) => prev.map((s) => (s.id === salonId ? { ...s, ...updatedSalonData } : s)));
+
+      // Обновляем кеш
+      const cachedSalon = loadSalonFromCache(salonId);
+      if (cachedSalon) {
+        saveSalonToCache(salonId, { ...cachedSalon, ...updatedSalonData });
+      }
+    } catch (e: any) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, [loadSalonFromCache, saveSalonToCache]);
+
   const fetchSalonsByCity = useCallback(async (options: { city: string; limit: number; startAfterKey?: string }) => {
     setLoading(true);
     setError(null);
@@ -426,9 +481,9 @@ const createSalon = useCallback(async (salonId: string, data: Omit<Salon, 'id'>,
   }, [salons, fetchSalon, saveSalonToCache, clearUserSalonsCache, userSalonsOperations]); // Добавьте userSalonsOperations в зависимости
   
   const value: SalonContextType = useMemo(() => ({
-    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
+    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error, updateAvatar, removeAvatar,
   }), [
-    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error,
+    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error, updateAvatar, removeAvatar,
   ]);
 
   return <SalonContext.Provider value={value}>{children}</SalonContext.Provider>;

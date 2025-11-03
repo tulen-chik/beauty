@@ -1,4 +1,4 @@
-import { get, ref } from 'firebase/database';
+import { get, ref, query, orderByChild, equalTo } from 'firebase/database';
 
 import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
 import { db } from './init';
@@ -16,20 +16,27 @@ export const chatOperations = {
     updateOperation(`chats/${chatId}`, data, chatSchema),
 
   delete: (chatId: string) => deleteOperation(`chats/${chatId}`),
+  
 
-  getBySalon: async (salonId: string): Promise<Chat[]> => {
+getBySalon: async (salonId: string): Promise<Chat[]> => {
     try {
-      const snapshot = await get(ref(db, 'chats'));
+      // Создаем запрос, который будет выполнен на сервере Firebase
+      const chatsRef = ref(db, 'chats');
+      const salonQuery = query(chatsRef, orderByChild('salonId'), equalTo(salonId));
+
+      const snapshot = await get(salonQuery); // Выполняем запрос
+
       if (!snapshot.exists()) return [];
+
       const chats = snapshot.val() as Record<string, Chat>;
       return Object.entries(chats)
         .map(([id, chat]) => ({ ...chat, id }))
-        .filter(chat => chat.salonId === salonId)
         .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-    } catch (_) {
+    } catch (error) {
+      console.error("Error fetching chats by salon:", error);
       return [];
     }
-  },
+},
 
   getByCustomer: async (customerUserId: string): Promise<Chat[]> => {
     try {

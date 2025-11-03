@@ -53,6 +53,8 @@ export interface Salon {
   city?: string;
   description?: string;
   createdAt: string;
+  avatarUrl?: string;
+  avatarStoragePath?: string;
   updatedAt: string;
   members: SalonMember[];
   schedule?: SalonSchedule;

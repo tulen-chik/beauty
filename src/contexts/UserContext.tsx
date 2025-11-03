@@ -1,8 +1,10 @@
 'use client';
-import { createContext, useCallback, useContext, useEffect,useRef,useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { authService } from '@/lib/firebase/auth';
 import { userOperations } from '@/lib/firebase/database';
+// --- ДОБАВЛЕНО: Импорт функций для работы с аватарами ---
+import { deleteUserAvatar, uploadUserAvatar } from '@/lib/firebase/storage';
 
 import { useDatabase } from './DatabaseContext';
 
@@ -24,6 +26,9 @@ interface UserContextType {
   loginWithGoogle: () => Promise<void>;
   getUserByEmail: (email: string) => Promise<User | null>;
   getUserById: (userId: string) => Promise<User | null>;
+  // --- ДОБАВЛЕНО: Новые методы для аватаров ---
+  uploadAvatar: (file: File) => Promise<void>;
+  removeAvatar: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -36,12 +41,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<Error | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Ключи для localStorage
+  // ... (остальной код кеширования и useEffect без изменений)
   const USER_CACHE_KEY = 'user_cache';
   const USER_CACHE_TIMESTAMP_KEY = 'user_cache_timestamp';
-  const CACHE_DURATION = 5 * 60 * 1000; // 5 минут в миллисекундах
+  const CACHE_DURATION = 5 * 60 * 1000;
 
-  // Функция для сохранения пользователя в кеш
   const saveUserToCache = useCallback((userData: (User & { userId: string }) | null) => {
     try {
       if (userData) {
@@ -56,7 +60,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Функция для загрузки пользователя из кеша
   const loadUserFromCache = useCallback((): (User & { userId: string }) | null => {
     try {
       const cachedUser = localStorage.getItem(USER_CACHE_KEY);
@@ -69,7 +72,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const timestamp = parseInt(cachedTimestamp);
       const now = Date.now();
       
-      // Проверяем, не устарел ли кеш
       if (now - timestamp > CACHE_DURATION) {
         localStorage.removeItem(USER_CACHE_KEY);
         localStorage.removeItem(USER_CACHE_TIMESTAMP_KEY);
@@ -83,7 +85,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Очистка кеша
   const clearUserCache = useCallback(() => {
     try {
       localStorage.removeItem(USER_CACHE_KEY);
@@ -93,27 +94,30 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const refreshUser = useCallback(async (uid: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Сначала проверяем кеш
+  const refreshUser = useCallback(async (uid: string, options?: { force?: boolean }) => {
+    // Если нет принудительного обновления, проверяем кеш
+    if (!options?.force) {
       const cachedUser = loadUserFromCache();
       if (cachedUser && cachedUser.userId === uid) {
         setCurrentUser(cachedUser);
         setLoading(false);
         return;
       }
+    }
 
+    // Если есть флаг force или кеш невалиден, идем в базу
+    try {
+      setLoading(true);
+      setError(null);
+      
       const userData = await user.read(uid);
       if (userData) {
         const userWithId = { userId: uid, ...userData };
         setCurrentUser(userWithId);
-        saveUserToCache(userWithId);
+        saveUserToCache(userWithId); // Обновляем кеш свежими данными
       } else {
         setCurrentUser(null);
-        clearUserCache();
+        clearUserCache(); // Очищаем, если пользователя нет
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch user'));
@@ -123,7 +127,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [user, loadUserFromCache, saveUserToCache, clearUserCache]);
     
   useEffect(() => {
-    // При монтировании проверяем кеш
     const checkCacheOnMount = async () => {
       const cachedUser = loadUserFromCache();
       if (cachedUser) {
@@ -146,18 +149,15 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     });
 
-    // Проверяем, есть ли результат redirect аутентификации
     const checkRedirectResult = async () => {
       try {
         console.log('Checking for redirect result...');
-        // Проверяем результат redirect аутентификации
         const redirectResult = await authService.getRedirectResult();
         if (redirectResult) {
           console.log('Redirect result found:', redirectResult);
           const { user, name } = redirectResult;
           setFirebaseUser(user);
           
-          // Create or update user in database
           const userData = await userOperations.read(user.uid);
           if (!userData) {
             console.log('Creating new user from Google auth...');
@@ -180,23 +180,20 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           await refreshUser(user.uid);
         } else {
           console.log('No redirect result found');
-          // Если нет redirect результата, сбрасываем loading
           setLoading(false);
         }
       } catch (error) {
         console.error('Error checking redirect result:', error);
-        // В случае ошибки также сбрасываем loading
         setLoading(false);
       }
     };
 
-    // Добавляем таймаут для сброса loading, если что-то пошло не так
     timeoutRef.current = setTimeout(() => {
       if (loading) {
         console.log('Loading timeout reached, resetting loading state');
         setLoading(false);
       }
-    }, 10000); // 10 секунд таймаут
+    }, 10000);
 
     checkRedirectResult();
 
@@ -208,6 +205,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, [refreshUser]);
 
+  // ... (login, register, logout и другие существующие функции без изменений)
   const login = async (email: string, password: string) => {
     try {
       setError(null);
@@ -221,27 +219,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 const register = async (email: string, password: string, displayName: string) => {
     try {
       setError(null);
-      setLoading(true); // Устанавливаем загрузку в начале
-
-      // 1. Вызываем сервис регистрации и дожидаемся его полного завершения
-      // (включая создание записи в базе данных)
+      setLoading(true);
       const firebaseUser = await authService.register(email, password, displayName);
-
-      // 2. Теперь, когда мы уверены, что пользователь создан и в Auth, и в DB,
-      // мы можем вручную обновить состояние приложения.
       setFirebaseUser(firebaseUser);
-
-      // 3. Вызываем refreshUser, который теперь гарантированно найдет данные
-      // и установит currentUser.
       await refreshUser(firebaseUser.uid);
-
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to register'));
-      // Важно пробросить ошибку дальше, чтобы компонент формы мог ее обработать
       throw err;
-    } finally {
-      // setLoading(false) можно не вызывать здесь, так как refreshUser
-      // уже управляет состоянием загрузки.
     }
   };
 
@@ -322,12 +306,8 @@ const register = async (email: string, password: string, displayName: string) =>
       console.log('Attempting Google login...');
       result = await authService.loginWithGoogle();
       
-      // Если результат null, значит используется redirect метод
       if (result === null) {
         console.log('Google login using redirect method...');
-        // При redirect методе пользователь будет перенаправлен на страницу аутентификации
-        // Результат будет обработан в useEffect ниже
-        // Не сбрасываем loading, так как идет redirect
         return;
       }
       
@@ -335,7 +315,6 @@ const register = async (email: string, password: string, displayName: string) =>
       const { user, name } = result;
       setFirebaseUser(user);
       
-      // Create or update user in database
       const userData = await userOperations.read(user.uid);
       if (!userData) {
         console.log('Creating new user from Google popup auth...');
@@ -373,6 +352,69 @@ const register = async (email: string, password: string, displayName: string) =>
     return await userOperations.getById(userId);
   };
 
+  // --- ДОБАВЛЕНО: Реализация методов для работы с аватарами ---
+
+  const uploadAvatar = async (file: File) => {
+    if (!currentUser) {
+      throw new Error('Пользователь должен быть авторизован для загрузки аватара.');
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (currentUser.avatarStoragePath) {
+        await deleteUserAvatar(currentUser.avatarStoragePath);
+      }
+
+      const { url, storagePath } = await uploadUserAvatar(currentUser.userId, file);
+
+      await user.update(currentUser.userId, {
+        avatarUrl: url,
+        avatarStoragePath: storagePath,
+      });
+
+      // Вызываем refreshUser с флагом принудительного обновления
+      await refreshUser(currentUser.userId, { force: true });
+
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Не удалось загрузить аватар');
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!currentUser || !currentUser.avatarStoragePath) {
+      console.log('Нет аватара для удаления.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      await deleteUserAvatar(currentUser.avatarStoragePath);
+
+      await user.update(currentUser.userId, {
+        avatarUrl: '',
+        avatarStoragePath: '',
+      });
+
+      // Здесь также вызываем с флагом принудительного обновления
+      await refreshUser(currentUser.userId, { force: true });
+
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Не удалось удалить аватар');
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -390,7 +432,10 @@ const register = async (email: string, password: string, displayName: string) =>
         deleteAccount,
         loginWithGoogle,
         getUserByEmail,
-        getUserById
+        getUserById,
+        // --- ДОБАВЛЕНО: Передаем новые методы в провайдер ---
+        uploadAvatar,
+        removeAvatar,
       }}
     >
       {children}
@@ -404,4 +449,4 @@ export const useUser = () => {
     throw new Error('useUser must be used within a UserProvider');
   }
   return context;
-}; 
+};

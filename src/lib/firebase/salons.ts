@@ -22,6 +22,7 @@ import { ref, query, get, orderByChild, equalTo, limitToFirst, startAfter, updat
 
 import { db } from './init';
 import { z } from 'zod';
+import { deleteSalonAvatar, uploadSalonAvatar } from './storage';
 
 
 // Simple in-memory cache
@@ -79,7 +80,55 @@ export const salonOperations = {
     const results = await batchOperation(paths, data, salonSchema);
     updates.forEach(update => cache.delete(`salon_${update.id}`));
     return results;
-  }
+  },
+  /**
+   * Обновляет аватар салона.
+   * Удаляет старый аватар (если он есть), загружает новый и обновляет запись в базе данных.
+   * @param salonId ID салона.
+   * @param file Файл нового аватара.
+   */
+  updateAvatar: async (salonId: string, file: File) => {
+    // 1. Получаем текущие данные салона, чтобы найти старый путь к аватару
+    const currentSalon = await salonOperations.read(salonId, false); // `false` чтобы обойти кеш
+
+    // 2. Если старый аватар существует, удаляем его из Storage
+    if (currentSalon?.avatarStoragePath) {
+      await deleteSalonAvatar(currentSalon.avatarStoragePath);
+    }
+
+    // 3. Загружаем новый файл аватара в Storage
+    const { url, storagePath } = await uploadSalonAvatar(salonId, file);
+
+    // 4. Обновляем запись салона в базе данных новыми ссылками
+    // Эта операция автоматически очистит кеш для данного салона
+    await salonOperations.update(salonId, {
+      avatarUrl: url,
+      avatarStoragePath: storagePath,
+    });
+  },
+
+  /**
+   * Удаляет аватар салона.
+   * Удаляет файл из Storage и очищает соответствующие поля в базе данных.
+   * @param salonId ID салона.
+   */
+  removeAvatar: async (salonId: string) => {
+    // 1. Получаем текущие данные салона
+    const currentSalon = await salonOperations.read(salonId, false);
+
+    if (currentSalon?.avatarStoragePath) {
+      // 2. Удаляем файл из Storage
+      await deleteSalonAvatar(currentSalon.avatarStoragePath);
+
+      // 3. Очищаем поля в базе данных
+      await salonOperations.update(salonId, {
+        avatarUrl: '',
+        avatarStoragePath: '',
+      });
+    } else {
+      console.log(`Salon ${salonId} has no avatar to remove.`);
+    }
+  },
 };
 
 export const userSalonsOperations = {

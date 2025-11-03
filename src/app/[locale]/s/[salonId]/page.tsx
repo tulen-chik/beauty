@@ -17,7 +17,7 @@ import { useSalonService } from "@/contexts/SalonServiceContext"
 import { Salon, SalonSchedule, SalonWorkDay,  } from "@/types/salon"
 import { SalonService } from "@/types/services"
 
-// --- 1. НОВЫЙ КОМПОНЕНТ SKELETON ---
+// --- 1. КОМПОНЕНТ SKELETON (без изменений) ---
 const SalonPageSkeleton = () => {
   return (
     <div className="min-h-screen bg-white animate-pulse">
@@ -179,7 +179,6 @@ export default function SalonPublicPage() {
     }
   }, [salonId, fetchSalon, getSchedule, getServicesBySalon, getImages, getRatingStats])
 
-  // --- 2. ИСПОЛЬЗУЕМ SKELETON ВМЕСТО ТЕКСТА ЗАГРУЗКИ ---
   if (loading) {
     return <SalonPageSkeleton />;
   }
@@ -201,9 +200,9 @@ export default function SalonPublicPage() {
     )
   }
 
-  const heroImageUrl = services.length > 0 && serviceImages[services[0].id] 
-    ? serviceImages[services[0].id] 
-    : null;
+  // --- ИЗМЕНЕНИЕ: Логика выбора главного изображения ---
+  // Приоритет: Аватар салона -> Изображение первой услуги -> null (плейсхолдер)
+  const heroImageUrl = salon?.avatarUrl || (services.length > 0 ? serviceImages[services[0].id] : null);
 
   return (
     <div className="min-h-screen bg-white">
