@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, User } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 // Импортируем все необходимые хуки и провайдеры
@@ -32,19 +32,17 @@ const formatMessageTime = (dateString: string) => {
     });
 };
 
-//=========== НОВЫЙ КОМПОНЕНТ: Красивый плейсхолдер для аватара ===========//
+//=========== Компонент: Красивый плейсхолдер для аватара ===========//
 
 const InitialAvatar = ({ name, className }: { name: string; className?: string }) => {
-  // Генерируем инициалы (до 2-х букв)
   const getInitials = (nameStr: string) => {
     const words = nameStr.split(' ').filter(Boolean);
-    if (words.length === 0) return '?';
+    if (words.length === 0) return <User className="w-1/2 h-1/2" />;
     const firstInitial = words[0][0];
     const secondInitial = words.length > 1 ? words[1][0] : '';
     return `${firstInitial}${secondInitial}`.toUpperCase();
   };
 
-  // Генерируем стабильный цвет на основе имени
   const getColor = (nameStr: string) => {
     let hash = 0;
     for (let i = 0; i < nameStr.length; i++) {
@@ -66,7 +64,6 @@ const InitialAvatar = ({ name, className }: { name: string; className?: string }
     </div>
   );
 };
-
 
 //=========== Компоненты-скелетоны (без изменений) ===========//
 
@@ -114,7 +111,6 @@ const ChatViewSkeleton = () => {
     </main>
   );
 };
-
 
 //=========== Компонент: 1. Элемент в списке чатов (ChatItem) ===========//
 
@@ -164,7 +160,7 @@ function ChatItem({ chat, isActive, onClick }: { chat: Chat, isActive: boolean, 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-gray-800 truncate">
-            {"салон " + salon?.name || '...'}
+            {salon?.name || 'Загрузка...'}
           </h3>
           <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
             {formatDate(chat.lastMessageAt)}
@@ -190,7 +186,9 @@ function ChatItem({ chat, isActive, onClick }: { chat: Chat, isActive: boolean, 
               ) : null}
             </div>
             {chat.unreadCount.customer > 0 && (
-              <div className="w-3 h-3 bg-rose-500 rounded-full flex-shrink-0 ml-2 border-2 border-white"></div>
+              <div className="w-5 h-5 bg-rose-500 text-white text-xs font-bold rounded-full flex-shrink-0 ml-2 flex items-center justify-center">
+                {chat.unreadCount.customer}
+              </div>
             )}
         </div>
       </div>
@@ -202,16 +200,14 @@ function ChatItem({ chat, isActive, onClick }: { chat: Chat, isActive: boolean, 
 
 function ChatListPanel({ selectedChatId, onSelectChat }: { selectedChatId: string | null, onSelectChat: (chatId: string) => void }) {
   const { currentUser } = useUser();
-  const { getChatsByCustomer, loading, error } = useChat();
-  const [chats, setChats] = useState<Chat[]>([]);
+  // ИСПРАВЛЕНО: Получаем activeChats напрямую из контекста, убираем локальное состояние
+  const { getChatsByCustomer, activeChats, loading, error } = useChat();
 
   useEffect(() => {
     if (currentUser?.userId) {
+      // ИСПРАВЛЕНО: Этот вызов теперь только инициирует загрузку и подписку в провайдере.
+      // Нам не нужно обрабатывать .then() для установки локального состояния.
       getChatsByCustomer(currentUser.userId)
-        .then(userChats => {
-          const sorted = userChats.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-          setChats(sorted);
-        })
         .catch(err => console.error("Failed to load chats:", err));
     }
   }, [currentUser, getChatsByCustomer]);
@@ -227,20 +223,21 @@ function ChatListPanel({ selectedChatId, onSelectChat }: { selectedChatId: strin
         />
       </div>
       <div className="flex-1 overflow-y-auto">
-        {loading && (
+        {loading && activeChats.length === 0 && (
             <div>
                 {[...Array(6)].map((_, i) => <ChatItemSkeleton key={i} />)}
             </div>
         )}
-        {error && <p className="p-4 text-center text-red-500">Ошибка: {error}</p>}
-        {!loading && chats.length === 0 && (
+        {error && <p className="p-4 text-center text-red-500">Ошибка: {String(error)}</p>}
+        {!loading && activeChats.length === 0 && (
           <div className="p-8 text-center text-gray-400 mt-16">
             <MessageCircle className="w-16 h-16 mx-auto mb-4" />
             <h3 className="font-semibold text-lg">Нет активных чатов</h3>
             <p className="text-sm">Начните диалог с салоном, чтобы он появился здесь.</p>
           </div>
         )}
-        {!loading && chats.map(chat => (
+        {/* ИСПРАВЛЕНО: Рендерим activeChats из контекста, а не локальное состояние `chats` */}
+        {activeChats.map(chat => (
           <ChatItem
             key={chat.id}
             chat={chat}
@@ -257,34 +254,31 @@ function ChatListPanel({ selectedChatId, onSelectChat }: { selectedChatId: strin
 
 function ChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string | null, onBack: () => void }) {
   const { currentUser } = useUser();
-  const { getChatById, getMessages, sendMessage, markMessagesAsRead, chatMessages } = useChat();
+  // ИСПРАВЛЕНО: Получаем currentChat и isContextLoading из провайдера
+  const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading } = useChat();
   const { fetchSalon } = useSalon();
 
-  const [chatData, setChatData] = useState<Chat | null>(null);
+  // ИСПРАВЛЕНО: Убираем локальное состояние chatData, используем currentChat
   const [salonData, setSalonData] = useState<Salon | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Эта строка идеальна, она реактивно получает сообщения из контекста. Оставляем как есть.
   const messages = selectedChatId ? chatMessages[selectedChatId] || [] : [];
 
+  // ИСПРАВЛЕНО: Упрощаем useEffect. Его задача - загрузить данные о салоне и пометить сообщения как прочитанные.
   useEffect(() => {
-    if (selectedChatId) {
-      setLoading(true);
-      getChatById(selectedChatId).then(chat => {
-        setChatData(chat);
-        if (chat) {
-          fetchSalon(chat.salonId).then(setSalonData);
-          getMessages(selectedChatId, 100);
-          if (currentUser?.userId) {
-            markMessagesAsRead(chat.id, currentUser.userId);
-          }
-        }
-      }).catch(err => console.error("Failed to load chat details:", err))
-      .finally(() => setLoading(false));
+    if (currentChat) {
+      fetchSalon(currentChat.salonId).then(setSalonData);
+      if (currentUser?.userId && currentChat.unreadCount.customer > 0) {
+        markMessagesAsRead(currentChat.id, currentUser.userId);
+      }
+    } else {
+      // Очищаем данные о салоне, если чат не выбран
+      setSalonData(null);
     }
-  }, [selectedChatId, getChatById, getMessages, fetchSalon, markMessagesAsRead, currentUser]);
+  }, [currentChat, fetchSalon, markMessagesAsRead, currentUser]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -317,7 +311,7 @@ function ChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string | nu
     );
   }
   
-  if (loading) {
+  if (isContextLoading && !currentChat) {
       return <ChatViewSkeleton />;
   }
 
@@ -333,9 +327,9 @@ function ChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string | nu
             <InitialAvatar name={salonData?.name || ''} className="w-11 h-11 rounded-full text-base" />
         )}
         <div>
-          <h2 className="font-bold text-gray-900">{"салон " + salonData?.name}</h2>
-          <p className="text-xs text-gray-500">
-            {salonData?.city}, {salonData?.address} {salonData?.phone}
+          <h2 className="font-bold text-gray-900">{salonData?.name}</h2>
+          <p className="text-xs text-gray-500 truncate">
+            {salonData?.city}, {salonData?.address}
           </p>
         </div>
       </header>
@@ -411,6 +405,22 @@ function ChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string | nu
 
 function UnifiedChatPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Получаем доступ к activeChats и setCurrentChat из контекста
+  const { activeChats, setCurrentChat } = useChat();
+
+  // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Создаем новую функцию-обработчик для управления состоянием
+  const handleSelectChat = (chatId: string | null) => {
+    setSelectedChatId(chatId);
+    if (chatId) {
+      // Находим полный объект чата в real-time списке
+      const chat = activeChats.find(c => c.id === chatId);
+      // Сообщаем провайдеру, какой чат теперь активен
+      setCurrentChat(chat || null);
+    } else {
+      // Сбрасываем активный чат в провайдере
+      setCurrentChat(null);
+    }
+  };
 
   return (
     <>
@@ -428,14 +438,16 @@ function UnifiedChatPage() {
         <div className={`w-full md:w-auto md:flex transition-transform duration-300 ease-in-out ${selectedChatId ? '-translate-x-full md:translate-x-0' : 'translate-x-0'}`}>
           <ChatListPanel
             selectedChatId={selectedChatId}
-            onSelectChat={setSelectedChatId}
+            // ИСПРАВЛЕНО: Передаем новый обработчик
+            onSelectChat={handleSelectChat}
           />
         </div>
         <div className="absolute top-0 left-0 w-full h-full md:static flex-1 transition-transform duration-300 ease-in-out md:translate-x-0"
              style={{ transform: selectedChatId ? 'translateX(0)' : 'translateX(100%)' }}>
           <ChatViewPanel 
             selectedChatId={selectedChatId} 
-            onBack={() => setSelectedChatId(null)} 
+            // ИСПРАВЛЕНО: Передаем новый обработчик для кнопки "назад"
+            onBack={() => handleSelectChat(null)} 
           />
         </div>
       </div>
@@ -447,12 +459,6 @@ function UnifiedChatPage() {
 
 export default function FullChatPage() {
   return (
-    <SalonProvider>
-      <AppointmentProvider>
-        <SalonServiceProvider>
           <UnifiedChatPage />
-        </SalonServiceProvider>
-      </AppointmentProvider>
-    </SalonProvider>
   );
 }

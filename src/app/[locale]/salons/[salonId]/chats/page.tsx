@@ -1,20 +1,19 @@
 "use client"
 
-import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, Loader2, User } from 'lucide-react';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, User } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 
 // Импортируем все необходимые хуки и провайдеры
 import { useChat } from '@/contexts/ChatContext';
 import { AppointmentProvider, useAppointment } from '@/contexts/AppointmentContext';
-import { SalonProvider, useSalon } from '@/contexts/SalonContext';
+import { SalonProvider } from '@/contexts/SalonContext';
 import { SalonServiceProvider, useSalonService } from '@/contexts/SalonServiceContext';
 import { useUser } from '@/contexts/UserContext';
 
 // Импортируем типы
-import type { Appointment, Chat, Salon, SalonService } from '@/types/database';
+import type { Appointment, Chat, SalonService } from '@/types/database';
 
 //=========== Вспомогательные функции ===========//
 
@@ -188,17 +187,12 @@ function SalonChatItem({ chat, isActive, onClick }: { chat: Chat, isActive: bool
 //=========== Компонент: 2. Панель со списком чатов (слева) ===========//
 
 function SalonChatListPanel({ salonId, selectedChatId, onSelectChat }: { salonId: string, selectedChatId: string | null, onSelectChat: (chatId: string) => void }) {
-  const { getChatsBySalon, loading, error } = useChat();
-  const [chats, setChats] = useState<Chat[]>([]);
+  const { getChatsBySalon, activeChats, loading, error } = useChat();
   const t = useTranslations('salonChats');
 
   useEffect(() => {
     if (salonId) {
       getChatsBySalon(salonId)
-        .then(salonChats => {
-          const sorted = salonChats.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-          setChats(sorted);
-        })
         .catch(err => console.error("Failed to load chats:", err));
     }
   }, [salonId, getChatsBySalon]);
@@ -209,16 +203,16 @@ function SalonChatListPanel({ salonId, selectedChatId, onSelectChat }: { salonId
         <h1 className="text-2xl font-bold text-gray-800">{t('title')}</h1>
       </div>
       <div className="flex-1 overflow-y-auto">
-        {loading && <div>{[...Array(6)].map((_, i) => <ChatItemSkeleton key={i} />)}</div>}
+        {loading && activeChats.length === 0 && <div>{[...Array(6)].map((_, i) => <ChatItemSkeleton key={i} />)}</div>}
         {error && <p className="p-4 text-center text-red-500">{String(error)}</p>}
-        {!loading && chats.length === 0 && (
+        {!loading && activeChats.length === 0 && (
           <div className="p-8 text-center text-gray-400 mt-16">
             <MessageCircle className="w-16 h-16 mx-auto mb-4" />
             <h3 className="font-semibold text-lg">{t('noChatsTitle')}</h3>
             <p className="text-sm">{t('noChatsDesc')}</p>
           </div>
         )}
-        {!loading && chats.map(chat => (
+        {activeChats.map(chat => (
           <SalonChatItem
             key={chat.id}
             chat={chat}
@@ -235,31 +229,20 @@ function SalonChatListPanel({ salonId, selectedChatId, onSelectChat }: { salonId
 
 function SalonChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string | null, onBack: () => void }) {
   const { currentUser } = useUser();
-  const { getChatById, getMessages, sendMessage, markMessagesAsRead, chatMessages } = useChat();
+  const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading } = useChat();
   
-  const [chatData, setChatData] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messages = selectedChatId ? chatMessages[selectedChatId] || [] : [];
 
   useEffect(() => {
-    if (selectedChatId) {
-      setLoading(true);
-      getChatById(selectedChatId).then(chat => {
-        setChatData(chat);
-        if (chat) {
-          getMessages(selectedChatId, 100);
-          if (currentUser?.userId) {
-            markMessagesAsRead(chat.id, currentUser.userId);
-          }
-        }
-      }).catch(err => console.error("Failed to load chat details:", err))
-      .finally(() => setLoading(false));
+    // Помечаем сообщения как прочитанные, когда чат открыт и есть непрочитанные
+    if (currentChat && currentUser?.userId && currentChat.unreadCount.salon > 0) {
+      markMessagesAsRead(currentChat.id, currentUser.userId);
     }
-  }, [selectedChatId, getChatById, getMessages, markMessagesAsRead, currentUser]);
+  }, [currentChat, currentUser, markMessagesAsRead]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -269,7 +252,8 @@ function SalonChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string
     if (!messageText.trim() || !selectedChatId || !currentUser) return;
     setIsSending(true);
     try {
-      await sendMessage(selectedChatId, currentUser.userId, 'salon', currentUser.displayName, messageText, 'text');
+      const senderName = currentUser.displayName || 'Салон';
+      await sendMessage(selectedChatId, currentUser.userId, 'salon', senderName, messageText, 'text');
       setMessageText('');
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -292,7 +276,7 @@ function SalonChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string
     );
   }
   
-  if (loading) {
+  if (isContextLoading && !currentChat) {
       return <ChatViewSkeleton />;
   }
 
@@ -302,9 +286,9 @@ function SalonChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string
         <button onClick={onBack} className="md:hidden p-2 -ml-2 text-gray-600 hover:text-rose-500">
             <ArrowLeft className="w-6 h-6" />
         </button>
-        <InitialAvatar name={chatData?.customerName || ''} className="w-11 h-11 rounded-full text-base" />
+        <InitialAvatar name={currentChat?.customerName || ''} className="w-11 h-11 rounded-full text-base" />
         <div>
-          <h2 className="font-bold text-gray-900">{chatData?.customerName}</h2>
+          <h2 className="font-bold text-gray-900">{currentChat?.customerName}</h2>
           <p className="text-xs text-gray-500">Клиент</p>
         </div>
       </header>
@@ -325,7 +309,7 @@ function SalonChatViewPanel({ selectedChatId, onBack }: { selectedChatId: string
               )}
               <div className={`flex items-end gap-2 animate-pop-in ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 {!isOwnMessage && (
-                  <InitialAvatar name={chatData?.customerName || ''} className="w-7 h-7 rounded-full self-start text-xs" />
+                  <InitialAvatar name={currentChat?.customerName || ''} className="w-7 h-7 rounded-full self-start text-xs" />
                 )}
                 <div
                   className={`max-w-lg px-4 py-2.5 rounded-3xl ${
@@ -379,10 +363,22 @@ function UnifiedSalonChatPage() {
   const salonId = params.salonId as string;
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const t = useTranslations('salonChats');
+  
+  const { activeChats, setCurrentChat } = useChat();
 
   if (!salonId) {
       return <div className="flex items-center justify-center h-screen">{t('errorNoSalonId')}</div>
   }
+
+  const handleSelectChat = (chatId: string | null) => {
+    setSelectedChatId(chatId);
+    if (chatId) {
+      const chat = activeChats.find(c => c.id === chatId);
+      setCurrentChat(chat || null);
+    } else {
+      setCurrentChat(null);
+    }
+  };
 
   return (
     <>
@@ -401,14 +397,14 @@ function UnifiedSalonChatPage() {
           <SalonChatListPanel
             salonId={salonId}
             selectedChatId={selectedChatId}
-            onSelectChat={setSelectedChatId}
+            onSelectChat={handleSelectChat}
           />
         </div>
         <div className="absolute top-0 left-0 w-full h-full md:static flex-1 transition-transform duration-300 ease-in-out md:translate-x-0"
              style={{ transform: selectedChatId ? 'translateX(0)' : 'translateX(100%)' }}>
           <SalonChatViewPanel 
             selectedChatId={selectedChatId} 
-            onBack={() => setSelectedChatId(null)} 
+            onBack={() => handleSelectChat(null)} 
           />
         </div>
       </div>
@@ -420,12 +416,6 @@ function UnifiedSalonChatPage() {
 
 export default function SalonChatsPage() {
   return (
-    <SalonProvider>
-      <AppointmentProvider>
-        <SalonServiceProvider>
-          <UnifiedSalonChatPage />
-        </SalonServiceProvider>
-      </AppointmentProvider>
-    </SalonProvider>
+            <UnifiedSalonChatPage />
   );
 }
