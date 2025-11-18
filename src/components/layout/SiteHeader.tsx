@@ -50,7 +50,7 @@ export default function SiteHeader({ locale }: Props) {
   }, [isMenuOpen]);
 
   const nav = [
-    // { href: `/${locale}`, label: t('navigation.home') },
+    { href: `/${locale}`, label: t('navigation.home') },
     { href: `/${locale}/search`, label: t('navigation.search') },
     { href: `/${locale}/blog`, label: t('navigation.blog') },
   ];

@@ -10,76 +10,60 @@ import {
   Smartphone,
   Upload, 
   X, 
-  XCircle} from "lucide-react";
+  XCircle,
+  ImageIcon,
+  MoreHorizontal
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
 
-// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
-
-// Скелет для одной карточки услуги
+// --- SKELETON COMPONENTS (Без изменений) ---
 const ServiceCardSkeleton = () => (
-  <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+  <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
     <div className="p-0">
-      {/* Image Placeholder */}
-      <div className="h-48 bg-gray-200"></div>
-      <div className="p-6 space-y-4">
-        {/* Header Placeholder */}
+      <div className="h-52 bg-slate-100 animate-pulse"></div>
+      <div className="p-5 space-y-4">
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-2">
-            <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
-            <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
+            <div className="h-6 w-3/4 bg-slate-200 rounded animate-pulse"></div>
+            <div className="h-4 w-1/2 bg-slate-100 rounded animate-pulse"></div>
           </div>
-          <div className="h-7 w-1/4 bg-gray-300 rounded"></div>
+          <div className="h-8 w-20 bg-slate-200 rounded animate-pulse"></div>
         </div>
-        {/* Description Placeholder */}
         <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded"></div>
-          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
+          <div className="h-4 bg-slate-100 rounded animate-pulse"></div>
+          <div className="h-4 w-5/6 bg-slate-100 rounded animate-pulse"></div>
         </div>
-        {/* Categories Placeholder */}
         <div className="flex flex-wrap gap-2">
-          <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
-          <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
-        </div>
-        {/* Divider */}
-        <div className="shrink-0 bg-gray-200 h-[1px] w-full"></div>
-        {/* Image Management Placeholder */}
-        <div className="flex items-center justify-between">
-          <div className="h-5 w-1/3 bg-gray-200 rounded"></div>
-          <div className="h-9 w-28 bg-gray-300 rounded-md"></div>
+          <div className="h-6 w-16 bg-slate-100 rounded-full animate-pulse"></div>
+          <div className="h-6 w-20 bg-slate-100 rounded-full animate-pulse"></div>
         </div>
       </div>
     </div>
   </div>
 );
 
-// Основной компонент-скелет для всей страницы
 const SalonServicesPageSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gradient-soft py-8 px-4 animate-pulse">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="space-y-2">
-            <div className="h-9 w-64 bg-gray-300 rounded-lg"></div>
-            <div className="h-5 w-80 bg-gray-200 rounded-md"></div>
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-10">
+          <div className="space-y-3">
+            <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse"></div>
+            <div className="h-5 w-80 bg-slate-100 rounded-md animate-pulse"></div>
           </div>
-          <div className="h-12 w-full sm:w-48 bg-gray-300 rounded-md"></div>
+          <div className="h-12 w-full sm:w-48 bg-slate-200 rounded-lg animate-pulse"></div>
         </div>
-
-        {/* Services Grid Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => <ServiceCardSkeleton key={i} />)}
+          {[...Array(6)].map((_, i) => <ServiceCardSkeleton key={i} />)}
         </div>
       </div>
     </div>
   );
 };
-
-// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 interface ServiceFormData {
   id: string;
@@ -343,21 +327,20 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
   const selectedCategories = categories.filter(cat => form.categoryIds?.includes(cat.id));
 
-  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (serviceLoading && services.length === 0) {
     return <SalonServicesPageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-soft py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-10">
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               {t("header.title")}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-slate-500 text-lg max-w-2xl">
               {t("header.subtitle")}
             </p>
           </div>
@@ -366,7 +349,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
               setEditingService(null);
               setShowModal(true);
             }}
-            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-12 px-6 shadow-medium"
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-600 text-white hover:bg-rose-700 active:scale-95 h-12 px-6 shadow-lg shadow-rose-200"
           >
             <Plus className="h-5 w-5 mr-2" />
             {t("header.addServiceButton")}
@@ -374,18 +357,21 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         </div>
 
         {(serviceError || categoryError) && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg mb-6">
-            {serviceError || categoryError}
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-8 flex items-center gap-2">
+            <XCircle className="h-5 w-5" />
+            <p>{serviceError || categoryError}</p>
           </div>
         )}
 
         {/* Services Grid */}
         {services.length === 0 ? (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center py-12">
-            <div className="max-w-md mx-auto p-6">
-              <Camera className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">{t("emptyState.title")}</h3>
-              <p className="text-muted-foreground mb-6">
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Camera className="h-10 w-10 text-slate-300" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{t("emptyState.title")}</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
                 {t("emptyState.description")}
               </p>
               <button
@@ -393,7 +379,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                   setEditingService(null);
                   setShowModal(true);
                 }}
-                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-10 px-4"
+                className="inline-flex items-center justify-center rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 h-11 px-6 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {t("emptyState.addFirstServiceButton")}
@@ -407,137 +393,148 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
               const serviceImages = imagesMap[service.id] || [];
               
               return (
-                <div key={service.id} className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden hover:shadow-medium transition-all duration-300 group">
-                  <div className="p-0">
-                    {/* Service Images */}
-                    <div className="relative h-48 bg-muted/50 flex items-center justify-center">
-                      {imagesLoading[service.id] ? (
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      ) : serviceImages.length > 0 ? (
-                        <div className="relative w-full h-full">
-                          <img
-                            src={serviceImages[0].url}
-                            alt={service.name}
-                            className="w-full h-full object-cover"
-                          />
-                          {serviceImages.length > 1 && (
-                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 absolute top-2 right-2 bg-background/80 text-foreground">
-                              +{serviceImages.length - 1}
+                <div key={service.id} className="group relative flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-rose-100 transition-all duration-300 overflow-hidden">
+                  
+                  {/* Image Section */}
+                  <div className="relative h-56 bg-slate-100 overflow-hidden">
+                    {imagesLoading[service.id] ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                        <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+                      </div>
+                    ) : serviceImages.length > 0 ? (
+                      <>
+                        <img
+                          src={serviceImages[0].url}
+                          alt={service.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
+                        {serviceImages.length > 1 && (
+                          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            <span>+{serviceImages.length - 1}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                        <Camera className="h-12 w-12 mb-2 opacity-50" />
+                        <span className="text-sm font-medium">{t("serviceCard.noPhoto")}</span>
+                      </div>
+                    )}
+
+                    {/* Edit Button - Visible on mobile, hover on desktop */}
+                    <button
+                      className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full text-slate-700 shadow-sm hover:bg-white hover:text-rose-600 transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:translate-y-[-10px] sm:group-hover:translate-y-0 duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(service);
+                      }}
+                      aria-label="Edit service"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="flex flex-col flex-1 p-5">
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <h3 className="font-bold text-lg text-slate-900 leading-tight line-clamp-2">
+                        {service.name}
+                      </h3>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className="text-lg font-bold text-rose-600 whitespace-nowrap">
+                          {service.price} ₽
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Metadata Row */}
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 mb-4">
+                      <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-medium">{service.durationMinutes} {t("serviceCard.minutes")}</span>
+                      </div>
+                      
+                      {service.isApp && (
+                        <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 px-2 py-1 rounded-md">
+                          <Smartphone className="h-3.5 w-3.5" />
+                          <span className="font-medium">{t("serviceCard.inApp")}</span>
+                        </div>
+                      )}
+
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md ${service.isActive ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {service.isActive ? (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span className="font-medium">{t("serviceCard.active")}</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle className="h-3.5 w-3.5" />
+                            <span className="font-medium">{t("serviceCard.inactive")}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    {service.description && (
+                      <p className="text-sm text-slate-600 leading-relaxed line-clamp-2 mb-4">
+                        {service.description}
+                      </p>
+                    )}
+
+                    {/* Categories */}
+                    <div className="mt-auto">
+                      {categoryNames.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {categoryNames.slice(0, 3).map((name, index) => (
+                            <span key={index} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                              {name}
+                            </span>
+                          ))}
+                          {categoryNames.length > 3 && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-50 text-slate-500">
+                              +{categoryNames.length - 3}
                             </span>
                           )}
                         </div>
                       ) : (
-                        <div className="text-center text-muted-foreground">
-                          <Camera className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm">{t("serviceCard.noPhoto")}</p>
-                        </div>
-                      )}
-                      
-                      {/* Edit Button */}
-                      <button
-                        className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-50 hover:text-rose-600 h-9 px-3 absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity shadow-soft"
-                        onClick={() => handleEdit(service)}
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="p-6">
-                      {/* Service Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-foreground mb-1">
-                            {service.name}
-                          </h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              {service.durationMinutes} {t("serviceCard.minutes")}
-                            </div>
-                            {service.isApp && (
-                              <div className="flex items-center gap-1 text-rose-500">
-                                <Smartphone className="h-4 w-4" />
-                                <span>{t("serviceCard.inApp")}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-rose-500">
-                            {service.price} ₽
-                          </div>
-                          <div className="flex items-center gap-1 text-sm">
-                            {service.isActive ? (
-                              <>
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span className="text-success">{t("serviceCard.active")}</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">{t("serviceCard.inactive")}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Description */}
-                      {service.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                          {service.description}
-                        </p>
+                        <div className="h-4 mb-4"></div> // Spacer if no categories
                       )}
 
-                      {/* Categories */}
-                      {categoryNames.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-4">
-                          {categoryNames.map((name, index) => (
-                            <span key={index} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-rose-300 focus:ring-offset-2 border-transparent bg-rose-50 text-rose-700 hover:bg-rose-100">
-                              {name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="h-px bg-slate-100 w-full mb-4" />
 
-                      <div className="shrink-0 bg-border h-[1px] w-full mb-4"></div>
-
-                      {/* Image Management */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{t("serviceCard.photosTitle")}</span>
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={e => {
-                                if (e.target.files && e.target.files[0]) {
-                                  handleAddImage(service.id, e.target.files[0]);
-                                }
-                              }}
-                            />
-                            <span className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-50 hover:text-rose-600 h-9 px-3 cursor-pointer">
-                              <Upload className="h-4 w-4 mr-1" />
-                              {t("serviceCard.addPhotoButton")}
-                            </span>
-                          </label>
-                        </div>
+                      {/* Image Actions */}
+                      <div className="flex items-center justify-between">
+                        <label className="cursor-pointer group/upload flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-rose-600 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              if (e.target.files && e.target.files[0]) {
+                                handleAddImage(service.id, e.target.files[0]);
+                              }
+                            }}
+                          />
+                          <div className="p-1.5 rounded-md bg-slate-100 group-hover/upload:bg-rose-50 transition-colors">
+                            <Upload className="h-4 w-4" />
+                          </div>
+                          <span>{t("serviceCard.addPhotoButton")}</span>
+                        </label>
 
                         {serviceImages.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {serviceImages.map((img) => (
-                              <div key={img.id} className="relative group/img">
-                                <img
-                                  src={img.url}
-                                  alt="service"
-                                  className="w-16 h-16 object-cover rounded-md border"
-                                />
+                          <div className="flex -space-x-2">
+                            {serviceImages.slice(0, 3).map((img) => (
+                              <div key={img.id} className="relative w-8 h-8 rounded-full border-2 border-white overflow-hidden ring-1 ring-slate-100">
+                                <img src={img.url} alt="" className="w-full h-full object-cover" />
                                 <button
-                                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-destructive text-destructive-foreground hover:bg-destructive/90 absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                  className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
                                   onClick={() => handleImageDelete(service.id, img.storagePath)}
                                 >
-                                  <X className="h-3 w-3" />
+                                  <X className="h-3 w-3 text-white" />
                                 </button>
                               </div>
                             ))}
@@ -554,230 +551,233 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
         {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-background/100 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowModal(false)} />
+            
             <div
-              className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg max-h-[90vh] overflow-y-auto"
-              onWheel={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if (e.key === 'PageUp' || e.key === 'PageDown') {
-                  e.stopPropagation();
-                }
-              }}
-              tabIndex={0}
+              className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200"
+              role="dialog"
+              aria-modal="true"
             >
-              <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-                <h2 className="text-lg font-semibold leading-none tracking-tight">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h2 className="text-xl font-bold text-slate-900">
                   {editingService ? t("modal.titleEdit") : t("modal.titleAdd")}
                 </h2>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              <form onSubmit={handleSave} className="space-y-6">
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t("modal.form.nameLabel")}
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      value={form.name}
-                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder={t("modal.form.namePlaceholder")}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label htmlFor="description" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {t("modal.form.descriptionLabel")}
-                    </label>
-                    <textarea
-                      id="description"
-                      value={form.description}
-                      onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                      placeholder={t("modal.form.descriptionPlaceholder")}
-                      className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="price" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t("modal.form.priceLabel", { currency: "₽" })}
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <form id="serviceForm" onSubmit={handleSave} className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label htmlFor="name" className="text-sm font-semibold text-slate-700">
+                        {t("modal.form.nameLabel")}
                       </label>
                       <input
-                        id="price"
+                        id="name"
                         type="text"
-                        inputMode="decimal"
-                        value={displayPrice}
-                        onChange={handlePriceChange}
-                        onFocus={handlePriceFocus}
-                        onBlur={handlePriceBlur}
-                        placeholder="0"
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                        value={form.name}
+                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder={t("modal.form.namePlaceholder")}
+                        className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label htmlFor="duration" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t("modal.form.durationLabel")}
+
+                    <div className="space-y-1.5">
+                      <label htmlFor="description" className="text-sm font-semibold text-slate-700">
+                        {t("modal.form.descriptionLabel")}
                       </label>
-                      <input
-                        id="duration"
-                        type="number"
-                        min={1}
-                        value={form.durationMinutes}
-                        onChange={e => setForm(f => ({ ...f, durationMinutes: Number(e.target.value) }))}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 focus:ring-2 focus:ring-primary/20"
+                      <textarea
+                        id="description"
+                        value={form.description}
+                        onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                        placeholder={t("modal.form.descriptionPlaceholder")}
+                        className="w-full min-h-[100px] rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none resize-none"
                       />
                     </div>
-                  </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium leading-none">
-                        {t("modal.form.categoriesLabel")}
-                      </label>
-                      {!showNewCategoryInput && (
-                        <button
-                          type="button"
-                          onClick={() => setShowNewCategoryInput(true)}
-                          className="inline-flex items-center gap-1 text-sm font-medium text-rose-500 hover:text-rose-600"
-                        >
-                          <Plus className="h-4 w-4" />
-                          {t("modal.form.addCategory")}
-                        </button>
-                      )}
-                    </div>
-
-                    {showNewCategoryInput && (
-                      <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
-                        <input
-                          type="text"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          placeholder={t("modal.form.newCategoryPlaceholder")}
-                          className="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCreateCategory}
-                          disabled={!newCategoryName.trim() || isCreatingCategory}
-                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50"
-                        >
-                          {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowNewCategoryInput(false)}
-                          className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-background border hover:bg-accent"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label htmlFor="price" className="text-sm font-semibold text-slate-700">
+                          {t("modal.form.priceLabel", { currency: "₽" })}
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="price"
+                            type="text"
+                            inputMode="decimal"
+                            value={displayPrice}
+                            onChange={handlePriceChange}
+                            onFocus={handlePriceFocus}
+                            onBlur={handlePriceBlur}
+                            className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-8 text-sm font-medium text-slate-900 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₽</span>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="border rounded-lg p-4 bg-muted/30">
-                      {categories.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
-                          {categories.map((cat) => (
-                            <label
-                              key={cat.id}
-                              className="flex items-center space-x-2 cursor-pointer hover:bg-rose-50 p-2 rounded-md transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={form.categoryIds.includes(cat.id)}
-                                onChange={() => toggleCategory(cat.id)}
-                                className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                              />
-                              <span className="text-sm">{cat.name}</span>
-                            </label>
-                          ))}
+                      <div className="space-y-1.5">
+                        <label htmlFor="duration" className="text-sm font-semibold text-slate-700">
+                          {t("modal.form.durationLabel")}
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="duration"
+                            type="number"
+                            min={1}
+                            value={form.durationMinutes}
+                            onChange={e => setForm(f => ({ ...f, durationMinutes: Number(e.target.value) }))}
+                            className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-12 text-sm font-medium text-slate-900 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">мин</span>
                         </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-2">
-                          {t("modal.form.noCategories")}
-                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-slate-700">
+                          {t("modal.form.categoriesLabel")}
+                        </label>
+                        {!showNewCategoryInput && (
+                          <button
+                            type="button"
+                            onClick={() => setShowNewCategoryInput(true)}
+                            className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-md transition-colors"
+                          >
+                            <Plus className="h-3 w-3" />
+                            {t("modal.form.addCategory")}
+                          </button>
+                        )}
+                      </div>
+
+                      {showNewCategoryInput && (
+                        <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-xl border border-slate-200 animate-in slide-in-from-top-2">
+                          <input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder={t("modal.form.newCategoryPlaceholder")}
+                            className="flex-1 h-9 rounded-lg border-none bg-white px-3 text-sm focus:ring-2 focus:ring-rose-500"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={handleCreateCategory}
+                            disabled={!newCategoryName.trim() || isCreatingCategory}
+                            className="h-9 w-9 flex items-center justify-center rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                          >
+                            {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowNewCategoryInput(false)}
+                            className="h-9 w-9 flex items-center justify-center rounded-lg bg-white text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       )}
-                      
-                      {selectedCategories.length > 0 && (
-                        <div className="pt-3 border-t">
+
+                      <div className="border border-slate-200 rounded-xl p-4 bg-slate-50/50">
+                        {categories.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
-                            {selectedCategories.map((cat) => (
-                              <span key={cat.id} className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1">
-                                {cat.name}
-                                <X
-                                  className="h-3 w-3 cursor-pointer hover:text-destructive"
+                            {categories.map((cat) => {
+                              const isSelected = form.categoryIds.includes(cat.id);
+                              return (
+                                <button
+                                  key={cat.id}
+                                  type="button"
                                   onClick={() => toggleCategory(cat.id)}
-                                />
-                              </span>
-                            ))}
+                                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${
+                                    isSelected
+                                      ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                                      : "bg-white text-slate-600 border-slate-200 hover:border-rose-300 hover:text-rose-600"
+                                  }`}
+                                >
+                                  {cat.name}
+                                  {isSelected && <Check className="ml-1.5 h-3.5 w-3.5" />}
+                                </button>
+                              );
+                            })}
                           </div>
-                        </div>
-                      )}
+                        ) : (
+                          <p className="text-sm text-slate-400 text-center py-2">
+                            {t("modal.form.noCategories")}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        id="isActive"
-                        type="checkbox"
-                        checked={form.isActive}
-                        onChange={(e) => setForm(f => ({ ...f, isActive: e.target.checked }))}
-                        className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      />
-                      <label htmlFor="isActive" className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t("modal.form.isActiveLabel")}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all ${form.isActive ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <input
+                          type="checkbox"
+                          checked={form.isActive}
+                          onChange={(e) => setForm(f => ({ ...f, isActive: e.target.checked }))}
+                          className="h-5 w-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="ml-3 text-sm font-medium text-slate-700">{t("modal.form.isActiveLabel")}</span>
+                      </label>
+                      
+                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-all ${form.isApp ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                        <input
+                          type="checkbox"
+                          checked={form.isApp}
+                          onChange={(e) => setForm(f => ({ ...f, isApp: e.target.checked }))}
+                          className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="ml-3 text-sm font-medium text-slate-700">{t("modal.form.isAppLabel")}</span>
                       </label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        id="isApp"
-                        type="checkbox"
-                        checked={form.isApp}
-                        onChange={(e) => setForm(f => ({ ...f, isApp: e.target.checked }))}
-                        className="h-4 w-4 rounded border border-primary text-primary shadow focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      />
-                      <label htmlFor="isApp" className="text-sm cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {t("modal.form.isAppLabel")}
-                      </label>
+                  </div>
+
+                  {formError && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+                      <XCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                      <span>{formError}</span>
                     </div>
-                  </div>
-                </div>
+                  )}
+                </form>
+              </div>
 
-                {formError && (
-                  <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg text-sm">
-                    {formError}
-                  </div>
-                )}
-
-                <div className="flex gap-3 pt-6 border-t">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditingService(null);
-                    }}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 flex-1 sm:flex-none"
-
-                  >
-                    {t("modal.form.cancelButton")}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={serviceLoading || categoryLoading}
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-500 hover:text-accent-foreground h-10 px-4 flex-1 sm:flex-none"
-                  >
-                    {(serviceLoading || categoryLoading) ? t("modal.form.savingButton") : (editingService ? t("modal.form.saveButton") : t("modal.form.addButton"))}
-                  </button>
-                </div>
-              </form>
+              {/* Modal Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingService(null);
+                  }}
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                >
+                  {t("modal.form.cancelButton")}
+                </button>
+                <button
+                  type="submit"
+                  form="serviceForm"
+                  disabled={serviceLoading || categoryLoading}
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all active:scale-95"
+                >
+                  {(serviceLoading || categoryLoading) ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("modal.form.savingButton")}
+                    </span>
+                  ) : (
+                    editingService ? t("modal.form.saveButton") : t("modal.form.addButton")
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

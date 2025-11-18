@@ -1,13 +1,16 @@
 "use client"
 import {
   BarChart2,
-  CalendarOff,
+  Calendar,
   Camera,
+  Check,
   CheckCircle2,
   Clock,
   Loader2,
   Rocket,
   ShoppingCart,
+  TrendingUp,
+  X,
   XCircle,
   Zap,
 } from "lucide-react"
@@ -20,60 +23,46 @@ import { useSalonService } from "@/contexts/SalonServiceContext"
 import type { SalonService } from "@/types/database"
 import type { PromotionAnalytics, ServicePromotion, ServicePromotionPlan } from "@/types/database"
 
-// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+// --- SKELETONS ---
 
-// Скелет для одной карточки услуги
 const ServicePromotionCardSkeleton = () => (
-  <div className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
-    <div className="p-0">
-      {/* Image Placeholder */}
-      <div className="h-48 bg-gray-200"></div>
-      <div className="p-4 sm:p-6 space-y-4">
-        {/* Header Placeholder */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex-1 space-y-2">
-            <div className="h-6 w-3/4 bg-gray-300 rounded"></div>
-            <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
-          </div>
-          <div className="h-7 w-1/4 bg-gray-300 rounded"></div>
+  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+    <div className="h-48 bg-slate-100 animate-pulse"></div>
+    <div className="p-5 space-y-4">
+      <div className="flex justify-between items-start gap-4">
+        <div className="space-y-2 flex-1">
+          <div className="h-6 w-3/4 bg-slate-200 rounded animate-pulse"></div>
+          <div className="h-4 w-1/2 bg-slate-100 rounded animate-pulse"></div>
         </div>
-        {/* Description Placeholder */}
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded"></div>
-          <div className="h-4 w-5/6 bg-gray-200 rounded"></div>
-        </div>
-        {/* Divider */}
-        <div className="shrink-0 bg-gray-200 h-[1px] w-full"></div>
-        {/* Action Button Placeholder */}
-        <div className="h-10 w-full bg-gray-300 rounded-md"></div>
+        <div className="h-8 w-20 bg-slate-200 rounded animate-pulse"></div>
       </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-slate-100 rounded w-full animate-pulse"></div>
+        <div className="h-4 bg-slate-100 rounded w-5/6 animate-pulse"></div>
+      </div>
+      <div className="h-px bg-slate-100 w-full"></div>
+      <div className="h-11 w-full bg-slate-200 rounded-xl animate-pulse"></div>
     </div>
   </div>
 );
 
-// Основной компонент-скелет для всей страницы
 const SalonServicePromotionsPageSkeleton = () => {
   return (
-    <div className="min-h-screen bg-gradient-soft py-6 sm:py-8 px-4 animate-pulse">
-      <div className="max-w-6xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div className="space-y-2">
-            <div className="h-9 w-64 bg-gray-300 rounded-lg"></div>
-            <div className="h-5 w-80 bg-gray-200 rounded-md"></div>
-          </div>
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col gap-4 mb-10">
+          <div className="h-10 w-64 bg-slate-200 rounded-lg animate-pulse"></div>
+          <div className="h-5 w-96 bg-slate-100 rounded-md animate-pulse"></div>
         </div>
-
-        {/* Services Grid Skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => <ServicePromotionCardSkeleton key={i} />)}
+          {[...Array(6)].map((_, i) => <ServicePromotionCardSkeleton key={i} />)}
         </div>
       </div>
     </div>
   );
 };
 
-// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
+// --- MAIN COMPONENT ---
 
 export default function SalonServicePromotionsPage() {
   const { salonId } = useParams<{ salonId: string }>()
@@ -201,29 +190,34 @@ export default function SalonServicePromotionsPage() {
 
   const loading = servicesLoading && services.length === 0
 
-  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
     return <SalonServicePromotionsPageSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-soft py-6 sm:py-8 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Продвижение услуг</h1>
-            <p className="text-muted-foreground">Управляйте продвижением ваших услуг и отслеживайте результаты</p>
-          </div>
+        <div className="mb-10">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+            Продвижение услуг
+          </h1>
+          <p className="text-lg text-slate-500 max-w-3xl">
+            Запускайте рекламные кампании, привлекайте больше клиентов и отслеживайте эффективность ваших услуг в реальном времени.
+          </p>
         </div>
 
         {/* Services Grid */}
         {services.length === 0 ? (
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center py-12">
-            <div className="max-w-md mx-auto p-6">
-              <Rocket className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Нет услуг для продвижения</h3>
-              <p className="text-muted-foreground mb-6">Добавьте услуги в ваш салон, чтобы начать их продвижение</p>
+          <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Rocket className="h-10 w-10 text-slate-300" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Нет услуг для продвижения</h3>
+              <p className="text-slate-500 mb-6 leading-relaxed">
+                Добавьте услуги в ваш салон, чтобы начать их продвижение и получать больше записей.
+              </p>
             </div>
           </div>
         ) : (
@@ -238,127 +232,117 @@ export default function SalonServicePromotionsPage() {
               return (
                 <div
                   key={service.id}
-                  className="rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden hover:shadow-medium transition-all duration-300 group"
+                  className={`group relative flex flex-col bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
+                    activePromotion 
+                      ? 'border-rose-200 shadow-lg shadow-rose-100/50 ring-1 ring-rose-100' 
+                      : 'border-slate-200 shadow-sm hover:shadow-xl hover:border-rose-100'
+                  }`}
                 >
-                  <div className="p-0">
-                    <div className="relative h-48 bg-muted/50 flex items-center justify-center">
-                      {imagesLoading[service.id] ? (
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      ) : serviceImages.length > 0 ? (
-                        <div className="relative w-full h-full">
-                          <img
-                            src={serviceImages[0].url || "/salon-service-photo.jpg"}
-                            alt={service.name}
-                            className="w-full h-full object-cover"
-                          />
-                          {serviceImages.length > 1 && (
-                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 absolute top-2 right-2 bg-background/80 text-foreground">
-                              +{serviceImages.length - 1}
-                            </span>
-                          )}
+                  {/* Image Section */}
+                  <div className="relative h-48 bg-slate-100 overflow-hidden">
+                    {imagesLoading[service.id] ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                        <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
+                      </div>
+                    ) : serviceImages.length > 0 ? (
+                      <>
+                        <img
+                          src={serviceImages[0].url}
+                          alt={service.name}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60" />
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                        <Camera className="h-10 w-10 mb-2 opacity-50" />
+                        <span className="text-xs font-medium">Нет фото</span>
+                      </div>
+                    )}
+
+                    {/* Status Badge Overlay */}
+                    <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                      {activePromotion && (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-white text-rose-600 shadow-md">
+                          <Zap className="h-3 w-3 mr-1 fill-current" />
+                          PROMO
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Content Section */}
+                  <div className="flex flex-col flex-1 p-5">
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <h3 className="font-bold text-lg text-slate-900 leading-tight line-clamp-2">
+                        {service.name}
+                      </h3>
+                      <span className="text-lg font-bold text-rose-600 whitespace-nowrap shrink-0">
+                        {service.price} Br
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 text-sm text-slate-500 mb-4">
+                      <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="font-medium">{service.durationMinutes} мин</span>
+                      </div>
+                      {service.isActive ? (
+                        <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span className="font-medium">Активна</span>
                         </div>
                       ) : (
-                        <div className="text-center text-muted-foreground">
-                          <Camera className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm">Нет фото</p>
-                        </div>
-                      )}
-
-                      {activePromotion && (
-                        <div className="absolute top-3 right-3">
-                          <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-success/10 text-success border-success/20">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Активно
-                          </span>
+                        <div className="flex items-center gap-1.5 text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
+                          <XCircle className="h-3.5 w-3.5" />
+                          <span className="font-medium">Скрыта</span>
                         </div>
                       )}
                     </div>
 
-                    <div className="p-4 sm:p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-foreground mb-1">{service.name}</h3>
-                          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-4 w-4" />
-                              {service.durationMinutes} мин
-                            </div>
-                            {activePromotion ? (
-                              <div className="flex items-center gap-1 text-success">
-                                <Zap className="h-4 w-4" />
-                                <span>Продвигается</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-1 text-muted-foreground">
-                                <Zap className="h-4 w-4" />
-                                <span>Готово к продвижению</span>
-                              </div>
-                            )}
-                          </div>
+                    {/* Active Promotion Info */}
+                    {activePromotion && (
+                      <div className="mb-4 p-3 bg-gradient-to-r from-rose-50 to-white rounded-xl border border-rose-100">
+                        <div className="flex items-center gap-2 text-sm text-rose-800 font-medium mb-1">
+                          <TrendingUp className="h-4 w-4" />
+                          <span>Продвижение активно</span>
                         </div>
-                        <div className="text-left sm:text-right">
-                          <div className="text-xl font-bold text-rose-500">{service.price} Br</div>
-                          <div className="flex items-center gap-1 text-sm">
-                            {service.isActive ? (
-                              <>
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span className="text-success">Активна</span>
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">Неактивна</span>
-                              </>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-2 text-xs text-rose-600/80">
+                          <Calendar className="h-3.5 w-3.5" />
+                          <span>до {new Date(activePromotion.endDate).toLocaleDateString()}</span>
                         </div>
                       </div>
+                    )}
 
-                      {service.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{service.description}</p>
-                      )}
-
-                      {activePromotion && (
-                        <div className="p-3 bg-success/10 rounded-lg border border-success/20 text-sm space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-foreground/80">
-                            <CalendarOff className="h-4 w-4" />
-                            <span>Активно до: {new Date(activePromotion.endDate).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="shrink-0 bg-border h-[1px] w-full mb-4"></div>
-
-                      <div className="flex flex-col gap-2">
-                        {activePromotion ? (
-                          <button
-                            onClick={() => handleViewAnalytics(activePromotion)}
-                            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4"
-                          >
-                            <BarChart2 className="h-4 w-4 mr-2" />
-                            Посмотреть аналитику
-                          </button>
-                        ) : (
-                          <div className="space-y-2">
-                            {expiredPromotion && (
-                              <button
-                                onClick={() => handleViewAnalytics(expiredPromotion)}
-                                className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 w-full"
-                              >
-                                <BarChart2 className="h-4 w-4 mr-2" />
-                                Прошлая аналитика
-                              </button>
-                            )}
+                    <div className="mt-auto pt-4 border-t border-slate-100">
+                      {activePromotion ? (
+                        <button
+                          onClick={() => handleViewAnalytics(activePromotion)}
+                          className="w-full inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900 h-11 px-4 shadow-sm"
+                        >
+                          <BarChart2 className="h-4 w-4 mr-2 text-slate-400" />
+                          Аналитика
+                        </button>
+                      ) : (
+                        <div className="space-y-3">
+                          {expiredPromotion && (
                             <button
-                              onClick={() => handlePromoteClick(service)}
-                              className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-10 px-4 shadow-medium w-full"
+                              onClick={() => handleViewAnalytics(expiredPromotion)}
+                              className="w-full inline-flex items-center justify-center rounded-xl text-xs font-medium text-slate-500 hover:text-rose-600 transition-colors"
                             >
-                              <Rocket className="h-4 w-4 mr-2" />
-                              Продвигать услугу
+                              <BarChart2 className="h-3.5 w-3.5 mr-1.5" />
+                              Смотреть прошлую статистику
                             </button>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                          <button
+                            onClick={() => handlePromoteClick(service)}
+                            className="w-full inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all bg-rose-600 text-white hover:bg-rose-700 active:scale-95 h-11 px-4 shadow-lg shadow-rose-200"
+                          >
+                            <Rocket className="h-4 w-4 mr-2" />
+                            Запустить продвижение
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -367,152 +351,184 @@ export default function SalonServicePromotionsPage() {
           </div>
         )}
 
+        {/* Purchase Modal */}
         {showPurchaseModal && serviceToPromote && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-            <div
-              className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-sm sm:max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-4 sm:p-6 shadow-lg duration-200 sm:rounded-lg max-h-[90vh] overflow-y-auto"
-              onWheel={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if (e.key === "PageUp" || e.key === "PageDown") {
-                  e.stopPropagation()
-                }
-              }}
-              tabIndex={0}
-            >
-              <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-                <h2 className="text-lg font-semibold leading-none tracking-tight">Выберите план продвижения</h2>
-                <p className="text-sm text-muted-foreground">{serviceToPromote.name}</p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowPurchaseModal(false)} />
+            
+            <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+              <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Выберите план</h2>
+                  <p className="text-sm text-slate-500 mt-0.5">для услуги «{serviceToPromote.name}»</p>
+                </div>
+                <button onClick={() => setShowPurchaseModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="font-medium">Доступные планы:</h3>
+              <div className="flex-1 overflow-y-auto p-6">
                 {plans.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {plans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        onClick={() => setSelectedPlanId(plan.id)}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                      >
-                        <h4 className="font-semibold text-lg">{plan.name}</h4>
-                        <p className="text-xl sm:text-2xl font-bold my-2">
-                          {plan.price} {plan.currency}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Длительность: {plan.durationDays} дней</p>
-                        <ul className="mt-3 text-sm space-y-1 list-disc list-inside">
-                          {plan.features.map((feature, i) => (
-                            <li key={i}>{feature}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {plans.map((plan) => {
+                      const isSelected = selectedPlanId === plan.id;
+                      return (
+                        <div
+                          key={plan.id}
+                          onClick={() => setSelectedPlanId(plan.id)}
+                          className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                            isSelected 
+                              ? "border-rose-500 bg-rose-50/50 shadow-md" 
+                              : "border-slate-200 hover:border-rose-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute top-3 right-3 text-rose-600">
+                              <CheckCircle2 className="h-5 w-5 fill-rose-100" />
+                            </div>
+                          )}
+                          <h4 className={`font-bold text-lg mb-1 ${isSelected ? 'text-rose-900' : 'text-slate-900'}`}>{plan.name}</h4>
+                          <div className="flex items-baseline gap-1 mb-3">
+                            <span className="text-2xl font-extrabold text-slate-900">{plan.price}</span>
+                            <span className="text-sm font-medium text-slate-500">{plan.currency}</span>
+                          </div>
+                          <div className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-xs font-medium text-slate-600 mb-4">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {plan.durationDays} дней
+                          </div>
+                          <ul className="space-y-2">
+                            {plan.features.map((feature, i) => (
+                              <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                                <Check className="h-4 w-4 text-rose-500 mt-0.5 shrink-0" />
+                                <span className="leading-tight">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground bg-muted/50 rounded-lg">
-                    <p>Нет доступных планов для продвижения.</p>
+                  <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-slate-500">Нет доступных планов для продвижения.</p>
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-start gap-3 pt-6 border-t">
+              <div className="px-6 py-5 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex flex-col-reverse sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowPurchaseModal(false)}
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                >
+                  Отмена
+                </button>
                 <button
                   onClick={handlePurchasePromotion}
                   disabled={!selectedPlanId || promotionLoading}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none bg-rose-500 text-white hover:bg-rose-600 h-10 px-4 w-full sm:w-auto"
+                  className="flex-1 h-11 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
                   {promotionLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Купить план
+                      <ShoppingCart className="h-4 w-4" />
+                      Оплатить и запустить
                     </>
                   )}
-                </button>
-                <button
-                  onClick={() => setShowPurchaseModal(false)}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
-                >
-                  Отмена
                 </button>
               </div>
             </div>
           </div>
         )}
 
+        {/* Analytics Modal */}
         {showAnalyticsModal && promotionToView && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-            <div
-              className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-sm sm:max-w-2xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-4 sm:p-6 shadow-lg duration-200 sm:rounded-lg max-h-[90vh] overflow-y-auto"
-              onWheel={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if (e.key === "PageUp" || e.key === "PageDown") {
-                  e.stopPropagation()
-                }
-              }}
-              tabIndex={0}
-            >
-              <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-                <h2 className="text-lg font-semibold leading-none tracking-tight">Аналитика продвижения</h2>
-                <p className="text-sm text-muted-foreground">
-                  {services.find((s) => s.id === promotionToView.serviceId)?.name}
-                </p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setShowAnalyticsModal(false)} />
+            
+            <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+              <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Аналитика</h2>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    {services.find((s) => s.id === promotionToView.serviceId)?.name}
+                  </p>
+                </div>
+                <button onClick={() => setShowAnalyticsModal(false)} className="p-2 text-slate-400 hover:bg-slate-100 rounded-full transition-colors">
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              {analyticsLoading ? (
-                <div className="flex justify-center items-center h-48">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : (
-                <div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-center">
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Всего показов</p>
-                      <p className="text-2xl sm:text-3xl font-bold">{analyticsSummary.impressions}</p>
-                    </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Всего кликов</p>
-                      <p className="text-2xl sm:text-3xl font-bold">{analyticsSummary.clicks}</p>
-                    </div>
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Всего записей</p>
-                      <p className="text-2xl sm:text-3xl font-bold">{analyticsSummary.bookingsCount}</p>
-                    </div>
+              <div className="flex-1 overflow-y-auto p-6">
+                {analyticsLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-rose-500" />
                   </div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-5 bg-blue-50 rounded-2xl border border-blue-100 text-center">
+                        <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">Показы</p>
+                        <p className="text-3xl font-extrabold text-slate-900">{analyticsSummary.impressions}</p>
+                      </div>
+                      <div className="p-5 bg-purple-50 rounded-2xl border border-purple-100 text-center">
+                        <p className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-1">Клики</p>
+                        <p className="text-3xl font-extrabold text-slate-900">{analyticsSummary.clicks}</p>
+                      </div>
+                      <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Записи</p>
+                        <p className="text-3xl font-extrabold text-slate-900">{analyticsSummary.bookingsCount}</p>
+                      </div>
+                    </div>
 
-                  <h3 className="font-medium mb-2">Статистика по дням:</h3>
-                  <div className="border rounded-lg overflow-x-auto">
-                    {analyticsData.length > 0 ? (
-                      <table className="w-full text-sm whitespace-nowrap">
-                        <thead className="bg-muted/50">
-                          <tr>
-                            <th className="p-3 text-left font-medium">Дата</th>
-                            <th className="p-3 text-left font-medium">Показы</th>
-                            <th className="p-3 text-left font-medium">Клики</th>
-                            <th className="p-3 text-left font-medium">Записи</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {analyticsData.map((stat) => (
-                            <tr key={stat.id} className="border-b last:border-none">
-                              <td className="p-3">{new Date(stat.date).toLocaleDateString()}</td>
-                              <td className="p-3">{stat.impressions}</td>
-                              <td className="p-3">{stat.clicks}</td>
-                              <td className="p-3">{stat.bookingsCount}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <p className="p-8 text-center text-muted-foreground">Нет данных для отображения</p>
-                    )}
+                    {/* Table */}
+                    <div>
+                      <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-slate-400" />
+                        Детализация по дням
+                      </h3>
+                      <div className="border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="overflow-x-auto">
+                          {analyticsData.length > 0 ? (
+                            <table className="w-full text-sm text-left">
+                              <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                <tr>
+                                  <th className="px-4 py-3">Дата</th>
+                                  <th className="px-4 py-3 text-right">Показы</th>
+                                  <th className="px-4 py-3 text-right">Клики</th>
+                                  <th className="px-4 py-3 text-right">Записи</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {analyticsData.map((stat) => (
+                                  <tr key={stat.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-slate-700">
+                                      {new Date(stat.date).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-slate-600">{stat.impressions}</td>
+                                    <td className="px-4 py-3 text-right text-slate-600">{stat.clicks}</td>
+                                    <td className="px-4 py-3 text-right font-bold text-slate-900">{stat.bookingsCount}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            <div className="p-8 text-center text-slate-500">
+                              Нет данных за выбранный период
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              )}
-              <div className="flex gap-3 pt-6 border-t">
+                )}
+              </div>
+
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl flex justify-end">
                 <button
                   onClick={() => setShowAnalyticsModal(false)}
-                  className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none border border-input bg-background hover:bg-rose-300 hover:text-accent-foreground h-10 px-4 w-full sm:w-auto"
+                  className="px-6 py-2.5 rounded-xl text-sm font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
                 >
                   Закрыть
                 </button>

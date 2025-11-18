@@ -1,13 +1,25 @@
 "use client"
 
-import { CheckCircle, ChevronLeft, ChevronRight, Clock, Scissors, User, X } from "lucide-react"
+import { 
+  CheckCircle, 
+  ChevronLeft, 
+  ChevronRight, 
+  Clock, 
+  Scissors, 
+  User, 
+  X, 
+  Calendar as CalendarIcon,
+  Phone,
+  FileText,
+  AlertCircle,
+  Loader2
+} from "lucide-react"
 import Image from "next/image"
 import { useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useState } from "react"
 
 import { getServiceImages } from "@/lib/firebase/database"
-
 import { ModalPortal } from '@/components/ui/ModalPortal'
 
 import { useAppointment } from "@/contexts/AppointmentContext"
@@ -373,8 +385,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
       const appointmentId = Date.now().toString()
 
-      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-      // 1. Создаем базовый объект с обязательными полями
       const appointmentData: any = {
         salonId: service!.salonId,
         serviceId: service!.id,
@@ -385,27 +395,21 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
         updatedAt: new Date().toISOString(),
       };
 
-      // 2. Условно добавляем необязательные поля, только если у них есть значение
-      if (employeeId) {
-        appointmentData.employeeId = employeeId;
-      }
-      if (customerName) {
-        appointmentData.customerName = customerName;
-      }
-      if (customerPhone) {
-        appointmentData.customerPhone = customerPhone;
-      }
-      if (currentUser?.userId) {
-        appointmentData.customerUserId = currentUser.userId;
-      }
-      if (notes) {
-        appointmentData.notes = notes;
-      }
+      if (employeeId) appointmentData.employeeId = employeeId;
+      if (customerName) appointmentData.customerName = customerName;
+      if (customerPhone) appointmentData.customerPhone = customerPhone;
+      if (currentUser?.userId) appointmentData.customerUserId = currentUser.userId;
+      if (notes) appointmentData.notes = notes;
       
-      // 3. Передаем в функцию уже "чистый" объект без undefined полей
       await createAppointment(service!.salonId, appointmentId, appointmentData)
 
       setSuccess(t('successMessage'))
+      if (onBookingSuccess) {
+        setTimeout(() => {
+          onBookingSuccess();
+          onClose();
+        }, 1500);
+      }
     } catch (e: any) {
       console.error(e)
       setSubmissionError(e.message || t('messages.errorGeneric'))
@@ -418,170 +422,286 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString()
   const isSelected = (date: Date) => selectedDate.toDateString() === date.toDateString()
 
+  // Safe access to days of week
+  const daysOfWeek = (t.raw('calendar.daysOfWeek') as string[]) || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
     <ModalPortal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-4xl max-h-[90vh]"
+      className="max-w-4xl max-h-[90vh] w-full"
     >
       {/* Modal Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('modalTitle')}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full">
-              <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <h2 className="text-xl font-bold text-slate-900">{t('modalTitle')}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
+              <X className="w-5 h-5" />
           </button>
       </div>
 
       {/* Modal Content */}
-      <div className="overflow-y-auto">
+      <div className="overflow-y-auto p-6 bg-white">
         {loading ? (
-          <div className="h-96 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-600 mx-auto mb-4"></div>
+          <div className="h-80 flex flex-col items-center justify-center text-slate-400">
+            <Loader2 className="h-10 w-10 animate-spin mb-3 text-rose-600" />
+            <p>Загрузка данных...</p>
           </div>
         ) : submissionError ? (
-          <div className="p-6 text-center text-red-700">{submissionError}</div>
+          <div className="p-6 text-center bg-red-50 rounded-xl border border-red-100">
+            <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2" />
+            <p className="text-red-700 font-medium">{submissionError}</p>
+          </div>
         ) : (
-          <>
-            {/* Service Selection */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('fields.serviceLabel')} <span className="text-red-500">*</span></label>
-              <select
-                value={selectedServiceId}
-                onChange={(e) => setSelectedServiceId(e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-rose-500 focus:border-rose-500 ${formErrors.service ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`}
-              >
-                <option value="" disabled>{t('fields.servicePlaceholder')}</option>
-                {services.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} - {s.price} Br</option>
-                ))}
-              </select>
-              {formErrors.service && <p className="mt-1 text-xs text-red-600">{formErrors.service}</p>}
+          <div className="space-y-8">
+            
+            {/* 1. Service Selection */}
+            <div className="space-y-3">
+              <label className="block text-sm font-bold text-slate-700">
+                {t('fields.serviceLabel')} <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <Scissors className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <select
+                  value={selectedServiceId}
+                  onChange={(e) => setSelectedServiceId(e.target.value)}
+                  className={`w-full pl-11 pr-4 py-3 bg-slate-50 border rounded-xl text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all cursor-pointer ${formErrors.service ? 'border-red-300 focus:ring-red-200' : 'border-slate-200'}`}
+                >
+                  <option value="" disabled>{t('fields.servicePlaceholder')}</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} — {s.price} Br</option>
+                  ))}
+                </select>
+              </div>
+              {formErrors.service && <p className="text-xs text-red-500 font-medium ml-1">{formErrors.service}</p>}
             </div>
 
-            {/* Dynamic Content Area */}
+            {/* Selected Service Card */}
             {service ? (
-              <>
-                <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 bg-gray-50 dark:bg-gray-800/50">
-                  {/* <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                    <Image src={previewUrl || "/placeholder.svg"} alt={service.name} fill className="object-cover" />
-                  </div> */}
-                  <div className="flex-1">
-                    <div className="text-lg font-bold text-gray-900 dark:text-white">{service.name}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{salon.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{service.durationMinutes} {t('header.minutes')}</span>
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-white border border-rose-100 rounded-2xl">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">{service.name}</h3>
+                    <div className="flex items-center gap-4 text-sm text-slate-600">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-rose-500" />
+                        <span>{service.durationMinutes} мин</span>
+                      </div>
+                      <div className="font-bold text-rose-600 text-base">
+                        {service.price} Br
+                      </div>
                     </div>
                   </div>
-                  <div className="text-rose-600 font-bold">{service.price} Br</div>
                 </div>
 
-                <div className="p-3 sm:p-4 space-y-6">
-                  {success && (
-                    <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>{success}</span>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Calendar */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('calendar.title')} <span className="text-red-500">*</span></h3>
-                      <div className="flex items-center justify-between mb-4">
-                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"><ChevronLeft className="w-4 h-4" /></button>
-                        <span className="font-medium">{currentMonth.toLocaleDateString(params.locale, { month: 'long', year: 'numeric' })}</span>
-                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"><ChevronRight className="w-4 h-4" /></button>
+                {/* Success Message */}
+                {success && (
+                  <div className="mt-6 flex items-center gap-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl p-4 animate-in zoom-in-95">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    <span className="font-medium">{success}</span>
+                  </div>
+                )}
+                
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Left Column: Calendar */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 text-rose-500" />
+                        {t('calendar.title')}
+                      </h3>
+                      <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="p-1 hover:bg-white rounded-md shadow-sm transition-all text-slate-600"><ChevronLeft className="w-4 h-4" /></button>
+                        <span className="text-sm font-semibold text-slate-700 px-2 min-w-[100px] text-center">
+                          {currentMonth.toLocaleDateString(params.locale, { month: 'long', year: 'numeric' })}
+                        </span>
+                        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="p-1 hover:bg-white rounded-md shadow-sm transition-all text-slate-600"><ChevronRight className="w-4 h-4" /></button>
                       </div>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                       <div className="grid grid-cols-7 gap-1 mb-2">
-                        {t.raw('calendar.daysOfWeek').map((day: string) => <div key={day} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">{day}</div>)}
+                        {daysOfWeek.map((day: string) => (
+                          <div key={day} className="text-center text-[10px] uppercase font-bold text-slate-400 py-1">{day}</div>
+                        ))}
                       </div>
                       <div className="grid grid-cols-7 gap-1">
                         {calendarDays.map((date) => {
                           const dateKey = date.toISOString().split('T')[0];
                           const status = dayAvailability[dateKey];
-                          const isAvailableForBooking = status === 'available';
+                          const isAvailable = status === 'available';
+                          const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+                          const isSelectedDay = isSelected(date);
+
                           return (
                             <button
                               key={dateKey}
-                              onClick={() => { if (isAvailableForBooking) setSelectedDate(date) }}
-                              disabled={!isAvailableForBooking}
-                              className={`p-2 text-sm rounded-lg transition-colors border ${date.getMonth() === currentMonth.getMonth() ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'} ${status === 'loading' ? 'opacity-50' : ''} ${isToday(date) ? 'border-blue-500' : 'border-transparent'} ${isSelected(date) ? 'bg-rose-600 text-white font-bold ring-2 ring-rose-300' : ''} ${isAvailableForBooking ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 font-semibold hover:bg-green-100 dark:hover:bg-green-900/40' : 'bg-gray-50 dark:bg-gray-800/50'} ${!isAvailableForBooking ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed' : ''} ${isSelected(date) && isAvailableForBooking ? 'bg-rose-600 text-white' : ''}`}
+                              onClick={() => { if (isAvailable) setSelectedDate(date) }}
+                              disabled={!isAvailable}
+                              className={`
+                                relative h-10 w-full rounded-lg text-sm font-medium transition-all duration-200
+                                flex items-center justify-center
+                                ${!isCurrentMonth ? 'text-slate-300' : ''}
+                                ${isSelectedDay ? 'bg-rose-600 text-white shadow-md shadow-rose-200 scale-105 z-10' : ''}
+                                ${!isSelectedDay && isAvailable ? 'hover:bg-rose-50 text-slate-700 hover:text-rose-700' : ''}
+                                ${!isSelectedDay && !isAvailable ? 'text-slate-300 cursor-not-allowed' : ''}
+                                ${isToday(date) && !isSelectedDay ? 'ring-1 ring-rose-300 text-rose-600 font-bold' : ''}
+                              `}
                             >
                               {date.getDate()}
+                              {isAvailable && !isSelectedDay && (
+                                <span className="absolute bottom-1.5 w-1 h-1 bg-emerald-400 rounded-full"></span>
+                              )}
                             </button>
                           )
                         })}
                       </div>
                     </div>
+                  </div>
 
+                  {/* Right Column: Time & Staff */}
+                  <div className="space-y-6">
                     {/* Time Selection */}
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('timeSelector.title')} <span className="text-red-500">*</span></h3>
-                      {formErrors.selectedTime && <p className="mb-2 text-sm text-red-600">{formErrors.selectedTime}</p>}
+                      <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-rose-500" />
+                        {t('timeSelector.title')}
+                      </h3>
+                      
                       {loadingTimeSlots ? (
-                        <div className="text-center py-8"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-rose-600 mx-auto"></div></div>
+                        <div className="h-32 flex items-center justify-center bg-slate-50 rounded-xl border border-slate-100">
+                          <Loader2 className="h-6 w-6 animate-spin text-rose-400" />
+                        </div>
                       ) : availableTimeSlots.length > 0 ? (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 overflow-y-auto pr-2">
+                        <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                           {availableTimeSlots.map((slot, index) => (
                             <button
                               key={index}
                               onClick={() => { if (slot.available) setSelectedTime(slot.time) }}
                               disabled={!slot.available}
-                              className={`p-3 text-sm rounded-lg border transition-colors ${slot.available ? (selectedTime === slot.time ? 'bg-rose-600 text-white border-rose-600' : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 hover:border-rose-400') : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'}`}
+                              className={`
+                                py-2 px-1 text-sm font-medium rounded-lg border transition-all
+                                ${selectedTime === slot.time 
+                                  ? 'bg-rose-600 text-white border-rose-600 shadow-md' 
+                                  : slot.available 
+                                    ? 'bg-white border-slate-200 text-slate-700 hover:border-rose-300 hover:text-rose-600' 
+                                    : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed decoration-slate-300'}
+                              `}
                             >
                               {slot.time}
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg"><p>{t('timeSelector.noSlots')}</p></div>
+                        <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                          <p className="text-sm">{t('timeSelector.noSlots')}</p>
+                        </div>
                       )}
+                      {formErrors.selectedTime && <p className="text-xs text-red-500 font-medium mt-2">{formErrors.selectedTime}</p>}
                     </div>
-                  </div>
 
-                  {/* Other Form Fields */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+                    {/* Staff Selection */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('fields.staffLabel')}</label>
+                      <label className="block text-sm font-bold text-slate-700 mb-2">{t('fields.staffLabel')}</label>
                       <div className="relative">
-                        <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} className="w-full pl-9 pr-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700 focus:ring-rose-500 focus:border-rose-500">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <select 
+                          value={employeeId} 
+                          onChange={(e) => setEmployeeId(e.target.value)} 
+                          className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 appearance-none focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all cursor-pointer"
+                        >
                           <option value="">{t('fields.staffAny')}</option>
-                          {employees.map((m: { userId: string }) => <option key={m.userId} value={m.userId}>{employeeNames[m.userId] || m.userId}</option>)}
+                          {employees.map((m: { userId: string }) => (
+                            <option key={m.userId} value={m.userId}>{employeeNames[m.userId] || m.userId}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('fields.customerNameLabel')} <span className="text-red-500">*</span></label>
-                      <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${formErrors.customerName ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`} required />
-                      {formErrors.customerName && <p className="mt-1 text-xs text-red-600">{formErrors.customerName}</p>}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('fields.customerPhoneLabel')} <span className="text-red-500">*</span></label>
-                      <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white ${formErrors.customerPhone ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'}`} required />
-                      {formErrors.customerPhone && <p className="mt-1 text-xs text-red-600">{formErrors.customerPhone}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('fields.notesLabel')}</label>
-                      <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white border-gray-300 dark:border-gray-700" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-end gap-3 pt-2">
-                    <button onClick={onClose} className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium" disabled={submitting}>{t('buttons.cancel')}</button>
-                    <button onClick={handleBook} disabled={submitting} className="px-5 py-2 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-50">{submitting ? t('buttons.submitting') : t('buttons.bookNow')}</button>
                   </div>
                 </div>
-              </>
+
+                <div className="h-px bg-slate-100 w-full my-8"></div>
+
+                {/* Customer Details Form */}
+                <div className="space-y-6">
+                  <h3 className="text-lg font-bold text-slate-900">Данные клиента</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        {t('fields.customerNameLabel')} <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input 
+                          type="text" 
+                          value={customerName} 
+                          onChange={(e) => setCustomerName(e.target.value)} 
+                          className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all ${formErrors.customerName ? 'border-red-300 focus:ring-red-200' : 'border-slate-200'}`}
+                          placeholder="Иван Иванов"
+                        />
+                      </div>
+                      {formErrors.customerName && <p className="text-xs text-red-500 mt-1">{formErrors.customerName}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        {t('fields.customerPhoneLabel')} <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input 
+                          type="tel" 
+                          value={customerPhone} 
+                          onChange={(e) => setCustomerPhone(e.target.value)} 
+                          className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all ${formErrors.customerPhone ? 'border-red-300 focus:ring-red-200' : 'border-slate-200'}`}
+                          placeholder="+375 (XX) XXX-XX-XX"
+                        />
+                      </div>
+                      {formErrors.customerPhone && <p className="text-xs text-red-500 mt-1">{formErrors.customerPhone}</p>}
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t('fields.notesLabel')}</label>
+                      <div className="relative">
+                        <FileText className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                        <textarea 
+                          value={notes} 
+                          onChange={(e) => setNotes(e.target.value)} 
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all min-h-[80px] resize-none"
+                          placeholder="Дополнительные пожелания..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-8 mt-4">
+                  <button 
+                    onClick={onClose} 
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
+                    disabled={submitting}
+                  >
+                    {t('buttons.cancel')}
+                  </button>
+                  <button 
+                    onClick={handleBook} 
+                    disabled={submitting} 
+                    className="w-full sm:w-auto px-8 py-3 rounded-xl bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-rose-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {submitting ? t('buttons.submitting') : t('buttons.bookNow')}
+                  </button>
+                </div>
+              </div>
             ) : (
-              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                <Scissors className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                <p>{t('messages.selectServicePrompt')}</p>
+              <div className="py-12 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Scissors className="w-10 h-10 text-slate-300" />
+                </div>
+                <p className="text-slate-500 font-medium">{t('messages.selectServicePrompt')}</p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </ModalPortal>

@@ -183,7 +183,6 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      // Используем новый метод из appointmentOperations
       const list = await appointmentOperations.listByUser(userId);
       return list;
     } catch (e: any) {

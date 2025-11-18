@@ -20,8 +20,7 @@ const getRoleLabel = (role: SalonRole, t: (key: string) => string): string => {
   return roleMap[role] || role;
 };
 
-
-// --- СКЕЛЕТЫ (ОСТАВЛЕНЫ БЕЗ ИЗМЕНЕНИЙ) ---
+// --- СКЕЛЕТЫ ---
 const SalonNameSkeleton = () => (
   <span className="inline-block h-6 w-40 bg-gray-200 rounded-md animate-pulse"></span>
 );
@@ -39,28 +38,45 @@ const SalonListItemSkeleton = () => (
 
 function SalonName({ salonId }: { salonId: string }) {
   const t = useTranslations('salons'); 
-  const { fetchSalon } = useSalon();
+  // Достаем также список salons, чтобы проверить кэш
+  const { fetchSalon, salons } = useSalon();
   const [name, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Сначала проверяем, есть ли салон уже в контексте
+    const existingSalon = salons.find(s => s.id === salonId);
+    
+    if (existingSalon) {
+      setName(existingSalon.name);
+      setLoading(false);
+      return;
+    }
+
+    // 2. Если нет, загружаем
+    let isMounted = true;
     const getSalonName = async () => {
       try {
-        setLoading(true);
+        // Не устанавливаем loading в true здесь, если хотим избежать мигания, 
+        // но для скелетона имени это нужно.
         const salon = await fetchSalon(salonId);
-        if (salon) {
+        if (isMounted && salon) {
           setName(salon.name);
         }
       } catch (error) {
         console.error("Failed to fetch salon name:", error);
-        setName(t('failedToLoadName')); 
+        if (isMounted) setName(t('failedToLoadName')); 
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     getSalonName();
-  }, [salonId, fetchSalon, t]); 
+
+    return () => { isMounted = false; };
+    // Убрали 't' и 'salons' из зависимостей, чтобы избежать лишних ре-рендеров.
+    // fetchSalon стабилен благодаря useCallback в контексте.
+  }, [salonId, fetchSalon]); 
 
   if (loading) {
     return <SalonNameSkeleton />
@@ -86,6 +102,11 @@ export default function UserSalonsPage() {
 
   const hasMaxSalons = userSalons?.salons && userSalons.salons.length >= 3;
 
+  // ИСПРАВЛЕНИЕ: Показываем скелетоны ТОЛЬКО если идет загрузка И данных еще нет.
+  // Если данные есть (userSalons !== null), мы оставляем их на экране, даже если loading === true
+  // (например, когда SalonName подгружает детали).
+  const showSkeletons = loading && !userSalons;
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
@@ -106,7 +127,8 @@ export default function UserSalonsPage() {
           </div>
         )}
         
-        {loading && (
+        {/* Используем исправленное условие */}
+        {showSkeletons && (
           <ul className="space-y-4">
             <SalonListItemSkeleton />
             <SalonListItemSkeleton />
@@ -115,12 +137,12 @@ export default function UserSalonsPage() {
 
         {error && <div className="text-center text-red-500">{error}</div>}
         
-        {!loading && !userSalons && (
+        {!loading && !userSalons && !error && (
           <div className="text-center text-gray-500">{t('noSalons')}</div>
         )}
         
-        {/* Условие 2: Если загрузка завершена и userSalons - это объект, показываем список */}
-        {!loading && userSalons && (
+        {/* Рендерим список, если данные есть (даже если идет фоновая загрузка) */}
+        {userSalons && (
           <ul className="space-y-4">
             {userSalons.salons.map((s) => {
               const translatedRole = getRoleLabel(s.role as SalonRole, t);

@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, CheckCheck, Clock, File, Image, MessageCircle, Send, X } from 'lucide-react';
+import { Check, CheckCheck, Clock, File, Image, MessageCircle, Paperclip, Send, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -11,16 +11,12 @@ import { useUser } from '@/contexts/UserContext';
 
 import type { ChatMessageType } from '@/types/database';
 
-/**
- * ИЗМЕНЕНИЕ: В интерфейс добавлено новое необязательное свойство `salonName`.
- * Оно будет передаваться из родительского компонента.
- */
 interface ChatInterfaceProps {
   chatId: string;
   salonId: string;
   customerUserId: string;
   customerName: string;
-  salonName?: string | null; // Имя салона, может быть null или undefined во время загрузки
+  salonName?: string | null;
   appointmentId?: string;
   serviceId?: string;
 }
@@ -30,7 +26,7 @@ export default function ChatInterface({
   salonId,
   customerUserId,
   customerName,
-  salonName, // Получаем новое свойство
+  salonName,
   appointmentId,
   serviceId
 }: ChatInterfaceProps) {
@@ -47,7 +43,6 @@ export default function ChatInterface({
 
   const t = useTranslations('chat');
 
-  // Состояния компонента (без изменений)
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -62,21 +57,14 @@ export default function ChatInterface({
   const messages = chatMessages[chatId] || [];
   const isCustomer = currentUser?.userId === customerUserId;
 
-  /**
-   * ИЗМЕНЕНИЕ: Динамическое определение имени для заголовка чата.
-   * - Если текущий пользователь - клиент, показываем ему название салона.
-   * - Если текущий пользователь - салон, показываем ему имя клиента.
-   */
   const headerTitle = isCustomer 
-    ? salonName || t('loadingName') // Для клиента показываем имя салона или заглушку "Загрузка..."
-    : customerName;                 // Для салона показываем имя клиента
+    ? salonName || t('loadingName') 
+    : customerName;
 
-  // Хук для авто-прокрутки к новым сообщениям (без изменений)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Хук для пометки сообщений как прочитанных (без изменений)
   useEffect(() => {
     if (currentUser && messages.length > 0) {
       const unreadMessages = messages.filter(msg => 
@@ -95,7 +83,6 @@ export default function ChatInterface({
     }
   }, [chatId, currentUser, messages, markMessagesAsRead, t]);
 
-  // Хук для загрузки сообщений при открытии чата (без изменений)
   useEffect(() => {
     if (!chatId) return;
     setLoadError(null);
@@ -111,7 +98,6 @@ export default function ChatInterface({
     load();
   }, [chatId, getMessages, t]);
 
-  // Функция отправки сообщения (без изменений)
   const handleSendMessage = async () => {
     setSendError(null);
     if (!messageText.trim() && attachments.length === 0) return;
@@ -157,7 +143,6 @@ export default function ChatInterface({
     }
   };
 
-  // Остальные функции-обработчики (без изменений)
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -165,7 +150,7 @@ export default function ChatInterface({
     }
   };
 
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
   const ALLOWED_MIMES = [
     'image/',
     'application/pdf',
@@ -203,13 +188,13 @@ export default function ChatInterface({
   const getMessageStatusIcon = (status: string) => {
     switch (status) {
       case 'sent':
-        return <Check className="w-3 h-3 text-gray-400" />;
+        return <Check className="w-3.5 h-3.5 text-rose-200" />;
       case 'delivered':
-        return <CheckCheck className="w-3 h-3 text-gray-400" />;
+        return <CheckCheck className="w-3.5 h-3.5 text-rose-200" />;
       case 'read':
-        return <CheckCheck className="w-3 h-3 text-blue-500" />;
+        return <CheckCheck className="w-3.5 h-3.5 text-white" />;
       default:
-        return <Clock className="w-3 h-3 text-gray-400" />;
+        return <Clock className="w-3.5 h-3.5 text-rose-200" />;
     }
   };
 
@@ -220,7 +205,6 @@ export default function ChatInterface({
     });
   };
 
-  // Рендеринг состояний загрузки и ошибок (без изменений)
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -228,105 +212,129 @@ export default function ChatInterface({
   const loadErrMsg = loadError ?? (error ? String(error) : null);
 
   return (
-    <div className="flex flex-col h-full bg-white border border-gray-200 rounded-lg">
+    <div className="flex flex-col h-full bg-white">
+      {/* Ошибки загрузки */}
       {loadErrMsg && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+        <div className="p-3 bg-red-50 border-b border-red-100 text-red-700 text-sm flex items-center justify-between animate-in slide-in-from-top">
           <div>{loadErrMsg}</div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setLoadError(null);
-                if (chatId) getMessages(chatId, 50).catch(err => setLoadError(err?.message ?? t('errorLoading')));
-              }}
-              className="px-3 py-1 bg-rose-600 text-white rounded"
-            >
-              {t('retry')}
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setLoadError(null);
+              if (chatId) getMessages(chatId, 50).catch(err => setLoadError(err?.message ?? t('errorLoading')));
+            }}
+            className="px-3 py-1 bg-white border border-red-200 text-red-700 rounded-lg hover:bg-red-50 text-xs font-medium transition-colors"
+          >
+            {t('retry')}
+          </button>
         </div>
       )}
       
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-rose-100 rounded-full flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-rose-600" />
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 bg-gradient-to-br from-rose-100 to-rose-50 rounded-full flex items-center justify-center shadow-sm border border-rose-100">
+              <MessageCircle className="w-6 h-6 text-rose-600" />
+            </div>
+            {currentChat?.status === 'active' && (
+              <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full shadow-sm"></span>
+            )}
           </div>
           <div>
-            {/* ИЗМЕНЕНИЕ: Используем новую переменную `headerTitle` для заголовка */}
-            <h3 className="font-semibold text-gray-900">{headerTitle}</h3>
-            <p className="text-sm text-gray-500">
-              {appointmentId ? t('chatByAppointment') : t('generalChat')}
+            <h3 className="font-bold text-slate-800 text-lg leading-tight">{headerTitle}</h3>
+            <p className="text-sm text-slate-500 font-medium">
+              {appointmentId ? (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> {t('chatByAppointment')}
+                </span>
+              ) : t('generalChat')}
             </p>
           </div>
         </div>
-        <div className="text-xs text-gray-500">
-          {currentChat?.status === 'active' && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              {t('active')}
-            </span>
-          )}
-        </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-slate-50/50 scroll-smooth">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
-            <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>{t('startConversation')}</p>
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-2">
+              <MessageCircle className="w-8 h-8 text-slate-300" />
+            </div>
+            <p className="text-lg font-medium">{t('startConversation')}</p>
+            <p className="text-sm text-slate-400 max-w-xs text-center">Напишите первое сообщение, чтобы начать диалог</p>
           </div>
         ) : (
-          messages.map((message) => {
+          messages.map((message, index) => {
             const isOwnMessage = message.senderId === currentUser?.userId;
+            const showAvatar = !isOwnMessage && (index === 0 || messages[index - 1].senderId !== message.senderId);
             
             return (
               <div
                 key={message.id}
-                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                className={`flex w-full ${isOwnMessage ? 'justify-end' : 'justify-start'} group`}
               >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    isOwnMessage
-                      ? 'bg-rose-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
+                <div className={`flex max-w-[85%] sm:max-w-[75%] gap-2 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                  
+                  {/* Аватар собеседника (плейсхолдер) */}
                   {!isOwnMessage && (
-                    <div className="text-xs font-medium mb-1 text-gray-600">
-                      {message.senderName}
+                    <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-rose-700 bg-rose-100 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
+                      {message.senderName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  
-                  <div className="mb-1">
-                    {message.messageType === 'text' && (
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    )}
-                    
-                    {message.messageType === 'file' && message.attachments && (
-                      <div className="space-y-2">
-                        <p className="text-sm">{message.content}</p>
-                        {message.attachments.map((attachment, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center gap-2 p-2 bg-white/20 rounded"
-                          >
-                            {attachment.type.startsWith('image/') ? (
-                              <Image className="w-4 h-4" />
-                            ) : (
-                              <File className="w-4 h-4" />
-                            )}
-                            <span className="text-xs truncate">{attachment.filename}</span>
-                          </div>
-                        ))}
+
+                  <div
+                    className={`relative px-5 py-3 shadow-sm transition-all duration-200 ${
+                      isOwnMessage
+                        ? 'bg-rose-600 text-white rounded-2xl rounded-tr-sm'
+                        : 'bg-white text-slate-800 border border-slate-100 rounded-2xl rounded-tl-sm'
+                    }`}
+                  >
+                    {!isOwnMessage && showAvatar && (
+                      <div className="text-xs font-bold mb-1 text-rose-600/80">
+                        {message.senderName}
                       </div>
                     )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between text-xs opacity-75">
-                    <span>{formatTime(message.createdAt)}</span>
-                    {isOwnMessage && getMessageStatusIcon(message.status)}
+                    
+                    <div className="mb-1.5 leading-relaxed">
+                      {message.messageType === 'text' && (
+                        <p className="text-[15px] whitespace-pre-wrap break-words">{message.content}</p>
+                      )}
+                      
+                      {message.messageType === 'file' && message.attachments && (
+                        <div className="space-y-2">
+                          {message.content && <p className="text-[15px] mb-2">{message.content}</p>}
+                          {message.attachments.map((attachment, idx) => (
+                            <div
+                              key={idx}
+                              className={`flex items-center gap-3 p-2.5 rounded-xl border backdrop-blur-sm ${
+                                isOwnMessage 
+                                  ? 'bg-white/10 border-white/20 hover:bg-white/20' 
+                                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                              } transition-colors cursor-pointer`}
+                            >
+                              <div className={`p-2 rounded-lg ${isOwnMessage ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
+                                {attachment.type.startsWith('image/') ? (
+                                  <Image className="w-5 h-5" />
+                                ) : (
+                                  <File className="w-5 h-5" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{attachment.filename}</p>
+                                <p className={`text-xs ${isOwnMessage ? 'text-rose-100' : 'text-slate-400'}`}>
+                                  {(attachment.size / 1024).toFixed(1)} KB
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className={`flex items-center justify-end gap-1.5 text-[11px] font-medium ${isOwnMessage ? 'text-rose-100' : 'text-slate-400'}`}>
+                      <span>{formatTime(message.createdAt)}</span>
+                      {isOwnMessage && getMessageStatusIcon(message.status)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -338,26 +346,28 @@ export default function ChatInterface({
 
       {/* Attachments Preview */}
       {attachments.length > 0 && (
-        <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-          <div className="flex flex-wrap gap-2">
+        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm">
+          <div className="flex flex-wrap gap-3">
             {attachments.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 px-3 py-1 bg-white rounded-lg border"
+                className="group flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all"
               >
-                {file.type.startsWith('image/') ? (
-                  <Image className="w-4 h-4 text-gray-500" />
-                ) : (
-                  <File className="w-4 h-4 text-gray-500" />
-                )}
-                <span className="text-sm text-gray-700 truncate max-w-32">
+                <div className="p-1.5 bg-rose-50 rounded-lg text-rose-600">
+                  {file.type.startsWith('image/') ? (
+                    <Image className="w-4 h-4" />
+                  ) : (
+                    <File className="w-4 h-4" />
+                  )}
+                </div>
+                <span className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
                   {file.name}
                 </span>
                 <button
                   onClick={() => removeAttachment(index)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-red-500 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))}
@@ -365,32 +375,58 @@ export default function ChatInterface({
         </div>
       )}
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-end gap-2">
-          <div className="flex-1">
+      {/* Input Area */}
+      <div className="p-4 sm:p-6 bg-white border-t border-slate-100">
+        <div className="relative flex items-end gap-2 bg-slate-50 p-2 rounded-[28px] border border-slate-200 shadow-inner focus-within:border-rose-300 focus-within:ring-4 focus-within:ring-rose-100 transition-all duration-300">
+          
+          {/* Кнопка вложений */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="p-3 text-slate-400 hover:text-rose-600 hover:bg-white rounded-full transition-all duration-200 flex-shrink-0"
+            title={t('attachFile')}
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+
+          <div className="flex-1 py-2">
             <textarea
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={t('placeholder')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+              className="w-full bg-transparent border-none p-0 text-slate-800 placeholder:text-slate-400 focus:ring-0 resize-none max-h-32 min-h-[24px] text-[15px] leading-relaxed"
               rows={1}
+              style={{ height: 'auto', minHeight: '24px' }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+              }}
               disabled={isTyping || isSending}
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleSendMessage}
-              disabled={(!messageText.trim() && attachments.length === 0) || isTyping || isSending}
-              className="p-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            onClick={handleSendMessage}
+            disabled={(!messageText.trim() && attachments.length === 0) || isTyping || isSending}
+            className={`p-3 rounded-full flex-shrink-0 transition-all duration-200 shadow-sm ${
+              (!messageText.trim() && attachments.length === 0) || isTyping || isSending
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-rose-600 text-white hover:bg-rose-700 hover:shadow-md hover:scale-105 active:scale-95'
+            }`}
+          >
+            <Send className="w-5 h-5 ml-0.5" /> {/* ml-0.5 для визуального центрирования иконки Send */}
+          </button>
         </div>
         
+        {/* Ошибки отправки/файлов */}
+        {(sendError || fileError) && (
+          <div className="mt-2 px-4 text-xs font-medium text-red-600 flex items-center gap-1.5 animate-in slide-in-from-bottom-2">
+            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+            {sendError || fileError}
+          </div>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"
