@@ -278,6 +278,41 @@ export const getServicesBySalonAction = async (salonId: string): Promise<SalonSe
 };
 
 /**
+ * Получает услуги конкретного салона с пагинацией
+ */
+export const getSalonServicesBySalonPaginatedAction = async (options: {
+  salonId: string;
+  limit: number;
+  startAfterKey?: string;
+}): Promise<{ services: SalonService[]; nextKey: string | null }> => {
+  const { salonId, limit, startAfterKey } = options;
+  const db = getDb();
+  
+  let q = db
+    .collection('salonServices')
+    .where('salonId', '==', salonId)
+    .orderBy('createdAt', 'desc');
+
+  if (startAfterKey) {
+    const lastDoc = await db.collection('salonServices').doc(startAfterKey).get();
+    if (lastDoc.exists) {
+      const lastData = lastDoc.data() as SalonService;
+      q = q.startAfter(lastData.createdAt);
+    }
+  }
+
+  const snap = await q.limit(limit + 1).get();
+  const docs = snap.docs;
+  const hasNext = docs.length > limit;
+  const pageDocs = docs.slice(0, limit);
+
+  const services = pageDocs.map((d) => ({ ...(d.data() as Omit<SalonService, 'id'>), id: d.id }));
+  const nextKey = hasNext ? docs[docs.length - 1].id : null;
+
+  return { services, nextKey };
+};
+
+/**
  * Получает услуги с постраничной загрузкой
  */
 export const getSalonServicesPaginatedAction = async (options: { 

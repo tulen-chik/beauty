@@ -37,6 +37,7 @@ interface SalonServiceContextType {
 
   // --- Методы для получения списков услуг ---
   getServicesBySalon: (salonId: string, options?: { search?: string; limit?: number }) => Promise<SalonService[]>;
+  getServicesBySalonPaginated: (options: { salonId: string; limit: number; startAfterKey?: string }) => Promise<{ services: SalonService[]; nextKey: string | null }>;
   getAllServices: (options: { limit: number; startAfterKey?: string }) => Promise<{ services: SalonService[]; nextKey: string | null }>;
   getServicesByCity: (options: { city: string; limit: number; startAfterKey?: string }) => Promise<{ services: SalonService[]; nextKey: string | null }>;
 
@@ -152,6 +153,10 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [handleRequest]);
 
+  const getServicesBySalonPaginated = useCallback((options: { salonId: string; limit: number; startAfterKey?: string }) => {
+    return handleRequest(() => salonActions.getSalonServicesBySalonPaginatedAction(options));
+  }, [handleRequest]);
+
   const getAllServices = useCallback((options: { limit: number; startAfterKey?: string }) => {
     return handleRequest(() => salonActions.getSalonServicesPaginatedAction(options));
   }, [handleRequest]);
@@ -189,6 +194,7 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     updateService,
     deleteService,
     getServicesBySalon,
+    getServicesBySalonPaginated,
     getAllServices, 
     getServicesByCity,
     uploadImage,
@@ -202,6 +208,7 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
     updateService,
     deleteService,
     getServicesBySalon,
+    getServicesBySalonPaginated,
     getAllServices, 
     getServicesByCity,
     uploadImage,

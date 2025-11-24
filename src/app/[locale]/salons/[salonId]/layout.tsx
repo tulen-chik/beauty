@@ -2,9 +2,11 @@
 import { Building2, Menu,X } from "lucide-react";
 import { usePathname,useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useSalon } from "@/contexts";
+import { useUser } from "@/contexts";
 
 export default function SalonCrmLayout({ 
   children, 
@@ -19,6 +21,19 @@ export default function SalonCrmLayout({
   const t = useTranslations('salonCrm');
   const activePath = pathname.split(`/salons/${salonId}`)[1] || "";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { userSalons, fetchUserSalons } = useSalon();
+  const { currentUser } = useUser();
+
+  useEffect(() => {
+    if (!userSalons && currentUser?.userId) {
+      fetchUserSalons(currentUser.userId).catch(() => {});
+    }
+  }, [userSalons, currentUser?.userId, fetchUserSalons]);
+
+  const currentRole = useMemo(() => {
+    const entry = userSalons?.salons?.find((s) => s.salonId === salonId);
+    return entry?.role || null;
+  }, [userSalons, salonId]);
 
   const MENU = [
     // { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
@@ -31,6 +46,13 @@ export default function SalonCrmLayout({
     { key: "promotion", label: t('menu.promotion'), path: "/promotion" },
     { key: "analytics", label: t('menu.analytics'), path: "/analytics" },
   ];
+
+  const FILTERED_MENU = useMemo(() => {
+    if (currentRole === 'employee') {
+      return MENU.filter((i) => i.key !== 'settings' && i.key !== 'promotion');
+    }
+    return MENU;
+  }, [MENU, currentRole]);
 
   const handleMenuClick = (path: string) => {
     router.push(`/${locale}/salons/${salonId}${path}`);
@@ -77,7 +99,7 @@ export default function SalonCrmLayout({
                 </div>
               </div>
               <div className="p-4 space-y-2">
-                {MENU.map((item) => (
+                {FILTERED_MENU.map((item) => (
                   <button
                     key={item.key}
                     onClick={() => handleMenuClick(item.path)}
@@ -105,7 +127,7 @@ export default function SalonCrmLayout({
             {/* Меню справа */}
             <aside className="w-64 border-l border-gray-100 bg-gray-50 p-8 flex flex-col gap-2 flex-shrink-0">
               <div className="text-lg font-bold text-gray-800 mb-4">{t('menu.title')}</div>
-              {MENU.map((item) => (
+              {FILTERED_MENU.map((item) => (
                 <button
                   key={item.key}
                   onClick={() => router.push(`/${locale}/salons/${salonId}${item.path}`)}

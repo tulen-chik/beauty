@@ -39,7 +39,7 @@ export default function SearchPage() {
   const { findActiveServicePromotion } = usePromotion();
   // --- ИЗМЕНЕНИЕ 1: Получаем новый метод getRandomCategories из контекста ---
   const { getCategoriesBySalon, getRandomCategories } = useServiceCategory();
-  const { getServicesByCity, getServicesBySalon } = useSalonService();
+  const { getServicesByCity, getServicesBySalon, getServicesBySalonPaginated } = useSalonService();
   const { city: userCity, position, loading: geoLoading } = useGeolocation();
   const { fetchSalonsByCity } = useSalon();
 
@@ -92,38 +92,47 @@ export default function SearchPage() {
       setServices([]);
       setNextKey(undefined);
       setHasMore(true);
-
       try {
-        let accumulatedSalons: Salon[] = [];
-        let currentSalonNextKey: string | undefined = undefined;
-        let hasMoreSalons = true;
+        // Запускаем фоновую подгрузку салонов и рейтингов, добавляя по мере получения
+        (async () => {
+          try {
+            let currentSalonNextKey: string | undefined = undefined;
+            let hasMoreSalons = true;
+            let localRatings: Record<string, any> = {};
 
-        while (hasMoreSalons) {
-          const response: { salons: Salon[]; nextKey: string | null } = await fetchSalonsByCity({
-            city: currentCity,
-            limit: SALON_PAGE_SIZE,
-            startAfterKey: currentSalonNextKey,
-          });
+            while (hasMoreSalons) {
+              const response: { salons: Salon[]; nextKey: string | null } = await fetchSalonsByCity({
+                city: currentCity,
+                limit: SALON_PAGE_SIZE,
+                startAfterKey: currentSalonNextKey,
+              });
 
-          accumulatedSalons = [...accumulatedSalons, ...response.salons];
-          currentSalonNextKey = response.nextKey ?? undefined;
-          hasMoreSalons = !!response.nextKey;
-        }
+              // добавляем салоны инкрементально
+              setAllSalons(prev => [...prev, ...response.salons]);
+              setSalonsById(prev => ({ ...prev, ...Object.fromEntries(response.salons.map(s => [s.id, s])) }));
 
-        setAllSalons(accumulatedSalons);
+              // рейтинги для пришедшей страницы салонов
+              for (const salon of response.salons) {
+                try {
+                  const stats = await getRatingStats(salon.id);
+                  localRatings[salon.id] = stats;
+                  // обновляем по мере получения
+                  setSalonRatings(prev => ({ ...prev, [salon.id]: stats }));
+                } catch (error) {
+                  console.warn(`Failed to load ratings for salon ${salon.id}`, error);
+                }
+              }
 
-        const salonsMap = Object.fromEntries(accumulatedSalons.map(s => [s.id, s]));
-        setSalonsById(salonsMap);
+              currentSalonNextKey = response.nextKey ?? undefined;
+              hasMoreSalons = !!response.nextKey;
+            }
+          } catch (e) {
+            console.error('Background salons load failed:', e);
+          }
+        })();
 
-        const ratingsData: Record<string, any> = {};
-        for (const salon of accumulatedSalons) {
-          try { ratingsData[salon.id] = await getRatingStats(salon.id); } 
-          catch (error) { console.warn(`Failed to load ratings for salon ${salon.id}`, error); }
-        }
-        setSalonRatings(ratingsData);
-
-        await fetchServices(false, salonsMap);
-
+        // Немедленно загружаем первую страницу услуг, не дожидаясь всех салонов
+        await fetchServices(false);
       } catch (error) {
         console.error("Error loading data for city:", error);
       } finally {
@@ -194,8 +203,13 @@ export default function SearchPage() {
       let newNextKey: string | null = null;
 
       if (selectedSalonId) {
-        rawServices = await getServicesBySalon(selectedSalonId, { search: debouncedQuery });
-        newNextKey = null;
+        const result = await getServicesBySalonPaginated({
+          salonId: selectedSalonId,
+          limit: PAGE_SIZE,
+          startAfterKey: isLoadMore ? (nextKey ?? undefined) : undefined,
+        });
+        rawServices = result.services;
+        newNextKey = result.nextKey;
       } else if (currentCity) {
         const result = await getServicesByCity({ 
           limit: PAGE_SIZE, 
@@ -216,7 +230,7 @@ export default function SearchPage() {
     } finally {
       if (isLoadMore) setIsLoadingMore(false);
     }
-  }, [selectedSalonId, nextKey, getServicesByCity, getServicesBySalon, processServicesChunk, debouncedQuery, currentCity, salonsById]);
+  }, [selectedSalonId, nextKey, getServicesByCity, getServicesBySalonPaginated, processServicesChunk, debouncedQuery, currentCity, salonsById]);
   
   useEffect(() => {
     if (loading) return;
@@ -226,6 +240,23 @@ export default function SearchPage() {
     setHasMore(true);
     fetchServices(false);
   }, [selectedSalonId, debouncedQuery, selectedCategory, sortBy]);
+
+  // По мере загрузки справочника салонов дополняем уже полученные услуги данными салона
+  useEffect(() => {
+    if (!services.length) return;
+    setServices(prev => prev.map(s => {
+      if (!s.salon) {
+        const salon = salonsById[s.salonId];
+        if (salon) {
+          return {
+            ...s,
+            salon: { id: salon.id, name: salon.name, address: salon.address }
+          };
+        }
+      }
+      return s;
+    }));
+  }, [salonsById]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_DELAY);

@@ -166,13 +166,13 @@ export const ServiceCard = React.memo(({ service, locale, salonRating }: { servi
                       <span className="truncate">{service.salon.name}</span>
                     </div>
                     <p className="text-xs text-slate-500 truncate pl-5">{formatAddress(service.salon.address)}</p>
-                    
-                    {salonRating && (
-                      <div className="flex items-center gap-1.5 mt-1 pl-5">
-                        <RatingDisplay rating={salonRating.averageRating} size="sm" />
-                        <span className="text-xs text-slate-400 font-medium">({salonRating.totalRatings})</span>
-                      </div>
-                    )}
+                  </div>
+                )}
+
+                {salonRating && (
+                  <div className={`flex items-center gap-1.5 mt-1 ${service.salon ? 'pl-5' : ''}`}>
+                    <RatingDisplay rating={salonRating.averageRating} size="sm" />
+                    <span className="text-xs text-slate-400 font-medium">({salonRating.totalRatings})</span>
                   </div>
                 )}
               </div>
@@ -362,7 +362,12 @@ export const SearchAndFilterPanel = ({
                     ) : (
                         <div>
                             {filteredAndSortedServices.map((service: ProcessedService) => (
-                                <ServiceCard key={service.id} service={service} locale={locale} salonRating={service.salon ? salonRatings[service.salon.id] : undefined} />
+                                <ServiceCard 
+                                  key={service.id} 
+                                  service={service} 
+                                  locale={locale} 
+                                  salonRating={salonRatings[service.salon?.id || service.salonId]}
+                                />
                             ))}
                             <div ref={loaderRef} className="h-16 flex justify-center items-center">
                                 {isLoadingMore && <LoadingSpinner />}
