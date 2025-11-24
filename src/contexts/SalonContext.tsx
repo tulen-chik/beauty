@@ -7,9 +7,9 @@ import * as salonActions from '@/app/actions/salonActions';
 
 // 2. Импорт клиентских функций для Storage
 import { 
-  deleteSalonAvatar, 
-  uploadSalonAvatar 
-} from '@/lib/firebase/database';
+  deleteSalonAvatarAction as deleteSalonAvatar, 
+  uploadSalonAvatarAction as uploadSalonAvatar 
+} from '@/app/actions/storageActions';
 
 import { useGeolocation } from './index';
 
@@ -177,7 +177,20 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
 
   const updateAvatar = useCallback(async (salonId: string, file: File): Promise<Salon> => {
     return handleRequest(async () => {
-      const { url, storagePath } = await uploadSalonAvatar(salonId, file);
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('salonId', salonId);
+
+      const resp = await fetch('/api/upload/salon-avatar', {
+        method: 'POST',
+        body: fd,
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err?.error || 'Не удалось загрузить аватар салона');
+      }
+      const { url, storagePath } = await resp.json();
+
       await salonActions.updateSalonAvatarDbAction(salonId, url, storagePath);
       
       const updatedSalon = await salonActions.getSalonByIdAction(salonId);

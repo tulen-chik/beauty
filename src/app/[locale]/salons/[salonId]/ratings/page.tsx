@@ -1,20 +1,16 @@
 'use client';
 
-import { CheckCircle, Clock, Filter, Star, XCircle } from 'lucide-react';
+import { MessageCircle, Send, Star } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // Рекомендую добавить uuid для генерации ID
 
 import RatingCard from '@/components/RatingCard';
 import RatingStats from '@/components/RatingStats';
-// --- ИЗМЕНЕНИЕ: УДАЛЕН ИМПОРТ СПИННЕРА ---
-// import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-
 import { useSalonRating } from '@/contexts';
 import { useUser } from '@/contexts';
 
-// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
-
-// Скелет для карточки отзыва
+// --- КОМПОНЕНТЫ SKELETON (Оставлены без изменений) ---
 const RatingCardSkeleton = () => (
   <div className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
     <div className="flex items-start gap-4">
@@ -34,7 +30,6 @@ const RatingCardSkeleton = () => (
   </div>
 );
 
-// Скелет для блока статистики
 const RatingStatsSkeleton = () => (
   <div className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse">
     <div className="h-7 w-1/2 bg-gray-300 rounded-lg mb-6"></div>
@@ -55,39 +50,21 @@ const RatingStatsSkeleton = () => (
   </div>
 );
 
-// Основной компонент-скелет для всей страницы
 const SalonRatingsPageSkeleton = () => (
   <div className="min-h-screen bg-gray-50">
     <div className="container mx-auto px-4 py-8">
-      {/* Header Skeleton */}
       <div className="mb-8 space-y-2">
         <div className="h-9 w-3/4 bg-gray-300 rounded-lg"></div>
         <div className="h-5 w-1/2 bg-gray-200 rounded-md"></div>
       </div>
-
-      {/* Stats Skeleton */}
       <RatingStatsSkeleton />
-
-      {/* Filters Skeleton */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 my-6">
-        <div className="flex items-center gap-4">
-          <div className="h-5 w-16 bg-gray-200 rounded"></div>
-          <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
-          <div className="h-8 w-32 bg-gray-200 rounded-full"></div>
-          <div className="h-8 w-28 bg-gray-200 rounded-full"></div>
-        </div>
-      </div>
-
-      {/* Ratings List Skeleton */}
-      <div className="space-y-6">
+      <div className="space-y-6 mt-8">
         <RatingCardSkeleton />
         <RatingCardSkeleton />
       </div>
     </div>
   </div>
 );
-
-// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
 export default function SalonRatingsPage() {
   const params = useParams();
@@ -97,9 +74,7 @@ export default function SalonRatingsPage() {
     getRatingsBySalon, 
     getRatingStats, 
     getResponsesByRating,
-    approveRating,
-    rejectRating,
-    createRating,
+    createResponse, // Используем метод создания ответа
     ratings,
     ratingStats,
     loading
@@ -107,82 +82,83 @@ export default function SalonRatingsPage() {
   
   const { currentUser } = useUser();
   
-  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-  const [selectedRating, setSelectedRating] = useState<string | null>(null);
+  // Состояние для модального окна ответа
+  const [selectedRatingId, setSelectedRatingId] = useState<string | null>(null);
+  const [responseText, setResponseText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Локальное хранилище ответов для быстрого отображения
   const [responses, setResponses] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     if (salonId) {
-      loadRatings();
-      loadStats();
+      loadData();
     }
   }, [salonId]);
 
-  const loadRatings = async () => {
+  const loadData = async () => {
+    await Promise.all([
+      loadRatingsAndResponses(),
+      getRatingStats(salonId)
+    ]);
+  };
+
+  const loadRatingsAndResponses = async () => {
     const salonRatings = await getRatingsBySalon(salonId);
     
     const responsesData: Record<string, any[]> = {};
-    for (const rating of salonRatings) {
+    // Загружаем ответы для каждого рейтинга
+    await Promise.all(salonRatings.map(async (rating) => {
       const ratingResponses = await getResponsesByRating(rating.id);
       responsesData[rating.id] = ratingResponses;
-    }
+    }));
+    
     setResponses(responsesData);
   };
 
-  const loadStats = async () => {
-    await getRatingStats(salonId);
+  const handleOpenResponseModal = (ratingId: string) => {
+    setSelectedRatingId(ratingId);
+    setResponseText('');
   };
 
+  const handleCloseResponseModal = () => {
+    setSelectedRatingId(null);
+    setResponseText('');
+  };
 
-  const handleApproveRating = async (ratingId: string) => {
+  const handleSubmitResponse = async () => {
+    if (!selectedRatingId || !responseText.trim()) return;
+
+    setIsSubmitting(true);
     try {
-      await approveRating(ratingId);
-      await loadRatings();
-      await loadStats();
+      // Генерируем ID для ответа (лучше использовать uuid, но можно и так)
+      const responseId = `resp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Имя отвечающего (название салона или имя менеджера)
+      const responderName = currentUser?.displayName || 'Администратор салона';
+
+      await createResponse(
+        responseId,
+        selectedRatingId,
+        salonId,
+        responseText,
+        responderName
+      );
+
+      // Обновляем данные
+      await loadRatingsAndResponses();
+      handleCloseResponseModal();
     } catch (error) {
-      console.error('Ошибка при одобрении отзыва:', error);
+      console.error('Ошибка при отправке ответа:', error);
+      alert('Не удалось отправить ответ. Попробуйте позже.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleRejectRating = async (ratingId: string) => {
-    const reason = prompt('Укажите причину отклонения:');
-    if (reason) {
-      try {
-        await rejectRating(ratingId, reason);
-        await loadRatings();
-        await loadStats();
-      } catch (error) {
-        console.error('Ошибка при отклонении отзыва:', error);
-      }
-    }
-  };
-
-  const filteredRatings = ratings[salonId]?.filter(rating => {
-    if (filter === 'all') return true;
-    return rating.status === filter;
-  }) || [];
-
+  const salonRatings = ratings[salonId] || [];
   const stats = ratingStats[salonId];
 
-  const getFilterIcon = (filterType: string) => {
-    switch (filterType) {
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'rejected': return <XCircle className="w-4 h-4" />;
-      default: return <Filter className="w-4 h-4" />;
-    }
-  };
-
-  const getFilterColor = (filterType: string) => {
-    switch (filterType) {
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
-      case 'approved': return 'text-green-600 bg-green-100';
-      case 'rejected': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
     return <SalonRatingsPageSkeleton />;
   }
@@ -192,95 +168,99 @@ export default function SalonRatingsPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Заголовок */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Отзывы о салоне</h1>
-          <p className="text-gray-600 mt-2">Управление отзывами и рейтингами</p>
+          <h1 className="text-3xl font-bold text-gray-900">Отзывы клиентов</h1>
+          <p className="text-gray-600 mt-2">Просматривайте отзывы и отвечайте на них</p>
         </div>
 
         {/* Статистика */}
         {stats && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Статистика отзывов</h2>
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8 shadow-sm">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Общий рейтинг</h2>
             <RatingStats stats={stats} showCategoryAverages />
           </div>
         )}
 
-        {/* Фильтры */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Фильтр:</span>
-            {(['all', 'pending', 'approved', 'rejected'] as const).map((filterType) => (
-              <button
-                key={filterType}
-                onClick={() => setFilter(filterType)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  filter === filterType
-                    ? getFilterColor(filterType)
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {getFilterIcon(filterType)}
-                <span>
-                  {filterType === 'all' && 'Все'}
-                  {filterType === 'pending' && 'На модерации'}
-                  {filterType === 'approved' && 'Одобренные'}
-                  {filterType === 'rejected' && 'Отклоненные'}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Список отзывов */}
         <div className="space-y-6">
-          {filteredRatings.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-              <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Нет отзывов</h3>
-              <p className="text-gray-600">
-                {filter === 'all' 
-                  ? 'Пока нет отзывов для этого салона'
-                  : `Нет отзывов со статусом "${filter}"`
-                }
+          {salonRatings.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Отзывов пока нет</h3>
+              <p className="text-gray-500">
+                Как только клиенты оставят отзывы, они появятся здесь.
               </p>
             </div>
           ) : (
-            filteredRatings.map((rating) => (
-              <RatingCard
-                key={rating.id}
-                rating={rating}
-                responses={responses[rating.id] || []}
-                showResponseButton={true}
-                onResponse={(ratingId) => setSelectedRating(ratingId)}
-              />
-            ))
+            salonRatings.map((rating) => {
+              const ratingResponses = responses[rating.id] || [];
+              const hasResponse = ratingResponses.length > 0;
+
+              return (
+                <div key={rating.id} className="relative">
+                  <RatingCard
+                    rating={rating}
+                    responses={ratingResponses}
+                    showResponseButton={!hasResponse} 
+                    onResponse={() => handleOpenResponseModal(rating.id)}
+                  />
+                </div>
+              );
+            })
           )}
         </div>
-        {/* Панель модерации */}
-        {selectedRating && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Модерация отзыва</h3>
-              <div className="space-y-4">
-                <button
-                  onClick={() => handleApproveRating(selectedRating)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Одобрить
-                </button>
-                <button
-                  onClick={() => handleRejectRating(selectedRating)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Отклонить
-                </button>
-                <button
-                  onClick={() => setSelectedRating(null)}
-                  className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Отмена
-                </button>
+
+        {/* Модальное окно ответа */}
+        {selectedRatingId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                    Ответ на отзыв
+                  </h3>
+                  <button 
+                    onClick={handleCloseResponseModal}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ваш ответ
+                  </label>
+                  <textarea
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    placeholder="Поблагодарите клиента или прокомментируйте ситуацию..."
+                    className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={handleCloseResponseModal}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+                    disabled={isSubmitting}
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleSubmitResponse}
+                    disabled={!responseText.trim() || isSubmitting}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  >
+                    {isSubmitting ? (
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                    Отправить
+                  </button>
+                </div>
               </div>
             </div>
           </div>

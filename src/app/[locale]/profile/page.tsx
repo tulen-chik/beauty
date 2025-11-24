@@ -137,7 +137,6 @@ export default function ProfilePage() {
 
   const handleAvatarRemove = async () => {
     if (!currentUser?.avatarUrl) return;
-    if (window.confirm("Вы уверены, что хотите удалить свой аватар?")) {
       setIsAvatarUploading(true); setMsg(null); setErrors({});
       try {
         await removeAvatar();
@@ -147,7 +146,7 @@ export default function ProfilePage() {
       } finally {
         setIsAvatarUploading(false);
       }
-    }
+    
   };
 
   const handleInvitationResponse = async (invitationId: string, accept: boolean) => {

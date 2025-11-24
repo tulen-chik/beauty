@@ -1,6 +1,14 @@
-import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+'use client';
 
-import { salonScheduleOperations } from '@/lib/firebase/database';
+import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+
+// Импортируем новые Server Actions
+import {
+  getSalonScheduleAction,
+  createSalonScheduleAction,
+  updateSalonScheduleAction,
+  deleteSalonScheduleAction
+} from '@/app/actions/salonActions';
 
 import type { SalonSchedule } from '@/types/database';
 
@@ -29,13 +37,13 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
     setLoading(true);
     setError(null);
     try {
-      const schedule = await salonScheduleOperations.read(salonId);
-      setLoading(false);
+      const schedule = await getSalonScheduleAction(salonId);
       return schedule;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -43,13 +51,13 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
     setLoading(true);
     setError(null);
     try {
-      const schedule = await salonScheduleOperations.create(salonId, data);
-      setLoading(false);
+      const schedule = await createSalonScheduleAction(salonId, data);
       return schedule;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -57,13 +65,13 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
     setLoading(true);
     setError(null);
     try {
-      const updated = await salonScheduleOperations.update(salonId, data);
-      setLoading(false);
+      const updated = await updateSalonScheduleAction(salonId, data);
       return updated;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -71,12 +79,12 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
     setLoading(true);
     setError(null);
     try {
-      await salonScheduleOperations.delete(salonId);
-      setLoading(false);
+      await deleteSalonScheduleAction(salonId);
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -101,4 +109,4 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
       {children}
     </SalonScheduleContext.Provider>
   );
-}; 
+};

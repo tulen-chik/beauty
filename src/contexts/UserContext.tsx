@@ -2,11 +2,18 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { authService } from '@/lib/firebase/auth';
-import { userOperations } from '@/lib/firebase/database';
+import { 
+  readUserAction,
+  createUserAction,
+  updateUserAction,
+  getUserByEmailAction,
+  getUserByIdAction,
+} from '@/app/actions/userActions';
 // --- ДОБАВЛЕНО: Импорт функций для работы с аватарами ---
-import { deleteUserAvatar, uploadUserAvatar } from '@/lib/firebase/storage';
-
-import { useDatabase } from './DatabaseContext';
+import {
+  uploadUserAvatarAction as uploadUserAvatar,
+  deleteUserAvatarAction as deleteUserAvatar,
+} from '@/app/actions/storageActions';
 
 import type { User } from '@/types/database';
 
@@ -34,7 +41,6 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | null>(null);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useDatabase();
   const [currentUser, setCurrentUser] = useState<(User & { userId: string }) | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -110,7 +116,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       setError(null);
       
-      const userData = await user.read(uid);
+      const userData = await readUserAction(uid);
       if (userData) {
         const userWithId = { userId: uid, ...userData };
         setCurrentUser(userWithId);
@@ -124,7 +130,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  }, [user, loadUserFromCache, saveUserToCache, clearUserCache]);
+  }, [loadUserFromCache, saveUserToCache, clearUserCache]);
     
   useEffect(() => {
     const checkCacheOnMount = async () => {
@@ -158,10 +164,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           const { user, name } = redirectResult;
           setFirebaseUser(user);
           
-          const userData = await userOperations.read(user.uid);
+          const userData = await readUserAction(user.uid);
           if (!userData) {
             console.log('Creating new user from Google auth...');
-            await userOperations.create(user.uid, {
+            await createUserAction(user.uid, {
               email: user.email || '',
               displayName: name,
               avatarUrl: '',
@@ -222,6 +228,21 @@ const register = async (email: string, password: string, displayName: string) =>
       setLoading(true);
       const firebaseUser = await authService.register(email, password, displayName);
       setFirebaseUser(firebaseUser);
+      const existing = await readUserAction(firebaseUser.uid);
+      if (!existing) {
+        await createUserAction(firebaseUser.uid, {
+          email: firebaseUser.email || email,
+          displayName,
+          avatarUrl: '',
+          avatarStoragePath: '',
+          createdAt: new Date().toISOString(),
+          role: 'user',
+          settings: {
+            language: 'en',
+            notifications: true,
+          },
+        });
+      }
       await refreshUser(firebaseUser.uid);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to register'));
@@ -315,10 +336,10 @@ const register = async (email: string, password: string, displayName: string) =>
       const { user, name } = result;
       setFirebaseUser(user);
       
-      const userData = await userOperations.read(user.uid);
+      const userData = await readUserAction(user.uid);
       if (!userData) {
         console.log('Creating new user from Google popup auth...');
-        await userOperations.create(user.uid, {
+        await createUserAction(user.uid, {
           email: user.email || '',
           displayName: name,
           avatarUrl: '',
@@ -345,11 +366,12 @@ const register = async (email: string, password: string, displayName: string) =>
   };
 
   const getUserByEmail = async (email: string) => {
-    return await userOperations.getByEmail(email);
+    const res = await getUserByEmailAction(email);
+    return res as unknown as User | null;
   };
 
   const getUserById = async (userId: string) => {
-    return await userOperations.getById(userId);
+    return await getUserByIdAction(userId);
   };
 
   // --- ДОБАВЛЕНО: Реализация методов для работы с аватарами ---
@@ -360,21 +382,31 @@ const register = async (email: string, password: string, displayName: string) =>
     }
 
     try {
-      setLoading(true);
       setError(null);
 
+      // Если был старый аватар — удаляем файл и запись о нем
       if (currentUser.avatarStoragePath) {
         await deleteUserAvatar(currentUser.avatarStoragePath);
       }
 
-      const { url, storagePath } = await uploadUserAvatar(currentUser.userId, file);
+      // Отправляем файл через API роут (Server Actions не принимают File напрямую)
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('userId', currentUser.userId);
 
-      await user.update(currentUser.userId, {
-        avatarUrl: url,
-        avatarStoragePath: storagePath,
+      const resp = await fetch('/api/upload/user-avatar', {
+        method: 'POST',
+        body: fd,
       });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err?.error || 'Не удалось загрузить аватар');
+      }
+      const { url, storagePath } = await resp.json();
 
-      // Вызываем refreshUser с флагом принудительного обновления
+      await updateUserAction(currentUser.userId, { avatarUrl: url, avatarStoragePath: storagePath });
+
+      // Принудительно обновляем пользователя
       await refreshUser(currentUser.userId, { force: true });
 
     } catch (err) {
@@ -398,7 +430,7 @@ const register = async (email: string, password: string, displayName: string) =>
 
       await deleteUserAvatar(currentUser.avatarStoragePath);
 
-      await user.update(currentUser.userId, {
+      await updateUserAction(currentUser.userId, {
         avatarUrl: '',
         avatarStoragePath: '',
       });

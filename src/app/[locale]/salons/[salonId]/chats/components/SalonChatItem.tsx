@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useAppointment } from '@/contexts/AppointmentContext';
+// Импортируем действие для получения пользователя
+import { getUserByIdAction } from '@/app/actions/userActions'; 
 import { Chat, SalonService, Appointment } from '@/types/database';
 import { InitialAvatar, formatDate } from '@/components/Chat/Helpers';
 
@@ -16,26 +18,48 @@ interface SalonChatItemProps {
 export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItemProps) {
   const { getService } = useSalonService();
   const { getAppointment } = useAppointment();
+  
   const [service, setService] = useState<SalonService | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
+  // Добавляем состояние для аватара
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  
   const t = useTranslations('salonChats');
 
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoadingDetails(true);
+      
+      // 1. Загружаем данные пользователя (аватар)
+      if (chat.customerUserId) {
+        try {
+          const user = await getUserByIdAction(chat.customerUserId);
+          if (user && user.avatarUrl) {
+            setAvatarUrl(user.avatarUrl);
+          }
+        } catch (e) {
+          console.error("Failed to load user avatar", e);
+        }
+      }
+
+      // 2. Загружаем услугу
       if (chat.serviceId) {
         try { setService(await getService(chat.serviceId)); }
         catch (e) { console.error(e); setService(null); }
       }
+
+      // 3. Загружаем запись
       if (chat.appointmentId && chat.salonId) {
         try { setAppointment(await getAppointment(chat.salonId, chat.appointmentId)); }
         catch (e) { console.error(e); setAppointment(null); }
       }
+      
       setIsLoadingDetails(false);
     };
+    
     loadDetails();
-  }, [chat.serviceId, chat.appointmentId, chat.salonId, getService, getAppointment]);
+  }, [chat.serviceId, chat.appointmentId, chat.salonId, chat.customerUserId, getService, getAppointment]);
 
   return (
     <div
@@ -46,7 +70,21 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
           : 'hover:bg-slate-50 hover:border-slate-100'
       }`}
     >
-      <InitialAvatar name={chat.customerName || ''} className="w-12 h-12 rounded-full flex-shrink-0 text-lg shadow-sm" />
+      {/* Логика отображения аватара */}
+      <div className="w-12 h-12 flex-shrink-0">
+        {avatarUrl ? (
+          <img 
+            src={avatarUrl} 
+            alt={chat.customerName} 
+            className="w-full h-full rounded-full object-cover shadow-sm"
+          />
+        ) : (
+          <InitialAvatar 
+            name={chat.customerName || ''} 
+            className="w-full h-full rounded-full text-lg shadow-sm" 
+          />
+        )}
+      </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">

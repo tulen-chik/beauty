@@ -606,7 +606,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label htmlFor="price" className="text-sm font-semibold text-slate-700">
-                          {t("modal.form.priceLabel", { currency: "₽" })}
+                          {t("modal.form.priceLabel", { currency: "Br" })}
                         </label>
                         <div className="relative">
                           <input
@@ -619,7 +619,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                             onBlur={handlePriceBlur}
                             className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-8 text-sm font-medium text-slate-900 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none"
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">₽</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">"Br"</span>
                         </div>
                       </div>
                       <div className="space-y-1.5">

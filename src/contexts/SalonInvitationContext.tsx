@@ -1,6 +1,6 @@
 import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
 
-import { salonInvitationOperations } from '@/lib/firebase/database';
+import { getInvitationByIdAction, updateInvitationAction, deleteInvitationAction, createInvitationAction, acceptInvitationAction, getInvitationsByEmailAction, getInvitationsBySalonIdAction } from '@/app/actions/salonActions';
 
 import type { SalonInvitation } from '@/types/database';
 
@@ -32,7 +32,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const invitation = await salonInvitationOperations.create(invitationId, data);
+      const invitation = await createInvitationAction(invitationId, data);
       setLoading(false);
       return invitation;
     } catch (e: any) {
@@ -46,7 +46,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const invitation = await salonInvitationOperations.read(invitationId);
+      const invitation = await getInvitationByIdAction(invitationId);
       setLoading(false);
       return invitation;
     } catch (e: any) {
@@ -60,7 +60,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      await salonInvitationOperations.acceptInvitation(options);
+      await acceptInvitationAction(options.invitationId, options.userId);
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -73,7 +73,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const updated = await salonInvitationOperations.update(invitationId, data);
+      const updated = await updateInvitationAction(invitationId, data);
       setLoading(false);
       return updated;
     } catch (e: any) {
@@ -87,7 +87,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      await salonInvitationOperations.delete(invitationId);
+      await deleteInvitationAction(invitationId);
       setLoading(false);
     } catch (e: any) {
       setError(e.message);
@@ -101,7 +101,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await salonInvitationOperations.getInvitationsByEmail(email);
+      const all = await getInvitationsByEmailAction(email);
       setLoading(false);
       return all;
     } catch (e: any) {
@@ -116,7 +116,7 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await salonInvitationOperations.getInvitationsBySalonId(salonId);
+      const all = await getInvitationsBySalonIdAction(salonId);
       setLoading(false);
       return all;
     } catch (e: any) {

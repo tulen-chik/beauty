@@ -12,12 +12,12 @@ import React, {
 // 1. Импорт серверных действий (предполагаемый путь)
 import * as salonActions from '@/app/actions/salonActions';
 
-// 2. Импорт клиентских функций для Storage (так как файлы грузим с клиента)
+// 2. Импорт серверных функций для Storage
 import { 
   deleteServiceImage, 
   getServiceImages, 
   uploadServiceImage 
-} from '@/lib/firebase/database';
+} from '@/lib/firebase/storage';
 
 import type { 
   SalonService, 

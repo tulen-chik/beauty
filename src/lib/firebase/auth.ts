@@ -15,9 +15,9 @@ import {
   updatePassword,
   updateProfile} from 'firebase/auth';
 
-import { userOperations } from './database';
+import { createUserAction, updateUserAction, deleteUserAction, readUserAction } from '@/app/actions/userActions';
+import { app, auth } from './init';
 
-const auth = getAuth();
 const googleProvider = new GoogleAuthProvider();
 
 export const authService = {
@@ -30,7 +30,7 @@ export const authService = {
     await updateProfile(user, { displayName });
     
     // Создаем запись в базе данных
-    await userOperations.create(user.uid, {
+    await createUserAction(user.uid, {
       email,
       displayName,
       avatarUrl: '',
@@ -69,7 +69,7 @@ export const authService = {
     
     await updateProfile(user, { displayName, photoURL });
     if (displayName) {
-      await userOperations.update(user.uid, { displayName });
+      await updateUserAction(user.uid, { displayName });
     }
   },
 
@@ -79,7 +79,7 @@ export const authService = {
     if (!user) throw new Error('No user logged in');
     
     await updateEmail(user, newEmail);
-    await userOperations.update(user.uid, { email: newEmail });
+    await updateUserAction(user.uid, { email: newEmail });
   },
 
   // Обновление пароля
@@ -95,7 +95,7 @@ export const authService = {
     const user = auth.currentUser;
     if (!user) throw new Error('No user logged in');
     
-    await userOperations.delete(user.uid);
+    await deleteUserAction(user.uid);
     await deleteUser(user);
   },
 
@@ -117,11 +117,21 @@ export const authService = {
       console.log('Google popup authentication successful');
       // Get the user's name from Google profile
       const name = user.displayName || '';
-      
-      return {
-        user,
-        name
-      };
+
+      const exists = await readUserAction(user.uid);
+      if (!exists) {
+        await createUserAction(user.uid, {
+          email: user.email || '',
+          displayName: name,
+          avatarUrl: '',
+          avatarStoragePath: '',
+          createdAt: new Date().toISOString(),
+          role: 'user',
+          settings: { language: 'en', notifications: true },
+        });
+      }
+
+      return { user, name };
     } catch (error: any) {
       console.log('Google popup auth error:', error);
       console.log('Error code:', error.code);
@@ -169,6 +179,20 @@ export const authService = {
         console.log('Redirect result found:', result.user.email);
         const user = result.user;
         const name = user.displayName || '';
+
+        const exists = await readUserAction(user.uid);
+        if (!exists) {
+          await createUserAction(user.uid, {
+            email: user.email || '',
+            displayName: name,
+            avatarUrl: '',
+            avatarStoragePath: '',
+            createdAt: new Date().toISOString(),
+            role: 'user',
+            settings: { language: 'en', notifications: true },
+          });
+        }
+
         return { user, name };
       } else {
         console.log('No redirect result found');

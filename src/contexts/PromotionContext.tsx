@@ -7,10 +7,10 @@ import React, {
   useState} from 'react';
 
 import {
-  promotionAnalyticsOperations,
-  servicePromotionOperations,
-  servicePromotionPlanOperations,
-} from '@/lib/firebase/database';
+  promotionAnalyticsActions as promotionAnalyticsOperations,
+  servicePromotionActions as servicePromotionOperations,
+  servicePromotionPlanActions as servicePromotionPlanOperations,
+} from '@/app/actions/promotionActions';
 
 import type {
   PromotionAnalytics,

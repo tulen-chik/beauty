@@ -6,13 +6,18 @@ import { ref, onValue, off, query, orderByChild, equalTo } from 'firebase/databa
 // 1. Импорт клиентского SDK для real-time подписок
 import { db as clientDb } from '@/lib/firebase/init';
 
-// 2. Импорт ВСЕХ серверных действий
-import * as chatActions from '@/app/actions/chatActions';
+// 2. Импорт ваших клиентских операций
+import { 
+  chatOperations, 
+  chatMessageOperations, 
+  chatParticipantOperations, 
+  chatNotificationOperations 
+} from '@/lib/firebase/database';
 
 // 3. Импорт типов
 import type { Chat, ChatMessage, ChatMessageType, ChatNotification, ChatParticipant } from '@/types/database';
 
-// Интерфейс контекста остается БЕЗ ИЗМЕНЕНИЙ, чтобы не ломать другие компоненты
+// Интерфейс контекста
 interface ChatContextType {
   // Chat operations
   createOrGetChat: (salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string) => Promise<Chat>;
@@ -66,21 +71,22 @@ export const useChat = () => {
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Состояния данных
   const [activeChats, setActiveChats] = useState<Chat[]>([]);
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [chatMessages, setChatMessages] = useState<Record<string, ChatMessage[]>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, { customer: number; salon: number }>>({});
 
-  // ИСПРАВЛЕНО: Заменяем useRef на useState для управления подпиской.
-  // Это гарантирует, что useEffect будет перезапускаться при смене подписки.
+  // Состояние подписки
   const [chatListSubscription, setChatListSubscription] = useState<{ type: 'salon' | 'customer'; id: string } | null>(null);
 
   // --- REAL-TIME СЛУШАТЕЛИ ---
 
-  // Слушатель для списка чатов (activeChats)
+  // 1. Слушатель списка чатов (activeChats + unreadCounts)
   useEffect(() => {
     if (!chatListSubscription) {
-      setActiveChats([]); // Очищаем чаты, если подписка сброшена
+      setActiveChats([]);
       return;
     }
 
@@ -106,23 +112,25 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         setActiveChats([]);
         setUnreadCounts({});
       }
-      setLoading(false); // Завершаем загрузку после получения данных
+      setLoading(false);
     });
 
     return () => off(chatQuery, 'value', unsubscribe);
-  }, [chatListSubscription]); // Этот useEffect теперь будет правильно реагировать на изменения
+  }, [chatListSubscription]);
 
-  // Слушатель для сообщений (chatMessages) в активном чате
+  // 2. Слушатель сообщений активного чата (chatMessages)
   useEffect(() => {
     if (!currentChat) return;
 
-    const messagesRef = ref(clientDb, `messages/${currentChat.id}`);
+    // Подписываемся на сообщения конкретного чата
+    const messagesRef = ref(clientDb, `chatMessages/${currentChat.id}`);
     const unsubscribe = onValue(messagesRef, (snapshot) => {
       if (snapshot.exists()) {
         const messagesData = snapshot.val() as Record<string, Omit<ChatMessage, 'id'>>;
         const messagesArray = Object.entries(messagesData)
           .map(([id, msg]) => ({ ...msg, id }))
           .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
         setChatMessages(prev => ({ ...prev, [currentChat.id]: messagesArray }));
       } else {
         setChatMessages(prev => ({ ...prev, [currentChat.id]: [] }));
@@ -132,7 +140,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     return () => off(messagesRef, 'value', unsubscribe);
   }, [currentChat]);
 
-  // Обертка для вызова серверных действий
+  // Обертка для обработки ошибок и лоадинга
   const handleRequest = useCallback(async <T,>(request: () => Promise<T>, showLoading = true): Promise<T> => {
     if (showLoading) setLoading(true);
     setError(null);
@@ -147,57 +155,106 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // --- РЕАЛИЗАЦИЯ МЕТОДОВ КОНТЕКСТА ---
+  // --- РЕАЛИЗАЦИЯ МЕТОДОВ ЧЕРЕЗ ВАШИ ОПЕРАЦИИ ---
 
-  // Chat operations
-  const createOrGetChat = useCallback((...args: Parameters<typeof chatActions.createOrGetChatAction>) => handleRequest(() => chatActions.createOrGetChatAction(...args)), [handleRequest]);
+  // 1. Chat Operations
+  const createOrGetChat = useCallback((salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string) => 
+    handleRequest(() => chatOperations.createOrGet(salonId, customerUserId, customerName, appointmentId, serviceId)), 
+  [handleRequest]);
 
-  // ИСПРАВЛЕНО: Эти функции теперь устанавливают состояние подписки, запуская real-time слушатель
   const getChatsBySalon = useCallback(async (salonId: string) => {
     setLoading(true);
     setChatListSubscription({ type: 'salon', id: salonId });
-    // Мы можем вернуть промис от серверного действия, но основной источник данных - слушатель
-    return chatActions.getChatsBySalonAction(salonId);
+    return chatOperations.getBySalon(salonId);
   }, []);
 
   const getChatsByCustomer = useCallback(async (customerUserId: string) => {
     setLoading(true);
     setChatListSubscription({ type: 'customer', id: customerUserId });
-    return chatActions.getChatsByCustomerAction(customerUserId);
+    return chatOperations.getByCustomer(customerUserId);
   }, []);
 
-  const getChatByAppointment = useCallback((...args: Parameters<typeof chatActions.getChatByAppointmentAction>) => handleRequest(() => chatActions.getChatByAppointmentAction(...args)), [handleRequest]);
+  const getChatByAppointment = useCallback((appointmentId: string) => 
+    handleRequest(() => chatOperations.getByAppointment(appointmentId)), 
+  [handleRequest]);
 
-  const updateChat = useCallback((...args: Parameters<typeof chatActions.updateChatAction>) => handleRequest(() => chatActions.updateChatAction(...args), false), [handleRequest]);
+  const updateChat = useCallback((chatId: string, data: Partial<Chat>) => 
+    handleRequest(async () => {
+      await chatOperations.update(chatId, data);
+      const updated = await chatOperations.read(chatId);
+      if (!updated) throw new Error('Chat not found after update');
+      return updated;
+    }, false), 
+  [handleRequest]);
 
-  const archiveChat = useCallback((chatId: string) => updateChat(chatId, { status: 'archived', archivedAt: new Date().toISOString() }).then(() => {}), [updateChat]);
+  const archiveChat = useCallback((chatId: string) => 
+    handleRequest(() => chatOperations.update(chatId, { status: 'archived', archivedAt: new Date().toISOString() }).then(() => {}), false), 
+  [handleRequest]);
 
-  const closeChat = useCallback((chatId: string) => updateChat(chatId, { status: 'closed', closedAt: new Date().toISOString() }).then(() => {}), [updateChat]);
+  const closeChat = useCallback((chatId: string) => 
+    handleRequest(() => chatOperations.update(chatId, { status: 'closed', closedAt: new Date().toISOString() }).then(() => {}), false), 
+  [handleRequest]);
 
-  const getChatById = useCallback((...args: Parameters<typeof chatActions.getChatByIdAction>) => handleRequest(() => chatActions.getChatByIdAction(...args)), [handleRequest]);
+  const getChatById = useCallback((chatId: string) => 
+    handleRequest(() => chatOperations.read(chatId)), 
+  [handleRequest]);
 
-  // Message operations
-  const sendMessage = useCallback((...args: Parameters<typeof chatActions.sendMessageAction>) => handleRequest(() => chatActions.sendMessageAction(...args), false), [handleRequest]);
+  // 2. Message Operations (используем chatMessageOperations)
+  const sendMessage = useCallback((chatId: string, senderId: string, senderType: 'customer' | 'salon', senderName: string, content: string, messageType?: ChatMessageType, attachments?: ChatMessage['attachments']) => 
+    handleRequest(() => {
+      const effectiveChatId = chatId || currentChat?.id;
+      if (!effectiveChatId) {
+        throw new Error('No chat selected to send a message');
+      }
+      return chatMessageOperations.sendMessage(effectiveChatId, senderId, senderType, senderName, content, messageType, attachments);
+    }, false), 
+  [handleRequest, currentChat]);
 
-  const getMessages = useCallback(async (chatId: string, limit = 50, offset = 0) => {
-    return await handleRequest(() => chatActions.getMessagesAction(chatId, limit));
-  }, [handleRequest]);
+  const getMessages = useCallback((chatId: string, limit = 50, offset = 0) => 
+    handleRequest(() => chatMessageOperations.getByChat(chatId, limit, offset)), 
+  [handleRequest]);
 
-  const markMessagesAsRead = useCallback((...args: Parameters<typeof chatActions.markMessagesAsReadAction>) => handleRequest(() => chatActions.markMessagesAsReadAction(...args), false), [handleRequest]);
+  const markMessagesAsRead = useCallback((chatId: string, userId: string) => 
+    handleRequest(() => chatMessageOperations.markAsRead(chatId, userId), false), 
+  [handleRequest]);
 
-  const deleteMessage = useCallback((...args: Parameters<typeof chatActions.deleteMessageAction>) => handleRequest(() => chatActions.deleteMessageAction(...args), false), [handleRequest]);
+  const deleteMessage = useCallback((chatId: string, messageId: string) => 
+    handleRequest(() => chatMessageOperations.delete(chatId, messageId), false), 
+  [handleRequest]);
 
-  // Participant operations
-  const addParticipant = useCallback((...args: Parameters<typeof chatActions.addParticipantAction>) => handleRequest(() => chatActions.addParticipantAction(...args)), [handleRequest]);
-  const removeParticipant = useCallback((...args: Parameters<typeof chatActions.removeParticipantAction>) => handleRequest(() => chatActions.removeParticipantAction(...args)), [handleRequest]);
-  const updateParticipantStatus = useCallback((...args: Parameters<typeof chatActions.updateParticipantStatusAction>) => handleRequest(() => chatActions.updateParticipantStatusAction(...args)), [handleRequest]);
-  const getParticipants = useCallback((...args: Parameters<typeof chatActions.getParticipantsAction>) => handleRequest(() => chatActions.getParticipantsAction(...args)), [handleRequest]);
+  // 3. Participant Operations (используем chatParticipantOperations)
+  const addParticipant = useCallback((chatId: string, participantId: string, data: Omit<ChatParticipant, 'id'>) => 
+    handleRequest(() => chatParticipantOperations.add(chatId, participantId, data)), 
+  [handleRequest]);
 
-  // Notification operations
-  const createNotification = useCallback((...args: Parameters<typeof chatActions.createNotificationAction>) => handleRequest(() => chatActions.createNotificationAction(...args)), [handleRequest]);
-  const markNotificationAsRead = useCallback((...args: Parameters<typeof chatActions.markNotificationAsReadAction>) => handleRequest(() => chatActions.markNotificationAsReadAction(...args)), [handleRequest]);
-  const getNotificationsByUser = useCallback((...args: Parameters<typeof chatActions.getNotificationsByUserAction>) => handleRequest(() => chatActions.getNotificationsByUserAction(...args)), [handleRequest]);
-  const getUnreadNotificationsByUser = useCallback((...args: Parameters<typeof chatActions.getUnreadNotificationsByUserAction>) => handleRequest(() => chatActions.getUnreadNotificationsByUserAction(...args)), [handleRequest]);
+  const removeParticipant = useCallback((chatId: string, participantId: string) => 
+    handleRequest(() => chatParticipantOperations.remove(chatId, participantId)), 
+  [handleRequest]);
+
+  const updateParticipantStatus = useCallback((chatId: string, participantId: string, data: Partial<ChatParticipant>) => 
+    handleRequest(() => chatParticipantOperations.updateStatus(chatId, participantId, data)), 
+  [handleRequest]);
+
+  const getParticipants = useCallback((chatId: string) => 
+    handleRequest(() => chatParticipantOperations.getByChat(chatId)), 
+  [handleRequest]);
+
+  // 4. Notification Operations (используем chatNotificationOperations)
+  const createNotification = useCallback((notificationId: string, data: Omit<ChatNotification, 'id'>) => 
+    handleRequest(() => chatNotificationOperations.create(notificationId, data)), 
+  [handleRequest]);
+
+  const markNotificationAsRead = useCallback((notificationId: string) => 
+    handleRequest(() => chatNotificationOperations.markAsRead(notificationId)), 
+  [handleRequest]);
+
+  const getNotificationsByUser = useCallback((userId: string, limit?: number) => 
+    handleRequest(() => chatNotificationOperations.getByUser(userId, limit)), 
+  [handleRequest]);
+
+  const getUnreadNotificationsByUser = useCallback((userId: string) => 
+    handleRequest(() => chatNotificationOperations.getUnreadByUser(userId)), 
+  [handleRequest]);
 
   // Utility functions
   const refreshChats = useCallback(async () => {

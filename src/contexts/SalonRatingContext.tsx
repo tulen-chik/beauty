@@ -1,16 +1,46 @@
-import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+'use client';
 
+import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+
+// Импортируем отдельные функции
 import { 
-  salonRatingHelpfulOperations, 
-  salonRatingOperations, 
-  salonRatingResponseOperations} from '@/lib/firebase/database';
+  // Ratings
+  createSalonRatingAction,
+  readSalonRatingAction,
+  updateSalonRatingAction,
+  deleteSalonRatingAction,
+  getSalonRatingsBySalonAction,
+  getSalonRatingsByCustomerAction,
+  getSalonRatingByAppointmentAction,
+  getSalonRatingStatsAction,
+  approveSalonRatingAction,
+  rejectSalonRatingAction,
+  markSalonRatingAsVerifiedAction,
+  
+  // Responses
+  createSalonRatingResponseAction,
+  readSalonRatingResponseAction,
+  updateSalonRatingResponseAction,
+  deleteSalonRatingResponseAction,
+  getSalonRatingResponsesByRatingAction,
+  
+  // Helpful
+  addSalonRatingHelpfulVoteAction,
+  removeSalonRatingHelpfulVoteAction,
+  updateSalonRatingHelpfulVoteAction,
+  getSalonRatingHelpfulVotesByRatingAction,
+  getSalonRatingHelpfulStatsAction,
+  hasUserVotedOnSalonRatingAction,
+  toggleSalonRatingHelpfulVoteAction
+} from '@/app/actions/ratingActions';
 
 import type { 
   SalonRating, 
   SalonRatingCategories, 
   SalonRatingHelpful, 
   SalonRatingResponse, 
-  SalonRatingStats} from '@/types/database';
+  SalonRatingStats
+} from '@/types/database';
 
 interface SalonRatingContextType {
   // Rating operations
@@ -112,12 +142,12 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
         serviceId,
         isAnonymous,
         isVerified: false,
-        status: 'pending',
+        status: "approved",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
-      const newRating = await salonRatingOperations.create(ratingId, data);
+      const newRating = await createSalonRatingAction(ratingId, data);
       
       // Update local state
       setRatings(prev => ({
@@ -137,7 +167,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await salonRatingOperations.read(ratingId);
+      return await readSalonRatingAction(ratingId);
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -147,7 +177,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const updateRating = useCallback(async (ratingId: string, data: Partial<SalonRating>) => {
     setError(null);
     try {
-      const updated = await salonRatingOperations.update(ratingId, data);
+      const updated = await updateSalonRatingAction(ratingId, data);
       
       // Update local state
       setRatings(prev => {
@@ -170,7 +200,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const deleteRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await salonRatingOperations.delete(ratingId);
+      await deleteSalonRatingAction(ratingId);
       
       // Update local state
       setRatings(prev => {
@@ -190,7 +220,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const salonRatings = await salonRatingOperations.getBySalon(salonId);
+      const salonRatings = await getSalonRatingsBySalonAction(salonId);
       setRatings(prev => ({ ...prev, [salonId]: salonRatings }));
       setLoading(false);
       return salonRatings;
@@ -205,7 +235,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const customerRatings = await salonRatingOperations.getByCustomer(customerUserId);
+      const customerRatings = await getSalonRatingsByCustomerAction(customerUserId);
       setLoading(false);
       return customerRatings;
     } catch (e: any) {
@@ -218,7 +248,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRatingByAppointment = useCallback(async (appointmentId: string) => {
     setError(null);
     try {
-      return await salonRatingOperations.getByAppointment(appointmentId);
+      return await getSalonRatingByAppointmentAction(appointmentId);
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -228,7 +258,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRatingStats = useCallback(async (salonId: string) => {
     setError(null);
     try {
-      const stats = await salonRatingOperations.getRatingStats(salonId);
+      const stats = await getSalonRatingStatsAction(salonId);
       setRatingStats(prev => ({ ...prev, [salonId]: stats }));
       return stats;
     } catch (e: any) {
@@ -244,7 +274,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const approveRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await salonRatingOperations.approveRating(ratingId);
+      await approveSalonRatingAction(ratingId);
       
       // Update local state
       setRatings(prev => {
@@ -267,7 +297,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const rejectRating = useCallback(async (ratingId: string, reason: string) => {
     setError(null);
     try {
-      await salonRatingOperations.rejectRating(ratingId, reason);
+      await rejectSalonRatingAction(ratingId, reason);
       
       // Update local state
       setRatings(prev => {
@@ -290,7 +320,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const markRatingAsVerified = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await salonRatingOperations.markAsVerified(ratingId);
+      await markSalonRatingAsVerifiedAction(ratingId);
       
       // Update local state
       setRatings(prev => {
@@ -330,7 +360,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: new Date().toISOString()
       };
 
-      return await salonRatingResponseOperations.create(responseId, data);
+      return await createSalonRatingResponseAction(responseId, data);
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -340,7 +370,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getResponse = useCallback(async (responseId: string) => {
     setError(null);
     try {
-      return await salonRatingResponseOperations.read(responseId);
+      return await readSalonRatingResponseAction(responseId);
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -350,7 +380,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const updateResponse = useCallback(async (responseId: string, data: Partial<SalonRatingResponse>) => {
     setError(null);
     try {
-      return await salonRatingResponseOperations.update(responseId, data);
+      return await updateSalonRatingResponseAction(responseId, data);
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -360,7 +390,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const deleteResponse = useCallback(async (responseId: string) => {
     setError(null);
     try {
-      await salonRatingResponseOperations.delete(responseId);
+      await deleteSalonRatingResponseAction(responseId);
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -370,7 +400,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getResponsesByRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await salonRatingResponseOperations.getByRating(ratingId);
+      return await getSalonRatingResponsesByRatingAction(ratingId);
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -381,7 +411,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const addHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
     setError(null);
     try {
-      await salonRatingHelpfulOperations.add(ratingId, userId, isHelpful);
+      await addSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
       
       // Update local state
       setHelpfulVotes(prev => ({
@@ -403,7 +433,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const removeHelpfulVote = useCallback(async (ratingId: string, userId: string) => {
     setError(null);
     try {
-      await salonRatingHelpfulOperations.remove(ratingId, userId);
+      await removeSalonRatingHelpfulVoteAction(ratingId, userId);
       
       // Update local state
       setHelpfulVotes(prev => ({
@@ -419,7 +449,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const updateHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
     setError(null);
     try {
-      await salonRatingHelpfulOperations.update(ratingId, userId, isHelpful);
+      await updateSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
       
       // Update local state
       setHelpfulVotes(prev => ({
@@ -437,7 +467,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getHelpfulVotesByRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      const votes = await salonRatingHelpfulOperations.getByRating(ratingId);
+      const votes = await getSalonRatingHelpfulVotesByRatingAction(ratingId);
       setHelpfulVotes(prev => ({ ...prev, [ratingId]: votes }));
       return votes;
     } catch (e: any) {
@@ -449,7 +479,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getHelpfulStats = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await salonRatingHelpfulOperations.getHelpfulStats(ratingId);
+      return await getSalonRatingHelpfulStatsAction(ratingId);
     } catch (e: any) {
       setError(e.message);
       return { helpful: 0, notHelpful: 0 };
@@ -459,7 +489,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const hasUserVoted = useCallback(async (ratingId: string, userId: string) => {
     setError(null);
     try {
-      return await salonRatingHelpfulOperations.hasUserVoted(ratingId, userId);
+      return await hasUserVotedOnSalonRatingAction(ratingId, userId);
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -469,7 +499,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const toggleHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
     setError(null);
     try {
-      await salonRatingHelpfulOperations.toggleHelpful(ratingId, userId, isHelpful);
+      await toggleSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
       
       // Refresh helpful votes for this rating
       await getHelpfulVotesByRating(ratingId);

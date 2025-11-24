@@ -1,6 +1,18 @@
-import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
+'use client';
 
-import { appointmentOperations } from '@/lib/firebase/database';
+import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+
+// Импортируем новые Server Actions
+import {
+  createAppointmentAction,
+  getAppointmentAction,
+  updateAppointmentAction,
+  deleteAppointmentAction,
+  getAppointmentsBySalonAction,
+  getAppointmentsByDayAction,
+  getAppointmentsByUserAction,
+  checkAppointmentAvailabilityAction
+} from '@/app/actions/appointmentActions';
 
 import type { Appointment, AppointmentStatus } from '@/types/database';
 
@@ -10,6 +22,7 @@ interface ListOptions {
   status?: AppointmentStatus;
   employeeId?: string;
   serviceId?: string;
+  customerUserId?: string;
 }
 
 interface AppointmentContextType {
@@ -74,13 +87,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const created = await appointmentOperations.create(salonId, appointmentId, data);
-      setLoading(false);
-      return { ...created, id: appointmentId } as Appointment;
+      const created = await createAppointmentAction(salonId, appointmentId, data);
+      return created;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -88,13 +101,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const appt = await appointmentOperations.read(salonId, appointmentId);
-      setLoading(false);
-      return appt ? ({ ...appt, id: appointmentId } as Appointment) : null;
+      const appt = await getAppointmentAction(salonId, appointmentId);
+      return appt;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return null;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -106,13 +119,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await appointmentOperations.update(salonId, appointmentId, data);
-      setLoading(false);
-      return { ...updated, id: appointmentId } as Appointment;
+      const updated = await updateAppointmentAction(salonId, appointmentId, data);
+      return updated;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -120,12 +133,12 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await appointmentOperations.delete(salonId, appointmentId);
-      setLoading(false);
+      await deleteAppointmentAction(salonId, appointmentId);
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -133,13 +146,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const list = await appointmentOperations.listBySalon(salonId, options);
-      setLoading(false);
+      const list = await getAppointmentsBySalonAction(salonId, options);
       return list;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return [];
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -147,13 +160,27 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const list = await appointmentOperations.listByDay(salonId, date);
-      setLoading(false);
+      const list = await getAppointmentsByDayAction(salonId, date);
       return list;
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const listAppointmentsByCustomer = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const list = await getAppointmentsByUserAction(userId);
+      return list;
+    } catch (e: any) {
+      setError(e.message);
+      return [];
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -164,9 +191,10 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     employeeId?: string,
     excludeAppointmentId?: string
   ) => {
+    // Здесь не ставим глобальный loading, чтобы не блокировать UI при проверках в фоне
     setError(null);
     try {
-      return await appointmentOperations.isTimeSlotAvailable(
+      return await checkAppointmentAvailabilityAction(
         salonId,
         startAtIso,
         durationMinutes,
@@ -174,22 +202,8 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
         excludeAppointmentId
       );
     } catch (e: any) {
-      setError(e.message);
+      console.error("Availability check failed:", e);
       return false;
-    }
-  }, []);
-
-  const listAppointmentsByCustomer = useCallback(async (userId: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await appointmentOperations.listByUser(userId);
-      return list;
-    } catch (e: any) {
-      setError(e.message);
-      return [];
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -202,23 +216,26 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const ok = await appointmentOperations.isTimeSlotAvailable(
+      // 1. Проверяем доступность
+      const isAvailable = await checkAppointmentAvailabilityAction(
         salonId,
         data.startAt,
         data.durationMinutes,
         employeeId
       );
-      if (!ok) {
-        setLoading(false);
+
+      if (!isAvailable) {
         return { ok: false, reason: 'Время недоступно' };
       }
-      const created = await appointmentOperations.create(salonId, appointmentId, data);
-      setLoading(false);
-      return { ok: true, appointment: { ...created, id: appointmentId } as Appointment };
+
+      // 2. Создаем запись
+      const created = await createAppointmentAction(salonId, appointmentId, data);
+      return { ok: true, appointment: created };
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       return { ok: false, reason: e.message };
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -254,4 +271,3 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     </AppointmentContext.Provider>
   );
 };
-

@@ -70,6 +70,13 @@ export const chatMessageOperations = {
     attachments?: ChatMessage['attachments']
   ): Promise<ChatMessage> => {
     try {
+
+      if (!chatId) throw new Error('chatId is required');
+      if (!senderId) throw new Error('senderId is required');
+      if (!senderType) throw new Error('senderType is required');
+      if (!senderName) throw new Error('senderName is required');
+      if (!content) throw new Error('content is required');
+      
       const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
 

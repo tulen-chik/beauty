@@ -1,11 +1,14 @@
 import React, { createContext, useCallback,useContext, useMemo, useState } from 'react';
 
 import {
-  blogAuthorOperations,
-  blogCategoryOperations,
-  blogPostOperations,
+  blogAuthorActions as blogAuthorOperations,
+  blogCategoryActions as blogCategoryOperations,
+  blogPostActions as blogPostOperations,
+} from '@/app/actions/blogActions';
+import {
   deleteBlogImage,
-  uploadBlogImage} from '@/lib/firebase/database';
+  uploadBlogImage,
+} from '@/lib/firebase/storage';
 
 import type { BlogAuthor, BlogCategory, BlogPost } from '@/types/database';
 
