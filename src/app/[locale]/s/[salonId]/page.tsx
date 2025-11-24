@@ -1,7 +1,22 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { ArrowLeft, Building2, Calendar, Clock, Map as MapIcon, MapPin, Phone, Scissors, Star, Images } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { 
+  ArrowLeft, 
+  Building2, 
+  Calendar, 
+  Clock, 
+  Map as MapIcon, 
+  MapPin, 
+  Phone, 
+  Scissors, 
+  Star, 
+  ChevronDown, 
+  ChevronUp, 
+  User, 
+  MessageCircle, 
+  Quote 
+} from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -9,179 +24,256 @@ import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 
 import RatingStats from "@/components/RatingStats"
+import RatingDisplay from "@/components/RatingDisplay"
 
 import { useSalonRating } from "@/contexts"
 import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
-import { Salon, SalonSchedule, SalonWorkDay,  } from "@/types/salon"
+import { Salon, SalonSchedule, SalonWorkDay } from "@/types/salon"
 import { SalonService } from "@/types/services"
+import type { SalonRating, SalonRatingResponse } from "@/types/database"
 
-// --- 1. КОМПОНЕНТ SKELETON (без изменений) ---
-const SalonPageSkeleton = () => {
-  return (
-    <div className="min-h-screen bg-white animate-pulse">
-      {/* Top bar skeleton */}
-      <section className="py-6 bg-gray-50 border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <div className="h-6 w-32 bg-gray-200 rounded-md"></div>
-        </div>
-      </section>
+// --- ТИПЫ ---
+type ReviewWithResponse = SalonRating & {
+  response?: SalonRatingResponse | null
+}
 
-      {/* Hero skeleton */}
-      <section className="py-8 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <div className="h-64 md:h-80 rounded-3xl bg-gray-200"></div>
+// --- ЛОКАЛЬНЫЕ SKELETONS ---
+const MainSkeleton = () => (
+  <div className="min-h-screen bg-white animate-pulse">
+    <div className="h-16 bg-gray-50 border-b border-gray-200 mb-8" />
+    <div className="container mx-auto px-4">
+      <div className="max-w-5xl mx-auto">
+        <div className="h-64 md:h-80 rounded-3xl bg-gray-200 mb-10" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="h-8 w-48 bg-gray-200 rounded-full" />
+            <div className="h-12 w-3/4 bg-gray-200 rounded-lg" />
+            <div className="h-40 bg-gray-200 rounded-2xl" />
+          </div>
+          <div className="lg:col-span-1">
+            <div className="h-64 bg-gray-200 rounded-2xl" />
           </div>
         </div>
-      </section>
-
-      {/* Content skeleton */}
-      <section className="py-6 md:py-10 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main content skeleton */}
-            <div className="lg:col-span-2 space-y-6">
-              <div>
-                <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
-                <div className="h-10 w-3/4 bg-gray-300 rounded-lg mt-4"></div>
-                <div className="h-5 w-1/2 bg-gray-200 rounded-md mt-2"></div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <div className="h-7 w-1/3 bg-gray-300 rounded-lg mb-4"></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[...Array(2)].map((_, i) => (
-                    <div key={i} className="border border-gray-200 rounded-xl p-4">
-                      <div className="flex gap-3">
-                        <div className="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0"></div>
-                        <div className="flex-1 space-y-2">
-                          <div className="h-5 bg-gray-300 rounded w-full"></div>
-                          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                <div className="h-7 w-1/4 bg-gray-300 rounded-lg mb-4"></div>
-                <div className="h-40 bg-gray-200 rounded-lg"></div>
-              </div>
-            </div>
-
-            {/* Sidebar skeleton */}
-            <div className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-6 bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-1/4 bg-gray-200 rounded"></div>
-                    <div className="h-5 w-1/2 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
-                <div className="h-5 w-3/4 bg-gray-200 rounded"></div>
-                <div className="h-5 w-full bg-gray-200 rounded"></div>
-                <div className="h-10 w-full bg-gray-300 rounded-lg mt-2"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
-  );
-};
+  </div>
+)
 
+const ServicesSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+    {[1, 2, 3, 4].map(i => (
+      <div key={i} className="border border-gray-200 rounded-xl p-4 flex gap-3">
+        <div className="w-20 h-20 bg-gray-200 rounded-lg flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-3/4 bg-gray-200 rounded" />
+          <div className="h-3 w-1/2 bg-gray-200 rounded" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+const ReviewsSkeleton = () => (
+  <div className="space-y-4 animate-pulse mt-4">
+    {[1, 2].map(i => (
+      <div key={i} className="flex gap-4">
+        <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 w-1/3 bg-gray-200 rounded" />
+          <div className="h-4 w-full bg-gray-200 rounded" />
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
+// --- КОМПОНЕНТ ОТЗЫВА ---
+const ReviewItem = ({ review }: { review: ReviewWithResponse }) => {
+  return (
+    <div className="border-b border-gray-100 last:border-0 py-6 first:pt-2">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500 border border-gray-200">
+            <User className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-semibold text-gray-900 text-sm">{review.customerName || "Гость"}</div>
+            <div className="text-xs text-gray-500">
+              {new Date(review.createdAt).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+        <RatingDisplay rating={review.rating} size="sm" />
+      </div>
+
+      <p className="text-gray-700 text-sm leading-relaxed pl-[52px]">{review.review}</p>
+
+      {review.response && (
+        <div className="mt-4 ml-[52px] border-l-2 border-rose-200 bg-rose-50/50 rounded-r-lg p-3">
+          <div className="flex items-center gap-2 mb-1 text-rose-700 font-semibold text-xs uppercase tracking-wide">
+            <MessageCircle className="w-3 h-3" />
+            <span>Ответ салона</span>
+          </div>
+          <p className="text-gray-600 text-sm italic">
+            "{review.response.responseText}"
+          </p>
+          <div className="text-[10px] text-gray-400 mt-1 text-right">
+            {review.response.respondedBy}, {new Date(review.response.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function SalonPublicPage() {
-  const params = useParams() as { salonId:string; locale:string }
+  const params = useParams() as { salonId: string; locale: string }
   const router = useRouter()
   const { salonId, locale } = params
 
   const { fetchSalon } = useSalon()
   const { getSchedule } = useSalonSchedule()
   const { getServicesBySalon, getImages } = useSalonService()
-  const { getRatingStats } = useSalonRating()
+  const { getRatingStats, getRatingsBySalon, getResponsesByRating } = useSalonRating()
   const t = useTranslations('search')
 
-  const [loading, setLoading] = useState(true)
+  // --- СОСТОЯНИЯ ЗАГРУЗКИ ---
+  const [isSalonLoading, setIsSalonLoading] = useState(true)
+  const [isServicesLoading, setIsServicesLoading] = useState(true)
+  const [isScheduleLoading, setIsScheduleLoading] = useState(true)
+  const [isRatingsLoading, setIsRatingsLoading] = useState(true)
+  const [isReviewsListLoading, setIsReviewsListLoading] = useState(false)
+  
   const [error, setError] = useState<string | null>(null)
 
+  // --- ДАННЫЕ ---
   const [salon, setSalon] = useState<Salon | null>(null)
   const [schedule, setSchedule] = useState<SalonSchedule | null>(null)
   const [services, setServices] = useState<SalonService[]>([])
   const [serviceImages, setServiceImages] = useState<Record<string, string>>({})
   const [ratingStats, setRatingStats] = useState<any>(null)
+  const [reviews, setReviews] = useState<ReviewWithResponse[]>([])
 
+  // --- UI STATE ---
+  const [showReviews, setShowReviews] = useState(false)
+  const [reviewsLoaded, setReviewsLoaded] = useState(false)
+
+  // 1. Загрузка Салона (Критический путь)
   useEffect(() => {
     let cancelled = false
-    const load = async () => {
+    const loadSalon = async () => {
       try {
-        setLoading(true)
-        setError(null)
-
-        const salonData = await fetchSalon(salonId)
-        if (!salonData) {
-          setError("Салон не найден")
-          setLoading(false)
-          return
-        }
-        if (!cancelled) setSalon(salonData)
-
-        try {
-          const sch = await getSchedule(salonId)
-          if (!cancelled) setSchedule(sch)
-        } catch (err) {
-          console.error("Не удалось загрузить расписание:", err)
-        }
-
-        try {
-          const stats = await getRatingStats(salonId)
-          if (!cancelled) setRatingStats(stats)
-        } catch (err) {
-          console.error("Не удалось загрузить рейтинги:", err)
-        }
-
-        try {
-          const list = await getServicesBySalon(salonId)
-          if (!cancelled) setServices(list)
-          
-          const imagesMap: Record<string, string> = {}
-          await Promise.all(list.map(async (svc) => {
-            try {
-              const imgs = await getImages(svc.id)
-              if (imgs && imgs[0]) {
-                imagesMap[svc.id] = imgs[0].url
-              }
-            } catch (err) {
-              console.error(`Не удалось загрузить изображения для услуги ${svc.id}:`, err)
-            }
-          }));
-
-          if (!cancelled) setServiceImages(imagesMap)
-        } catch (err) {
-          console.error("Не удалось загрузить услуги:", err)
-        }
-      } catch (e: unknown) {
-        if (e instanceof Error) {
-          setError(e.message)
-        } else {
-          setError("Произошла неизвестная ошибка")
-        }
+        setIsSalonLoading(true)
+        const data = await fetchSalon(salonId)
+        if (!data) throw new Error("Салон не найден")
+        if (!cancelled) setSalon(data)
+      } catch (e: any) {
+        if (!cancelled) setError(e.message)
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setIsSalonLoading(false)
       }
     }
-    load()
-    return () => {
-      cancelled = true
-    }
-  }, [salonId, fetchSalon, getSchedule, getServicesBySalon, getImages, getRatingStats])
+    loadSalon()
+    return () => { cancelled = true }
+  }, [salonId, fetchSalon])
 
-  if (loading) {
-    return <SalonPageSkeleton />;
+  // 2. Загрузка Услуг
+  useEffect(() => {
+    let cancelled = false
+    const loadServices = async () => {
+      try {
+        setIsServicesLoading(true)
+        const list = await getServicesBySalon(salonId)
+        if (!cancelled) setServices(list)
+
+        // Грузим картинки параллельно
+        const imagesMap: Record<string, string> = {}
+        await Promise.all(list.map(async (svc) => {
+          try {
+            const imgs = await getImages(svc.id)
+            if (imgs && imgs[0]) imagesMap[svc.id] = imgs[0].url
+          } catch (e) { console.error(e) }
+        }))
+        if (!cancelled) setServiceImages(imagesMap)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        if (!cancelled) setIsServicesLoading(false)
+      }
+    }
+    loadServices()
+    return () => { cancelled = true }
+  }, [salonId, getServicesBySalon, getImages])
+
+  // 3. Загрузка Расписания и Статистики Рейтинга
+  useEffect(() => {
+    let cancelled = false
+    const loadExtras = async () => {
+      try {
+        setIsScheduleLoading(true)
+        setIsRatingsLoading(true)
+        
+        const [sch, stats] = await Promise.all([
+          getSchedule(salonId).catch(() => null),
+          getRatingStats(salonId).catch(() => null)
+        ])
+
+        if (!cancelled) {
+          setSchedule(sch)
+          setRatingStats(stats)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsScheduleLoading(false)
+          setIsRatingsLoading(false)
+        }
+      }
+    }
+    loadExtras()
+    return () => { cancelled = true }
+  }, [salonId, getSchedule, getRatingStats])
+
+  // 4. Функция загрузки детальных отзывов (по требованию)
+  const loadReviews = async () => {
+    if (reviewsLoaded || isReviewsListLoading) return
+    
+    setIsReviewsListLoading(true)
+    try {
+      const allRatings = await getRatingsBySalon(salonId)
+      // Показываем только одобренные
+      const approvedRatings = allRatings.filter(r => r.status === 'approved')
+
+      // Подгружаем ответы
+      const reviewsWithResponses = await Promise.all(
+        approvedRatings.map(async (rating) => {
+          const responses = await getResponsesByRating(rating.id)
+          return {
+            ...rating,
+            response: responses.length > 0 ? responses[0] : null
+          }
+        })
+      )
+      setReviews(reviewsWithResponses)
+      setReviewsLoaded(true)
+    } catch (e) {
+      console.error("Ошибка загрузки отзывов:", e)
+    } finally {
+      setIsReviewsListLoading(false)
+    }
   }
+
+  const toggleReviews = () => {
+    if (!showReviews && !reviewsLoaded) {
+      loadReviews()
+    }
+    setShowReviews(!showReviews)
+  }
+
+  // --- RENDER ---
+
+  if (isSalonLoading) return <MainSkeleton />
 
   if (error || !salon) {
     return (
@@ -189,20 +281,13 @@ export default function SalonPublicPage() {
         <div className="bg-white border border-gray-200 rounded-2xl p-6 text-center max-w-md w-full">
           <div className="text-red-600 font-semibold mb-2">Ошибка</div>
           <div className="text-gray-700 mb-4">{error || "Салон не найден"}</div>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium"
-          >
-            Назад
-          </button>
+          <button onClick={() => router.back()} className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium">Назад</button>
         </div>
       </div>
     )
   }
 
-  // --- ИЗМЕНЕНИЕ: Логика выбора главного изображения ---
-  // Приоритет: Аватар салона -> Изображение первой услуги -> null (плейсхолдер)
-  const heroImageUrl = salon?.avatarUrl || (services.length > 0 ? serviceImages[services[0].id] : null);
+  const heroImageUrl = salon.avatarUrl || (services.length > 0 ? serviceImages[services[0].id] : null)
 
   return (
     <div className="min-h-screen bg-white">
@@ -232,7 +317,7 @@ export default function SalonPublicPage() {
           >
             <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100">
               {heroImageUrl ? (
-                <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" />
+                <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" priority />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                   <Building2 className="w-16 h-16 mb-4" strokeWidth={1} />
@@ -248,9 +333,12 @@ export default function SalonPublicPage() {
       <section className="py-6 md:py-10 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main */}
-            <div className="lg:col-span-2">
-              <div className="mb-6">
+            
+            {/* Main Column */}
+            <div className="lg:col-span-2 space-y-8">
+              
+              {/* Header Info */}
+              <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-600 text-white rounded-full text-sm font-semibold">
                   <Building2 className="w-4 h-4" />
                   {t('salon')}
@@ -264,15 +352,19 @@ export default function SalonPublicPage() {
                 )}
               </div>
 
-              {services.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Scissors className="w-5 h-5 text-rose-600" />
-                    <h3 className="text-lg font-bold text-gray-900">Услуги</h3>
-                  </div>
+              {/* Services Section */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <Scissors className="w-5 h-5 text-rose-600" />
+                  <h3 className="text-lg font-bold text-gray-900">Услуги</h3>
+                </div>
+                
+                {isServicesLoading ? (
+                  <ServicesSkeleton />
+                ) : services.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {services.map((svc) => (
-                      <div key={svc.id} className="group border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300">
+                      <div key={svc.id} className="group border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-300 bg-white">
                         <div className="flex gap-3">
                           <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
                             {serviceImages[svc.id] ? (
@@ -285,9 +377,6 @@ export default function SalonPublicPage() {
                             <Link href={`/${locale}/services/${svc.id}`} className="text-base font-semibold text-gray-900 group-hover:text-rose-600 line-clamp-2">
                               {svc.name}
                             </Link>
-                            {svc.description && (
-                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{svc.description}</p>
-                            )}
                             <div className="mt-2 flex items-center gap-3 text-sm text-gray-600">
                               <div className="flex items-center gap-1"><Clock className="w-3 h-3" />{svc.durationMinutes} мин</div>
                               <div className="font-semibold text-rose-600">{svc.price} Br</div>
@@ -295,16 +384,19 @@ export default function SalonPublicPage() {
                           </div>
                         </div>
                         <div className="mt-3 flex items-center gap-2">
-                          <Link href={`/${locale}/services/${svc.id}`} className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm font-medium">Подробнее</Link>
-                          <Link href={`/${locale}/book/${svc.id}`} className="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold">Записаться</Link>
+                          <Link href={`/${locale}/services/${svc.id}`} className="flex-1 py-1.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 text-sm font-medium">Подробнее</Link>
+                          <Link href={`/${locale}/book/${svc.id}`} className="flex-1 py-1.5 text-center rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-sm font-semibold">Записаться</Link>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-8 text-gray-500">Услуги не найдены</div>
+                )}
+              </div>
 
-              {schedule && (
+              {/* Schedule Section */}
+              {!isScheduleLoading && schedule && (
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Calendar className="w-5 h-5 text-rose-600" />
@@ -323,22 +415,75 @@ export default function SalonPublicPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="text-xs text-gray-500 mt-3">Расписание рассчитывается на несколько недель вперед</div>
                 </div>
               )}
 
-              {ratingStats && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Star className="w-5 h-5 text-rose-600" />
-                    <h3 className="text-lg font-bold text-gray-900">Отзывы и рейтинги</h3>
+              {/* Ratings Section */}
+              {!isRatingsLoading && ratingStats && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-rose-600" />
+                      <h3 className="text-lg font-bold text-gray-900">Отзывы и рейтинги</h3>
+                    </div>
+                    <div className="text-sm text-gray-500 font-medium">
+                      {ratingStats.totalRatings} оценок
+                    </div>
                   </div>
+                  
                   <RatingStats stats={ratingStats} />
+
+                  {/* Expandable Reviews List */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <button 
+                      onClick={toggleReviews}
+                      className="w-full flex items-center justify-center gap-2 py-3 text-gray-600 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all font-medium"
+                    >
+                      {showReviews ? (
+                        <>
+                          <ChevronUp className="w-4 h-4" />
+                          Скрыть отзывы
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4" />
+                          Показать отзывы клиентов
+                        </>
+                      )}
+                    </button>
+
+                    <AnimatePresence>
+                      {showReviews && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          {isReviewsListLoading ? (
+                            <ReviewsSkeleton />
+                          ) : reviews.length > 0 ? (
+                            <div className="mt-4 space-y-2">
+                              {reviews.map((review) => (
+                                <ReviewItem key={review.id} review={review} />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl mt-4">
+                              <Quote className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                              <p>Отзывов с текстом пока нет</p>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               )}
 
-              {salon?.coordinates && (
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 mt-6">
+              {/* Map Section */}
+              {salon.coordinates && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
                   <div className="flex items-center gap-2 mb-3">
                     <MapIcon className="w-5 h-5 text-rose-600" />
                     <h3 className="text-lg font-bold text-gray-900">{t('mapTitle')}</h3>
