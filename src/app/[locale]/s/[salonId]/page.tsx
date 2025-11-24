@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence as FramerAnimatePresence } from "framer-motion"
 import { 
   ArrowLeft, 
   Building2, 
@@ -33,6 +33,9 @@ import { useSalonService } from "@/contexts/SalonServiceContext"
 import { Salon, SalonSchedule, SalonWorkDay } from "@/types/salon"
 import { SalonService } from "@/types/services"
 import type { SalonRating, SalonRatingResponse } from "@/types/database"
+
+// --- FIX: Приведение типа для AnimatePresence, чтобы исправить ошибку TypeScript ---
+const AnimatePresence = FramerAnimatePresence as any;
 
 // --- ТИПЫ ---
 type ReviewWithResponse = SalonRating & {
@@ -287,7 +290,8 @@ export default function SalonPublicPage() {
     )
   }
 
-  const heroImageUrl = salon.avatarUrl || (services.length > 0 ? serviceImages[services[0].id] : null)
+  // Приоритет: Аватар салона -> Изображение первой услуги -> null (плейсхолдер)
+  const heroImageUrl = salon.avatarUrl || (services.length > 0 ? serviceImages[services[0].id] : null);
 
   return (
     <div className="min-h-screen bg-white">
@@ -317,7 +321,7 @@ export default function SalonPublicPage() {
           >
             <div className="relative h-64 md:h-80 rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100">
               {heroImageUrl ? (
-                <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" priority />
+                <Image src={heroImageUrl} alt={salon.name || "salon"} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
                   <Building2 className="w-16 h-16 mb-4" strokeWidth={1} />
@@ -333,8 +337,7 @@ export default function SalonPublicPage() {
       <section className="py-6 md:py-10 bg-white">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* Main Column */}
+            {/* Main */}
             <div className="lg:col-span-2 space-y-8">
               
               {/* Header Info */}
