@@ -79,6 +79,18 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const assertString = (value: string | undefined | null, message: string) => {
+    if (!value || !value.trim()) {
+      throw new Error(message);
+    }
+  };
+
+  const assertCondition = (condition: boolean, message: string) => {
+    if (!condition) {
+      throw new Error(message);
+    }
+  };
+
   const createAppointment = useCallback(async (
     salonId: string,
     appointmentId: string,
@@ -87,11 +99,16 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(appointmentId, 'Не указан ID записи');
+      assertString(data?.serviceId, 'Не указана услуга');
+
       const created = await createAppointmentAction(salonId, appointmentId, data);
       return created;
     } catch (e: any) {
-      setError(e.message);
-      throw e;
+      const errorMessage = e?.message || 'Не удалось создать запись';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,10 +118,14 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(appointmentId, 'Не указан ID записи');
+
       const appt = await getAppointmentAction(salonId, appointmentId);
       return appt;
     } catch (e: any) {
-      setError(e.message);
+      const errorMessage = e?.message || 'Не удалось получить запись';
+      setError(errorMessage);
       return null;
     } finally {
       setLoading(false);
@@ -119,11 +140,16 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(appointmentId, 'Не указан ID записи');
+      assertCondition(Boolean(data && Object.keys(data).length > 0), 'Нет данных для обновления');
+
       const updated = await updateAppointmentAction(salonId, appointmentId, data);
       return updated;
     } catch (e: any) {
-      setError(e.message);
-      throw e;
+      const errorMessage = e?.message || 'Не удалось обновить запись';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -133,10 +159,14 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(appointmentId, 'Не указан ID записи');
+
       await deleteAppointmentAction(salonId, appointmentId);
     } catch (e: any) {
-      setError(e.message);
-      throw e;
+      const errorMessage = e?.message || 'Не удалось удалить запись';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -146,10 +176,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+
       const list = await getAppointmentsBySalonAction(salonId, options);
       return list;
     } catch (e: any) {
-      setError(e.message);
+      const errorMessage = e?.message || 'Не удалось получить список записей';
+      setError(errorMessage);
       return [];
     } finally {
       setLoading(false);
@@ -160,10 +193,14 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertCondition(Boolean(date && !isNaN(date.getTime())), 'Неверная дата');
+
       const list = await getAppointmentsByDayAction(salonId, date);
       return list;
     } catch (e: any) {
-      setError(e.message);
+      const errorMessage = e?.message || 'Не удалось получить записи за день';
+      setError(errorMessage);
       return [];
     } finally {
       setLoading(false);
@@ -174,10 +211,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
+      assertString(userId, 'Не указан ID пользователя');
+
       const list = await getAppointmentsByUserAction(userId);
       return list;
     } catch (e: any) {
-      setError(e.message);
+      const errorMessage = e?.message || 'Не удалось получить записи пользователя';
+      setError(errorMessage);
       return [];
     } finally {
       setLoading(false);
@@ -194,6 +234,10 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     // Здесь не ставим глобальный loading, чтобы не блокировать UI при проверках в фоне
     setError(null);
     try {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(startAtIso, 'Не указана дата начала');
+      assertCondition(durationMinutes > 0 && durationMinutes <= 1440, 'Неверная длительность');
+
       return await checkAppointmentAvailabilityAction(
         salonId,
         startAtIso,
@@ -216,24 +260,19 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Проверяем доступность
-      const isAvailable = await checkAppointmentAvailabilityAction(
-        salonId,
-        data.startAt,
-        data.durationMinutes,
-        employeeId
-      );
+      assertString(salonId, 'Не указан ID салона');
+      assertString(appointmentId, 'Не указан ID записи');
+      assertString(data?.serviceId, 'Не указана услуга');
+      assertString(data?.startAt, 'Не указано время начала');
+      assertCondition(Boolean(data?.durationMinutes), 'Не указана длительность');
 
-      if (!isAvailable) {
-        return { ok: false, reason: 'Время недоступно' };
-      }
-
-      // 2. Создаем запись
+      // 2. Создаем запись (внутри уже есть проверка доступности через транзакцию)
       const created = await createAppointmentAction(salonId, appointmentId, data);
       return { ok: true, appointment: created };
     } catch (e: any) {
-      setError(e.message);
-      return { ok: false, reason: e.message };
+      const errorMessage = e?.message || 'Не удалось создать запись';
+      setError(errorMessage);
+      return { ok: false, reason: errorMessage };
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,4 @@
-import { get, ref, remove, update } from 'firebase/database';
+import { get, ref, remove, update, query, orderByChild, limitToLast } from 'firebase/database';
 
 import { chatOperations } from './chat';
 import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
@@ -7,36 +7,82 @@ import { chatMessageSchema } from './schemas';
 
 import type { Chat, ChatMessage, ChatMessageType } from '@/types/database';
 
+const assertString = (value: string | undefined | null, fieldName: string) => {
+  if (!value || typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${fieldName} is required`);
+  }
+};
+
+const clampLimit = (value: number | undefined, defaultValue: number, max: number) => {
+  if (!value || value <= 0) return defaultValue;
+  return Math.min(value, max);
+};
+
+const sanitizeContent = (content: string, maxLength = 2000) => {
+  const trimmed = content.trim();
+  if (!trimmed) {
+    throw new Error('content is required');
+  }
+  if (trimmed.length > maxLength) {
+    throw new Error('content is too long');
+  }
+  return trimmed;
+};
+
 export const chatMessageOperations = {
-  create: (chatId: string, messageId: string, data: Omit<ChatMessage, 'id'>) =>
-    createOperation(`chatMessages/${chatId}/${messageId}`, data, chatMessageSchema),
+  create: (chatId: string, messageId: string, data: Omit<ChatMessage, 'id'>) => {
+    assertString(chatId, 'chatId');
+    assertString(messageId, 'messageId');
+    return createOperation(`chatMessages/${chatId}/${messageId}`, data, chatMessageSchema);
+  },
 
-  read: (chatId: string, messageId: string) =>
-    readOperation<ChatMessage>(`chatMessages/${chatId}/${messageId}`),
+  read: (chatId: string, messageId: string) => {
+    assertString(chatId, 'chatId');
+    assertString(messageId, 'messageId');
+    return readOperation<ChatMessage>(`chatMessages/${chatId}/${messageId}`);
+  },
 
-  update: (chatId: string, messageId: string, data: Partial<ChatMessage>) =>
-    updateOperation(`chatMessages/${chatId}/${messageId}`, data, chatMessageSchema),
+  update: (chatId: string, messageId: string, data: Partial<ChatMessage>) => {
+    assertString(chatId, 'chatId');
+    assertString(messageId, 'messageId');
+    return updateOperation(`chatMessages/${chatId}/${messageId}`, data, chatMessageSchema);
+  },
 
-  delete: (chatId: string, messageId: string) =>
-    deleteOperation(`chatMessages/${chatId}/${messageId}`),
+  delete: (chatId: string, messageId: string) => {
+    assertString(chatId, 'chatId');
+    assertString(messageId, 'messageId');
+    return deleteOperation(`chatMessages/${chatId}/${messageId}`);
+  },
 
   getByChat: async (chatId: string, limit = 50, offset = 0): Promise<ChatMessage[]> => {
     try {
-      const snapshot = await get(ref(db, `chatMessages/${chatId}`));
+      assertString(chatId, 'chatId');
+      const safeLimit = clampLimit(limit, 50, 500);
+      const safeOffset = Math.max(offset, 0);
+      const fetchCount = safeLimit + safeOffset;
+      const messagesRef = query(
+        ref(db, `chatMessages/${chatId}`),
+        orderByChild('createdAt'),
+        limitToLast(fetchCount)
+      );
+      const snapshot = await get(messagesRef);
       if (!snapshot.exists()) return [];
       const messages = snapshot.val() as Record<string, ChatMessage>;
       const messageList = Object.entries(messages)
         .map(([id, message]) => ({ ...message, id }))
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       return messageList.slice(offset, offset + limit);
-    } catch (_) {
+    } catch (error) {
+      console.error('[chatMessageOperations.getByChat] error:', error);
       return [];
     }
   },
 
   markAsRead: async (chatId: string, userId: string): Promise<void> => {
     try {
-      const messages = await chatMessageOperations.getByChat(chatId, 1000);
+      assertString(chatId, 'chatId');
+      assertString(userId, 'userId');
+      const messages = await chatMessageOperations.getByChat(chatId, 500);
       const unreadMessages = messages.filter(msg => 
         msg.senderId !== userId && 
         msg.status !== 'read'
@@ -70,12 +116,11 @@ export const chatMessageOperations = {
     attachments?: ChatMessage['attachments']
   ): Promise<ChatMessage> => {
     try {
-
-      if (!chatId) throw new Error('chatId is required');
-      if (!senderId) throw new Error('senderId is required');
-      if (!senderType) throw new Error('senderType is required');
-      if (!senderName) throw new Error('senderName is required');
-      if (!content) throw new Error('content is required');
+      assertString(chatId, 'chatId');
+      assertString(senderId, 'senderId');
+      assertString(senderType, 'senderType');
+      assertString(senderName, 'senderName');
+      const safeContent = sanitizeContent(content);
       
       const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
@@ -86,7 +131,7 @@ export const chatMessageOperations = {
         senderType,
         senderName,
         messageType,
-        content,
+        content: safeContent,
         status: 'sent',
         createdAt: now,
         updatedAt: now

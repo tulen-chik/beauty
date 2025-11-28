@@ -82,6 +82,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   // Состояние подписки
   const [chatListSubscription, setChatListSubscription] = useState<{ type: 'salon' | 'customer'; id: string } | null>(null);
 
+  const assertString = (value: string | undefined | null, message: string) => {
+    if (!value || typeof value !== 'string' || value.trim().length === 0) {
+      throw new Error(message);
+    }
+  };
+
+  const sanitizeMessageContent = (content: string) => {
+    const trimmed = (content || '').trim();
+    if (!trimmed) {
+      throw new Error('Текст сообщения не может быть пустым');
+    }
+    if (trimmed.length > 2000) {
+      throw new Error('Сообщение слишком длинное');
+    }
+    return trimmed;
+  };
+
   // --- REAL-TIME СЛУШАТЕЛИ ---
 
   // 1. Слушатель списка чатов (activeChats + unreadCounts)
@@ -160,46 +177,65 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   // 1. Chat Operations
   const createOrGetChat = useCallback((salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string) => 
-    handleRequest(() => chatOperations.createOrGet(salonId, customerUserId, customerName, appointmentId, serviceId)), 
+    handleRequest(() => {
+      assertString(salonId, 'Не указан ID салона');
+      assertString(customerUserId, 'Не указан ID клиента');
+      assertString(customerName, 'Не указано имя клиента');
+      return chatOperations.createOrGet(salonId, customerUserId, customerName, appointmentId, serviceId);
+    }), 
   [handleRequest]);
 
   const getChatsBySalon = useCallback(async (salonId: string) => {
-    setLoading(true);
-    setChatListSubscription({ type: 'salon', id: salonId });
-    return chatOperations.getBySalon(salonId);
-  }, []);
+    return handleRequest(() => {
+      assertString(salonId, 'Не указан ID салона');
+      setChatListSubscription({ type: 'salon', id: salonId });
+      return chatOperations.getBySalon(salonId);
+    });
+  }, [handleRequest]);
 
   const getChatsByCustomer = useCallback(async (customerUserId: string) => {
-    setLoading(true);
-    setChatListSubscription({ type: 'customer', id: customerUserId });
-    return chatOperations.getByCustomer(customerUserId);
-  }, []);
+    return handleRequest(() => {
+      assertString(customerUserId, 'Не указан ID клиента');
+      setChatListSubscription({ type: 'customer', id: customerUserId });
+      return chatOperations.getByCustomer(customerUserId);
+    });
+  }, [handleRequest]);
 
   const getChatByAppointment = useCallback((appointmentId: string) => 
-    handleRequest(() => chatOperations.getByAppointment(appointmentId)), 
+    handleRequest(() => {
+      assertString(appointmentId, 'Не указан ID записи');
+      return chatOperations.getByAppointment(appointmentId);
+    }), 
   [handleRequest]);
 
   const updateChat = useCallback((chatId: string, data: Partial<Chat>) => 
     handleRequest(async () => {
+      assertString(chatId, 'Не указан ID чата');
       await chatOperations.update(chatId, data);
       const updated = await chatOperations.read(chatId);
-      if (!updated) throw new Error('Chat not found after update');
+      if (!updated) throw new Error('Чат не найден после обновления');
       return updated;
     }, false), 
   [handleRequest]);
 
   const archiveChat = useCallback((chatId: string) => 
-    handleRequest(() => chatOperations.update(chatId, { status: 'archived', archivedAt: new Date().toISOString() }).then(() => {}), false), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      return chatOperations.update(chatId, { status: 'archived', archivedAt: new Date().toISOString() }).then(() => {});
+    }, false), 
   [handleRequest]);
 
   const closeChat = useCallback((chatId: string) => 
-    handleRequest(() => chatOperations.update(chatId, { status: 'closed', closedAt: new Date().toISOString() }).then(() => {}), false), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      return chatOperations.update(chatId, { status: 'closed', closedAt: new Date().toISOString() }).then(() => {});
+    }, false), 
   [handleRequest]);
 
   const deleteChat = useCallback((chatId: string) => 
     handleRequest(async () => {
+      assertString(chatId, 'Не указан ID чата');
       await chatMessageOperations.deleteChatWithMessages(chatId);
-      // Clear current chat if it was deleted
       if (currentChat?.id === chatId) {
         setCurrentChat(null);
       }
@@ -207,64 +243,106 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   [handleRequest, currentChat]);
 
   const getChatById = useCallback((chatId: string) => 
-    handleRequest(() => chatOperations.read(chatId)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      return chatOperations.read(chatId);
+    }), 
   [handleRequest]);
 
   // 2. Message Operations (используем chatMessageOperations)
   const sendMessage = useCallback((chatId: string, senderId: string, senderType: 'customer' | 'salon', senderName: string, content: string, messageType?: ChatMessageType, attachments?: ChatMessage['attachments']) => 
     handleRequest(() => {
       const effectiveChatId = chatId || currentChat?.id;
-      if (!effectiveChatId) {
-        throw new Error('No chat selected to send a message');
-      }
-      return chatMessageOperations.sendMessage(effectiveChatId, senderId, senderType, senderName, content, messageType, attachments);
+      assertString(effectiveChatId, 'Не выбран чат для отправки сообщения');
+      assertString(senderId, 'Не указан отправитель');
+      assertString(senderName, 'Не указано имя отправителя');
+      const safeContent = sanitizeMessageContent(content);
+      return chatMessageOperations.sendMessage(effectiveChatId!, senderId, senderType, senderName, safeContent, messageType, attachments);
     }, false), 
   [handleRequest, currentChat]);
 
   const getMessages = useCallback((chatId: string, limit = 50, offset = 0) => 
-    handleRequest(() => chatMessageOperations.getByChat(chatId, limit, offset)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      return chatMessageOperations.getByChat(chatId, limit, offset);
+    }), 
   [handleRequest]);
 
   const markMessagesAsRead = useCallback((chatId: string, userId: string) => 
-    handleRequest(() => chatMessageOperations.markAsRead(chatId, userId), false), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      assertString(userId, 'Не указан ID пользователя');
+      return chatMessageOperations.markAsRead(chatId, userId);
+    }, false), 
   [handleRequest]);
 
   const deleteMessage = useCallback((chatId: string, messageId: string) => 
-    handleRequest(() => chatMessageOperations.delete(chatId, messageId), false), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      assertString(messageId, 'Не указан ID сообщения');
+      return chatMessageOperations.delete(chatId, messageId);
+    }, false), 
   [handleRequest]);
 
   // 3. Participant Operations (используем chatParticipantOperations)
   const addParticipant = useCallback((chatId: string, participantId: string, data: Omit<ChatParticipant, 'id'>) => 
-    handleRequest(() => chatParticipantOperations.add(chatId, participantId, data)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      assertString(participantId, 'Не указан ID участника');
+      return chatParticipantOperations.add(chatId, participantId, data);
+    }), 
   [handleRequest]);
 
   const removeParticipant = useCallback((chatId: string, participantId: string) => 
-    handleRequest(() => chatParticipantOperations.remove(chatId, participantId)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      assertString(participantId, 'Не указан ID участника');
+      return chatParticipantOperations.remove(chatId, participantId);
+    }), 
   [handleRequest]);
 
   const updateParticipantStatus = useCallback((chatId: string, participantId: string, data: Partial<ChatParticipant>) => 
-    handleRequest(() => chatParticipantOperations.updateStatus(chatId, participantId, data)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      assertString(participantId, 'Не указан ID участника');
+      return chatParticipantOperations.updateStatus(chatId, participantId, data);
+    }), 
   [handleRequest]);
 
   const getParticipants = useCallback((chatId: string) => 
-    handleRequest(() => chatParticipantOperations.getByChat(chatId)), 
+    handleRequest(() => {
+      assertString(chatId, 'Не указан ID чата');
+      return chatParticipantOperations.getByChat(chatId);
+    }), 
   [handleRequest]);
 
   // 4. Notification Operations (используем chatNotificationOperations)
   const createNotification = useCallback((notificationId: string, data: Omit<ChatNotification, 'id'>) => 
-    handleRequest(() => chatNotificationOperations.create(notificationId, data)), 
+    handleRequest(() => {
+      assertString(notificationId, 'Не указан ID уведомления');
+      return chatNotificationOperations.create(notificationId, data);
+    }), 
   [handleRequest]);
 
   const markNotificationAsRead = useCallback((notificationId: string) => 
-    handleRequest(() => chatNotificationOperations.markAsRead(notificationId)), 
+    handleRequest(() => {
+      assertString(notificationId, 'Не указан ID уведомления');
+      return chatNotificationOperations.markAsRead(notificationId);
+    }), 
   [handleRequest]);
 
   const getNotificationsByUser = useCallback((userId: string, limit?: number) => 
-    handleRequest(() => chatNotificationOperations.getByUser(userId, limit)), 
+    handleRequest(() => {
+      assertString(userId, 'Не указан ID пользователя');
+      return chatNotificationOperations.getByUser(userId, limit);
+    }), 
   [handleRequest]);
 
   const getUnreadNotificationsByUser = useCallback((userId: string) => 
-    handleRequest(() => chatNotificationOperations.getUnreadByUser(userId)), 
+    handleRequest(() => {
+      assertString(userId, 'Не указан ID пользователя');
+      return chatNotificationOperations.getUnreadByUser(userId);
+    }), 
   [handleRequest]);
 
   // Utility functions

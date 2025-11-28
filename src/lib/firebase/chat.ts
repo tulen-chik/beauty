@@ -6,20 +6,39 @@ import { chatSchema } from './schemas';
 
 import type { Chat } from '@/types/database';
 
+const assertString = (value: string | undefined | null, field: string) => {
+  if (!value || typeof value !== 'string' || value.trim().length === 0) {
+    throw new Error(`${field} is required`);
+  }
+};
+
+const normalizeChat = (id: string, chat: Chat): Chat => ({ ...chat, id });
+
 export const chatOperations = {
-  create: (chatId: string, data: Omit<Chat, 'id'>) =>
-    createOperation(`chats/${chatId}`, data, chatSchema),
+  create: (chatId: string, data: Omit<Chat, 'id'>) => {
+    assertString(chatId, 'chatId');
+    return createOperation(`chats/${chatId}`, data, chatSchema);
+  },
 
-  read: (chatId: string) => readOperation<Chat>(`chats/${chatId}`),
+  read: (chatId: string) => {
+    assertString(chatId, 'chatId');
+    return readOperation<Chat>(`chats/${chatId}`);
+  },
 
-  update: (chatId: string, data: Partial<Chat>) =>
-    updateOperation(`chats/${chatId}`, data, chatSchema),
+  update: (chatId: string, data: Partial<Chat>) => {
+    assertString(chatId, 'chatId');
+    return updateOperation(`chats/${chatId}`, data, chatSchema);
+  },
 
-  delete: (chatId: string) => deleteOperation(`chats/${chatId}`),
+  delete: (chatId: string) => {
+    assertString(chatId, 'chatId');
+    return deleteOperation(`chats/${chatId}`);
+  },
   
 
 getBySalon: async (salonId: string): Promise<Chat[]> => {
     try {
+      assertString(salonId, 'salonId');
       // Создаем запрос, который будет выполнен на сервере Firebase
       const chatsRef = ref(db, 'chats');
       const salonQuery = query(chatsRef, orderByChild('salonId'), equalTo(salonId));
@@ -30,7 +49,7 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
 
       const chats = snapshot.val() as Record<string, Chat>;
       return Object.entries(chats)
-        .map(([id, chat]) => ({ ...chat, id }))
+        .map(([id, chat]) => normalizeChat(id, chat))
         .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
     } catch (error) {
       console.error("Error fetching chats by salon:", error);
@@ -40,12 +59,14 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
 
   getByCustomer: async (customerUserId: string): Promise<Chat[]> => {
     try {
-      const snapshot = await get(ref(db, 'chats'));
+      assertString(customerUserId, 'customerUserId');
+      const chatsRef = ref(db, 'chats');
+      const customerQuery = query(chatsRef, orderByChild('customerUserId'), equalTo(customerUserId));
+      const snapshot = await get(customerQuery);
       if (!snapshot.exists()) return [];
       const chats = snapshot.val() as Record<string, Chat>;
       return Object.entries(chats)
-        .map(([id, chat]) => ({ ...chat, id }))
-        .filter(chat => chat.customerUserId === customerUserId)
+        .map(([id, chat]) => normalizeChat(id, chat))
         .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
     } catch (_) {
       return [];
@@ -54,26 +75,38 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
 
   getByAppointment: async (appointmentId: string): Promise<Chat | null> => {
     try {
-      const snapshot = await get(ref(db, 'chats'));
+      assertString(appointmentId, 'appointmentId');
+      const chatsRef = ref(db, 'chats');
+      const appointmentQuery = query(chatsRef, orderByChild('appointmentId'), equalTo(appointmentId));
+      const snapshot = await get(appointmentQuery);
       if (!snapshot.exists()) return null;
       const chats = snapshot.val() as Record<string, Chat>;
-      const chat = Object.entries(chats)
-        .map(([id, chat]) => ({ ...chat, id }))
-        .find(chat => chat.appointmentId === appointmentId);
-      return chat || null;
-    } catch (_) {
+      const entry = Object.entries(chats)[0];
+      if (!entry) return null;
+      const [id, chat] = entry;
+      return normalizeChat(id, chat);
+    } catch (error) {
+      console.error('Error fetching chat by appointment:', error);
       return null;
     }
   },
 
   createOrGet: async (salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string): Promise<Chat> => {
     try {
+      assertString(salonId, 'salonId');
+      assertString(customerUserId, 'customerUserId');
+      assertString(customerName, 'customerName');
+
       // Check if chat already exists
-      const existingChats = await chatOperations.getBySalon(salonId);
-      const existingChat = existingChats.find(chat => 
-        chat.customerUserId === customerUserId && 
-        chat.appointmentId === appointmentId
-      );
+      let existingChat: Chat | undefined;
+      if (appointmentId) {
+        existingChat = await chatOperations.getByAppointment(appointmentId) || undefined;
+      } else {
+        const customerChats = await chatOperations.getByCustomer(customerUserId);
+        existingChat = customerChats.find(
+          (chat) => chat.salonId === salonId && chat.status === 'active'
+        );
+      }
 
       if (existingChat) {
         return existingChat;
@@ -81,18 +114,19 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
 
       // Create new chat
       const chatId = `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date().toISOString();
       const chatData: Omit<Chat, 'id'> = {
         salonId,
         customerUserId,
         customerName,
         status: 'active',
-        lastMessageAt: new Date().toISOString(),
+        lastMessageAt: now,
         unreadCount: {
           customer: 0,
           salon: 0
         },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: now,
+        updatedAt: now
       };
 
       // Only add optional fields if they exist
