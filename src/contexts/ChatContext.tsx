@@ -27,6 +27,7 @@ interface ChatContextType {
   updateChat: (chatId: string, data: Partial<Chat>) => Promise<Chat>;
   archiveChat: (chatId: string) => Promise<void>;
   closeChat: (chatId: string) => Promise<void>;
+  deleteChat: (chatId: string) => Promise<void>;
   getChatById: (chatId: string) => Promise<Chat | null>;
 
   // Message operations
@@ -195,6 +196,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     handleRequest(() => chatOperations.update(chatId, { status: 'closed', closedAt: new Date().toISOString() }).then(() => {}), false), 
   [handleRequest]);
 
+  const deleteChat = useCallback((chatId: string) => 
+    handleRequest(async () => {
+      await chatMessageOperations.deleteChatWithMessages(chatId);
+      // Clear current chat if it was deleted
+      if (currentChat?.id === chatId) {
+        setCurrentChat(null);
+      }
+    }, false), 
+  [handleRequest, currentChat]);
+
   const getChatById = useCallback((chatId: string) => 
     handleRequest(() => chatOperations.read(chatId)), 
   [handleRequest]);
@@ -269,14 +280,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, [chatListSubscription, getChatsBySalon, getChatsByCustomer]);
 
   const value: ChatContextType = useMemo(() => ({
-    createOrGetChat, getChatsBySalon, getChatsByCustomer, getChatByAppointment, updateChat, getChatById, archiveChat, closeChat,
+    createOrGetChat, getChatsBySalon, getChatsByCustomer, getChatByAppointment, updateChat, getChatById, archiveChat, closeChat, deleteChat,
     sendMessage, getMessages, markMessagesAsRead, deleteMessage,
     addParticipant, removeParticipant, updateParticipantStatus, getParticipants,
     createNotification, markNotificationAsRead, getNotificationsByUser, getUnreadNotificationsByUser,
     activeChats, currentChat, chatMessages, unreadCounts,
     loading, error, setCurrentChat, refreshChats,
   }), [
-    createOrGetChat, getChatsBySalon, getChatsByCustomer, getChatByAppointment, updateChat, getChatById, archiveChat, closeChat,
+    createOrGetChat, getChatsBySalon, getChatsByCustomer, getChatByAppointment, updateChat, getChatById, archiveChat, closeChat, deleteChat,
     sendMessage, getMessages, markMessagesAsRead, deleteMessage,
     addParticipant, removeParticipant, updateParticipantStatus, getParticipants,
     createNotification, markNotificationAsRead, getNotificationsByUser, getUnreadNotificationsByUser,

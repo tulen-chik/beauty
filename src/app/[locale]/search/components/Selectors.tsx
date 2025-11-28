@@ -26,9 +26,9 @@ const POPULAR_CITIES = [
   { name: "Витебск", value: "Витебск" },
 ]
 const POPULAR_CITIES_EN = [
-  { name: "Minsk", value: "Minsk" }, { name: "Gomel", value: "Gomel" },
-  { name: "Grodno", value: "Grodno" }, { name: "Brest", value: "Brest" },
-  { name: "Vitebsk", value: "Vitebsk" },
+  { name: "Minsk", value: "Минск" }, { name: "Gomel", value: "Гомель" },
+  { name: "Grodno", value: "Гродно" }, { name: "Brest", value: "Брест" },
+  { name: "Vitebsk", value: "Витебск" },
 ]
 
 export const CitySelector = React.memo(({ currentCity, onCityChange, locale }: { currentCity: string | null; onCityChange: (city: string) => void; locale: string }) => {

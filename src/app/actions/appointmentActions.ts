@@ -3,6 +3,8 @@
 import { Firestore, Settings } from '@google-cloud/firestore';
 import { appointmentSchema } from '@/lib/firebase/schemas';
 import type { Appointment, AppointmentStatus } from '@/types/database';
+import { sendEmail } from '@/lib/email';
+import type { User } from '@/types/user';
 
 // --- Инициализация Firestore (Singleton) ---
 let firestoreInstance: Firestore | null = null;
@@ -48,6 +50,26 @@ export async function createAppointmentAction(
   const path = `salons/${salonId}/appointments/${appointmentId}`;
   
   await getDb().doc(path).set(validated);
+  // Best-effort уведомление по email. Ошибки не прерывают создание записи
+  try {
+    const recipients = await resolveRecipientEmails(salonId, validated.employeeId);
+    if (recipients.length > 0) {
+      const subject = 'Новая запись в расписании';
+      const start = new Date(validated.startAt);
+      const timeStr = isNaN(start.getTime()) ? validated.startAt : start.toLocaleString('ru-RU');
+      const html = `
+        <div>
+          <p>Появилась новая запись в салоне <strong>${salonId}</strong>.</p>
+          <p>Время: <strong>${timeStr}</strong></p>
+          ${validated.customerName ? `<p>Клиент: <strong>${validated.customerName}</strong></p>` : ''}
+          ${validated.notes ? `<p>Заметки: ${validated.notes}</p>` : ''}
+        </div>
+      `;
+      await sendEmail({ to: recipients, subject, html, text: `Новая запись. Время: ${timeStr}` });
+    }
+  } catch (e) {
+    console.error('[appointments] failed to send email notification:', e);
+  }
   
   return { ...validated, id: appointmentId } as Appointment;
 }
@@ -191,9 +213,45 @@ export async function checkAppointmentAvailabilityAction(
     const aEnd = new Date(a.startAt);
     aEnd.setMinutes(aEnd.getMinutes() + a.durationMinutes);
 
-    // Логика пересечения: (StartA < EndB) и (EndA > StartB)
-    return aStart < end && start < aEnd;
-  });
+// Логика пересечения: (StartA < EndB) и (EndA > StartB)
+return aStart < end && start < aEnd;
+});
 
-  return !overlaps;
+return !overlaps;
+}
+
+// --- Helpers ---
+async function resolveRecipientEmails(salonId: string, employeeId?: string): Promise<string[]> {
+const db = getDb();
+try {
+const salonSnap = await db.collection('salons').doc(salonId).get();
+if (!salonSnap.exists) return [];
+const salon = salonSnap.data() as { members?: Array<{ userId: string }> } | undefined;
+const members = salon?.members || [];
+
+const targetUserIds = employeeId
+? members.filter((m) => m.userId === employeeId).map((m) => m.userId)
+: members.map((m) => m.userId);
+
+if (targetUserIds.length === 0) return [];
+
+// Получаем email пользователей
+const userDocs = await Promise.all(
+targetUserIds.map((uid) => db.collection('users').doc(uid).get())
+);
+
+const emails: string[] = [];
+for (const d of userDocs) {
+if (d.exists) {
+const u = d.data() as User;
+if (u?.email) emails.push(u.email);
+}
+}
+
+// Убираем дубликаты и пустые
+return Array.from(new Set(emails.filter(Boolean)));
+} catch (err) {
+console.error('[appointments] resolveRecipientEmails error:', err);
+return [];
+}
 }

@@ -19,7 +19,7 @@ interface ChatButtonProps {
   variant?: 'button' | 'link';
 }
 
-export default function ChatButton({
+export default function  ChatButton({
   salonId,
   customerUserId,
   customerName,
@@ -68,7 +68,7 @@ export default function ChatButton({
       }
       
       // После создания чата сразу переходим на его страницу
-      router.push(`/chat/${chat.id}`);
+      router.push(`/chats`);
 
     } catch (err: any) {
       console.error('Error creating chat:', err);

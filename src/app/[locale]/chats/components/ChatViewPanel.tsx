@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, CheckCheck, MessageCircle, Send } from 'lucide-react';
+import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, Trash2 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useChat } from '@/contexts/ChatContext';
 import { useSalon } from '@/contexts/SalonContext';
@@ -16,12 +16,14 @@ interface ChatViewPanelProps {
 
 export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelProps) {
   const { currentUser } = useUser();
-  const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading } = useChat();
+  const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading, deleteChat } = useChat();
   const { fetchSalon } = useSalon();
 
   const [salonData, setSalonData] = useState<Salon | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messages = selectedChatId ? chatMessages[selectedChatId] || [] : [];
@@ -51,6 +53,21 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
       console.error("Failed to send message:", error);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!selectedChatId || !currentChat) return;
+    setIsDeleting(true);
+    try {
+      await deleteChat(selectedChatId);
+      setShowDeleteConfirm(false);
+      onBack();
+    } catch (error) {
+      console.error("Failed to delete chat:", error);
+      alert("Не удалось удалить чат. Попробуйте еще раз.");
+    } finally {
+      setIsDeleting(false);
     }
   };
   
@@ -89,14 +106,46 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
                 <InitialAvatar name={salonData?.name || ''} className="w-10 h-10 rounded-full text-sm ring-2 ring-white shadow-sm" />
             )}
             {/* Индикатор онлайн (опционально) */}
-            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+            {/* <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div> */}
         </div>
 
-        <div>
+        <div className="flex-1">
           <h2 className="font-bold text-slate-800 text-sm leading-tight">{salonData?.name}</h2>
           <p className="text-xs text-slate-500 truncate mt-0.5">
             {salonData?.city ? `${salonData.city}, ${salonData.address}` : 'Салон красоты'}
           </p>
+        </div>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+            title="Удалить чат"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+
+          {showDeleteConfirm && (
+            <div className="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-20 min-w-[200px]">
+              <p className="text-sm text-slate-700 mb-3">Вы уверены, что хотите удалить этот чат?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeleteChat}
+                  disabled={isDeleting}
+                  className="flex-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isDeleting ? 'Удаление...' : 'Удалить'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
@@ -146,6 +195,14 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
         })}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Overlay для подтверждения удаления */}
+      {showDeleteConfirm && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-10 md:hidden"
+          onClick={() => setShowDeleteConfirm(false)}
+        />
+      )}
 
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-100">

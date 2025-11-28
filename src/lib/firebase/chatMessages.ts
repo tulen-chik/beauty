@@ -1,4 +1,4 @@
-import { get, ref, update } from 'firebase/database';
+import { get, ref, remove, update } from 'firebase/database';
 
 import { chatOperations } from './chat';
 import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
@@ -122,6 +122,32 @@ export const chatMessageOperations = {
       return { ...messageData, id: messageId } as ChatMessage;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
+    }
+  },
+
+  deleteChatWithMessages: async (chatId: string): Promise<void> => {
+    try {
+      if (!chatId) throw new Error('chatId is required');
+
+      // Get all messages for the chat
+      const messages = await chatMessageOperations.getByChat(chatId, 1000);
+      
+      // Delete all messages first
+      const messageDeletePromises = messages.map(message => 
+        chatMessageOperations.delete(chatId, message.id)
+      );
+      
+      await Promise.all(messageDeletePromises);
+
+      // Delete the entire messages node for this chat
+      await remove(ref(db, `chatMessages/${chatId}`));
+
+      // Delete the chat itself
+      await chatOperations.delete(chatId);
+      
+    } catch (error) {
+      console.error('Error deleting chat with messages:', error);
       throw error;
     }
   }

@@ -199,10 +199,12 @@ export default function ProfilePage() {
     }
   };
 
-  if (userLoading || (loading && !currentUser)) {
+  // Показываем скелет только во время начальной загрузки
+  if (userLoading || loading) {
     return <ProfilePageSkeleton />;
   }
 
+  // Если пользователь не авторизован после загрузки - показываем ссылки на авторизацию
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-gray-50 py-8 px-4">

@@ -13,7 +13,10 @@ import {
   User,
   Users,
   ArrowRight,
-  ChevronDown
+  ChevronDown,
+  Mail,
+  Phone,
+  MapPin
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
@@ -116,9 +119,9 @@ export default function Home() {
             />
           </div>
 
-          <div className="container mx-auto max-w-5xl text-center relative z-10 py-12 md:py-0">
+          <div className="container mx-auto max-w-5xl text-center relative z-10 py-6 md:py-8">
             <motion.div
-              className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-rose-100 rounded-full mb-8 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-1.5 bg-white border border-rose-100 rounded-full mb-6 shadow-sm"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
@@ -128,7 +131,7 @@ export default function Home() {
             </motion.div>
 
             <motion.h1
-              className="text-4xl sm:text-5xl md:text-7xl font-extrabold mb-6 leading-[1.1] text-gray-900 tracking-tight"
+              className="text-4xl sm:text-5xl md:text-7xl font-extrabold mb-4 leading-[1.1] text-gray-900 tracking-tight"
               initial={{ opacity: 0, y: -30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
@@ -139,7 +142,7 @@ export default function Home() {
             </motion.h1>
 
             <motion.p
-              className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium"
+              className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed font-medium"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -210,15 +213,14 @@ export default function Home() {
                     return (
                       <motion.li
                         key={i}
-                        className="flex items-start gap-5"
+                        className="flex items-center gap-5"
                         variants={itemVariants}
                       >
                         {/* shrink-0 предотвращает сжатие иконки */}
-                        <div className="shrink-0 p-2.5 bg-white rounded-xl shadow-sm text-rose-600 mt-0.5">
+                        <div className="shrink-0 p-2.5 bg-white rounded-xl shadow-sm text-rose-600">
                           <Icon className="w-6 h-6" />
                         </div>
-                        {/* pt-1 выравнивает текст по оптическому центру иконки */}
-                        <span className="text-lg text-gray-700 font-medium leading-relaxed pt-1">{b}</span>
+                        <span className="text-lg text-gray-700 font-medium leading-relaxed">{b}</span>
                       </motion.li>
                     )
                   })}
@@ -237,7 +239,7 @@ export default function Home() {
                   <div className="p-4 bg-gray-800 rounded-2xl shadow-inner text-rose-400">
                     <Scissors className="w-8 h-8" />
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold">{t("proBenefitsTitle")}</h3>
+                  <h2 className="text-2xl md:text-3xl font-bold">{t("proBenefitsTitle")}</h2>
                 </div>
                 <ul className="space-y-8">
                   {proBenefits.map((b: string, i: number) => {
@@ -245,13 +247,13 @@ export default function Home() {
                     return (
                       <motion.li
                         key={i}
-                        className="flex items-start gap-5"
+                        className="flex items-center gap-5"
                         variants={itemVariants}
                       >
-                        <div className="shrink-0 p-2.5 bg-gray-800 rounded-xl text-rose-400 mt-0.5">
+                        <div className="shrink-0 p-2.5 bg-gray-800 rounded-xl text-rose-400">
                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="text-lg text-gray-300 font-medium leading-relaxed pt-1">{b}</span>
+                        <span className="text-lg text-gray-300 font-medium leading-relaxed">{b}</span>
                       </motion.li>
                     )
                   })}
@@ -352,22 +354,112 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="py-12 bg-white border-t border-gray-100">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-rose-600 rounded-lg text-white">
-                  <Sparkles className="w-5 h-5" />
+        <footer className="bg-white border-t border-gray-200">
+          <div className="container mx-auto px-4 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+              {/* Компания */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-1.5 bg-rose-600 rounded-lg text-white">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">Charming</span>
                 </div>
-                <span className="text-xl font-bold text-gray-900">Charming</span>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {t("footer.description")}
+                </p>
               </div>
-              
-              <p className="text-gray-500 text-sm md:text-base text-center md:text-right max-w-md">
-                {t("footerText")}
-              </p>
+
+              {/* Контакты */}
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">{t("footer.contact")}</h3>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3 text-sm text-gray-600">
+                    <Mail className="w-4 h-4 text-rose-600 shrink-0" />
+                    <a href={`mailto:${t("footer.emailValue")}`} className="hover:text-rose-600 transition-colors">
+                      {t("footer.emailValue")}
+                    </a>
+                  </li>
+                  <li className="flex items-center gap-3 text-sm text-gray-600">
+                    <Phone className="w-4 h-4 text-rose-600 shrink-0" />
+                    <a href={`tel:${t("footer.phoneValue").replace(/\s/g, '').replace(/[()]/g, '')}`} className="hover:text-rose-600 transition-colors">
+                      {t("footer.phoneValue")}
+                    </a>
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span>{t("footer.location")}</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Правовая информация */}
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">{t("footer.legal")}</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link 
+                      href="/privacy" 
+                      className="text-sm text-gray-600 hover:text-rose-600 transition-colors"
+                    >
+                      {t("footer.privacy")}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      href="/terms" 
+                      className="text-sm text-gray-600 hover:text-rose-600 transition-colors"
+                    >
+                      {t("footer.terms")}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Поддержка */}
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">{t("footer.support")}</h3>
+                <ul className="space-y-2">
+                  <li>
+                    <Link 
+                      href="/help" 
+                      className="text-sm text-gray-600 hover:text-rose-600 transition-colors"
+                    >
+                      {t("footer.help")}
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      href="/about" 
+                      className="text-sm text-gray-600 hover:text-rose-600 transition-colors"
+                    >
+                      {t("footer.about")}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
             </div>
-            <div className="mt-8 pt-8 border-t border-gray-100 text-center text-gray-400 text-sm">
-              &copy; {new Date().getFullYear()} Charming. All rights reserved.
+            
+            <div className="pt-8 border-t border-gray-200">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <p className="text-gray-400 text-sm text-center md:text-left">
+                  &copy; {new Date().getFullYear()} Charming. {t("footer.copyright")}.
+                </p>
+                <div className="flex gap-6">
+                  <Link 
+                    href="/privacy" 
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {t("footer.privacy")}
+                  </Link>
+                  <Link 
+                    href="/terms" 
+                    className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {t("footer.terms")}
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </footer>
