@@ -88,18 +88,39 @@ export const chatMessageOperations = {
         msg.status !== 'read'
       );
 
+      if (unreadMessages.length === 0) {
+        return; // No unread messages to mark
+      }
+
       const updates: Record<string, any> = {};
       const now = new Date().toISOString();
 
+      // Mark individual messages as read
       unreadMessages.forEach(message => {
         updates[`chatMessages/${chatId}/${message.id}/status`] = 'read';
         updates[`chatMessages/${chatId}/${message.id}/readAt`] = now;
         updates[`chatMessages/${chatId}/${message.id}/updatedAt`] = now;
       });
 
-      if (Object.keys(updates).length > 0) {
-        await update(ref(db), updates);
+      // Update unread count in chat
+      const chat = await chatOperations.read(chatId);
+      if (chat) {
+        const unreadCount = { ...chat.unreadCount } as Chat['unreadCount'];
+        
+        // Determine which count to decrement based on sender types
+        unreadMessages.forEach(message => {
+          if (message.senderType === 'customer') {
+            unreadCount.salon = Math.max(0, unreadCount.salon - 1);
+          } else {
+            unreadCount.customer = Math.max(0, unreadCount.customer - 1);
+          }
+        });
+        
+        updates[`chats/${chatId}/unreadCount`] = unreadCount;
+        updates[`chats/${chatId}/updatedAt`] = now;
       }
+
+      await update(ref(db), updates);
     } catch (error) {
       console.error('Error marking messages as read:', error);
       throw error;

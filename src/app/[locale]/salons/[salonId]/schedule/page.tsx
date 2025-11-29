@@ -1,927 +1,105 @@
-"use client";
+import { Suspense } from "react";
+import { unstable_cache } from "next/cache";
+import { notFound } from "next/navigation";
 
-import {
-  AlertCircle,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileText,
-  Phone,
-  Plus,
-  Scissors,
-  Settings,
-  User as UserIcon,
-  X,
-} from "lucide-react";
-import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+// Импорт клиентского компонента
+import SalonSchedulePageClient from "./components/SalonSchedulePageClient";
 
-// --- COMPONENTS ---
-import ChatButton from "@/components/ChatButton";
+// Импорт серверных экшенов (предполагаемые пути, проверьте их)
+import {  getSalonByIdAction } from "@/app/actions/salonActions"; // Или useSalon context logic перенесенная в server action
+import { getServicesBySalonAction } from "@/app/actions/salonActions";
+import { getSalonScheduleAction } from "@/app/actions/salonActions";
+import { getUserByIdAction } from "@/app/actions/userActions";
+import { getAppointmentsBySalonAction } from "@/app/actions/appointmentActions"; // Из вашего appointment.ts
 
-import { useAppointment } from "@/contexts/AppointmentContext";
-import { useSalon } from "@/contexts/SalonContext";
-import { useSalonSchedule } from "@/contexts/SalonScheduleContext";
-import { useSalonService } from "@/contexts/SalonServiceContext";
-// --- CONTEXT HOOKS ---
-import { useUser } from "@/contexts/UserContext";
-import type { User as UserType } from "@/types/database";
-
-import ManualBookingModal from "./components/ManualBookingModal";
-
-// --- TYPE DEFINITIONS ---
-import { Salon, SalonWorkDay, WeekDay } from "@/types/database";
-import type { User } from "@/types/user";
-
-// --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
-
-// Скелет для мобильного вида (список дней)
-const MobileViewSkeleton = () => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-    {[...Array(3)].map((_, i) => (
-      <div key={i} className="border-b last:border-b-0 py-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-          <div className="space-y-2">
-            <div className="h-5 w-24 bg-gray-300 rounded"></div>
-            <div className="h-4 w-20 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-        <div className="py-6 text-center">
-          <div className="w-8 h-8 mx-auto mb-2 bg-gray-200 rounded-full"></div>
-          <div className="h-5 w-1/2 mx-auto bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    ))}
-  </div>
+// --- Кэширование статических данных (Салон, Услуги) ---
+// Это предотвращает повторные запросы к БД при каждом обновлении страницы
+const getCachedSalon = unstable_cache(
+  async (id: string) => getSalonByIdAction(id),
+  ['salon-data'],
+  { revalidate: 3600, tags: ['salon'] } // Кэш на 1 час
 );
 
-// Скелет для десктопного вида (сетка календаря)
-const DesktopViewSkeleton = () => (
-  <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
-    <div className="grid grid-cols-8 min-w-[1200px]">
-      {/* Time Column */}
-      <div>
-        {[...Array(10)].map((_, i) => (
-          <div key={i} className="h-24 flex items-center justify-center">
-            <div className="h-5 w-10 bg-gray-200 rounded"></div>
-          </div>
-        ))}
-      </div>
-      {/* Day Columns */}
-      {[...Array(7)].map((_, i) => (
-        <div key={i} className="border-l border-gray-200">
-          <div className="text-center py-2 border-b border-gray-200 space-y-1">
-            <div className="h-5 w-6 mx-auto bg-gray-300 rounded"></div>
-            <div className="h-7 w-8 mx-auto bg-gray-300 rounded-full"></div>
-          </div>
-          <div className="relative">
-            {[...Array(10)].map((_, j) => (
-              <div key={j} className="h-24 border-b border-gray-100"></div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
+const getCachedServices = unstable_cache(
+  async (id: string) => getServicesBySalonAction(id),
+  ['salon-services'],
+  { revalidate: 3600, tags: ['services'] }
 );
 
-// Основной компонент-скелет для всей страницы
-const SalonSchedulePageSkeleton = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return (
-    <div className="space-y-6 animate-pulse">
-      {/* Header Skeleton */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="space-y-2">
-          <div className="h-8 w-64 bg-gray-300 rounded-lg"></div>
-          <div className="h-5 w-48 bg-gray-200 rounded-md"></div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-10 w-36 bg-gray-300 rounded-lg"></div>
-          <div className="h-10 w-40 bg-gray-300 rounded-lg"></div>
-        </div>
-      </div>
-
-      {/* Filters & Nav Skeleton */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4 items-center">
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
-            <div className="w-48 h-12 bg-gray-200 rounded-lg"></div>
-            <div className="w-9 h-9 bg-gray-200 rounded-lg"></div>
-          </div>
-          <div className="flex-1 h-px bg-gray-200 lg:h-auto lg:w-px"></div>
-          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-            <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-lg"></div>
-            <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-lg"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Schedule View Skeleton */}
-      {isMobile ? <MobileViewSkeleton /> : <DesktopViewSkeleton />}
-    </div>
-  );
+// Вспомогательная функция для получения дат недели
+const getWeekRange = (date: Date) => {
+  const start = new Date(date);
+  start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1));
+  start.setHours(0, 0, 0, 0);
+  
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7); // Конец недели (начало следующей)
+  
+  return { start, end };
 };
 
-// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
-
-type Appointment = {
-  id: string;
-  salonId: string;
-  serviceId: string;
-  employeeId?: string;
-  customerName?: string;
-  customerPhone?: string;
-  customerUserId?: string;
-  startAt: string;
-  durationMinutes: number;
-  status: "pending" | "in_progress" | "completed";
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type Service = {
-  id: string;
-  name: string;
-  price: number;
-  durationMinutes: number;
-};
-
-
-const WEEKDAYS = [
-  { key: "monday", label: "Пн", fullLabel: "Понедельник", shortLabel: "Пн" },
-  { key: "tuesday", label: "Вт", fullLabel: "Вторник", shortLabel: "Вт" },
-  { key: "wednesday", label: "Ср", fullLabel: "Среда", shortLabel: "Ср" },
-  { key: "thursday", label: "Чт", fullLabel: "Четверг", shortLabel: "Чт" },
-  { key: "friday", label: "Пт", fullLabel: "Пятница", shortLabel: "Пт" },
-  { key: "saturday", label: "Сб", fullLabel: "Суббота", shortLabel: "Сб" },
-  { key: "sunday", label: "Вс", fullLabel: "Воскресенье", shortLabel: "Вс" },
-];
-
-const TIME_SLOTS = [
-  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-  "20:00", "20:30", "21:00",
-];
-
-const SLOT_HEIGHT_IN_REM = 6;
-const MINUTES_PER_SLOT = 30;
-const REM_IN_PX = 16;
-const SLOT_HEIGHT_PX = SLOT_HEIGHT_IN_REM * REM_IN_PX;
-const PX_PER_MINUTE = SLOT_HEIGHT_PX / MINUTES_PER_SLOT;
-
-const timeToMinutes = (timeString: string) => {
-  const [hours, minutes] = timeString.split(':').map(Number);
-  return hours * 60 + minutes;
-};
-
-const DAY_START_MINUTES = timeToMinutes(TIME_SLOTS[0]);
-
-export default function SalonSchedulePage() {
-  const params = useParams() as { salonId: string; locale: string };
+export default async function SchedulePage({ 
+  params 
+}: { 
+  params: { salonId: string; locale: string } 
+}) {
   const { salonId } = params;
-  const t = useTranslations("salonSchedule");
 
-  const [salon, setSalon] = useState<Salon | null>(null);
-  const [weeklySchedule, setWeeklySchedule] = useState<SalonWorkDay[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
-  const [users, setUsers] = useState<Record<string, User>>({});
-  
-  const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [modalError, setModalError] = useState<string | null>(null);
-
-  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
-  const maxWeeks = 3;
-
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedTime, setSelectedTime] = useState<string>("");
-
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [serviceFilter, setServiceFilter] = useState<string>("all");
-
-  const { getSchedule, updateSchedule } = useSalonSchedule();
-  const { listAppointmentsByDay, updateAppointment } = useAppointment();
-  const { currentUser, getUserById } = useUser();
-  const { fetchSalon } = useSalon();
-  const { getServicesBySalon } = useSalonService();
-
-  // --- CACHING & REFS ---
-  const appointmentsByWeekCache = useRef<Map<string, Appointment[]>>(new Map());
-  const [weekLoadingStates, setWeekLoadingStates] = useState<Record<number, boolean>>({});
-
-  // --- DATA FETCHING WITH CACHING & PARALLEL ---
-  useEffect(() => {
-    const loadInitialData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Parallel fetch of salon, services, schedule, and users
-        const [salonData, servicesData, scheduleData, usersData] = await Promise.all([
-          fetchSalon(params.salonId),
-          getServicesBySalon(params.salonId),
-          getSchedule(params.salonId),
-          salon?.members ? Promise.all(salon.members.map(m => getUserById(m.userId))) : Promise.resolve([])
-        ]);
-
-        if (!salonData) {
-          setError(t("salonNotFound"));
-          return;
-        }
-
-        const usersMap = usersData.reduce((acc: Record<string, User>, user: User | null, idx: number) => {
-          if (user && salon?.members?.[idx]) {
-            acc[salon.members[idx].userId] = user;
-          }
-          return acc;
-        }, {} as Record<string, User>);
-
-        setSalon(salonData);
-        setServices(servicesData);
-        setWeeklySchedule(scheduleData?.weeklySchedule || []);
-        setUsers(usersMap);
-      } catch (err) {
-        console.error("Error loading initial data:", err);
-        setError(t("errorLoadingData"));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadInitialData();
-  }, [params.salonId, salon?.members, t]);
-
-  // Incremental week loading with cache
-  const loadWeekAppointments = useCallback(async (weekOffset: number): Promise<Appointment[]> => {
-    const cacheKey = `${params.salonId}-${weekOffset}`;
-    if (appointmentsByWeekCache.current.has(cacheKey)) {
-      return appointmentsByWeekCache.current.get(cacheKey)!;
-    }
-
-    setWeekLoadingStates(prev => ({ ...prev, [weekOffset]: true }));
-    try {
-      const weekDates = getWeekDates(weekOffset);
-      const allAppointments = (
-        await Promise.all(
-          weekDates.map(date => listAppointmentsByDay(params.salonId, date))
-        )
-      ).flat();
-
-      appointmentsByWeekCache.current.set(cacheKey, allAppointments);
-      return allAppointments;
-    } catch (err) {
-      console.error(`Error loading week ${weekOffset}:`, err);
-      return [];
-    } finally {
-      setWeekLoadingStates(prev => ({ ...prev, [weekOffset]: false }));
-    }
-  }, [params.salonId]);
-
-  // Load current week on mount and when week offset changes
-  useEffect(() => {
-    loadWeekAppointments(currentWeekOffset).then(weekAppointments => {
-      setAppointments(weekAppointments);
-    });
-  }, [currentWeekOffset, loadWeekAppointments]);
-
-  // Preload adjacent weeks in background
-  useEffect(() => {
-    if (currentWeekOffset > 0) {
-      loadWeekAppointments(currentWeekOffset - 1); // previous week
-    }
-    if (currentWeekOffset < maxWeeks) {
-      loadWeekAppointments(currentWeekOffset + 1); // next week
-    }
-  }, [currentWeekOffset, maxWeeks, loadWeekAppointments]);
-
-  // --- MEMOIZED HELPERS ---
-  const getAppointmentsForDay = useCallback((date: Date) => {
-    const dayStart = new Date(date);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-
-    return appointments.filter(apt => {
-      const aptDate = new Date(apt.startAt);
-      return aptDate >= dayStart && aptDate < dayEnd;
-    });
-  }, [appointments]);
-
-  const filteredAppointments = useMemo(() => {
-    let filtered = appointments;
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(apt => apt.status === statusFilter);
-    }
-    if (serviceFilter !== "all") {
-      filtered = filtered.filter(apt => apt.serviceId === serviceFilter);
-    }
-    return filtered;
-  }, [appointments, statusFilter, serviceFilter]);
-
-  const isSalonOwner = useMemo(() => 
-    salon?.members?.some(
-      member => member.userId === currentUser?.userId && member.role === 'owner'
-    ), 
-    [salon, currentUser]
-  );
-  const canManageAppointments = currentUser?.role === 'admin' || isSalonOwner;
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
+  // 1. Вычисляем диапазон дат для текущей недели
   const today = new Date();
-  const isTodayDate = (date: Date) => date.toDateString() === today.toDateString();
+  const { start: startOfWeek, end: endOfWeek } = getWeekRange(today);
 
-  const getWeekDates = (weekOffset: number) => {
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(startOfWeek.getDate() - (startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1));
-    startOfWeek.setHours(0, 0, 0, 0);
-    startOfWeek.setDate(startOfWeek.getDate() + weekOffset * 7);
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      return date;
-    });
-  };
-
-  const weekDates = getWeekDates(currentWeekOffset);
+  // 2. ПАРАЛЛЕЛЬНЫЙ ЗАПУСК ЗАПРОСОВ
+  // Мы запускаем все промисы одновременно, не дожидаясь завершения предыдущего
+  const salonPromise = getCachedSalon(salonId);
+  const servicesPromise = getCachedServices(salonId);
+  const schedulePromise = getSalonScheduleAction(salonId);
   
-  const getStatusColor = (status: string) => {
-    const colors = {
-      completed: "bg-green-100 text-green-800 border-green-300",
-      in_progress: "bg-blue-100 text-blue-800 border-blue-300",
-      pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-300";
-  };
+  // Загружаем записи сразу для текущей недели
+  const appointmentsPromise = getAppointmentsBySalonAction(salonId, {
+    startAt: startOfWeek.toISOString(),
+    endAt: endOfWeek.toISOString()
+  });
 
-  const getStatusText = (status: string) => t(`status.${status}`) || status;
+  // 3. Ожидание всех данных (время выполнения = время самого медленного запроса)
+  const [salon, services, scheduleData, appointments] = await Promise.all([
+    salonPromise,
+    servicesPromise,
+    schedulePromise,
+    appointmentsPromise
+  ]);
 
-  const handleSaveSchedule = async () => {
-    setModalError(null);
-    try {
-      const scheduleToSave = {
-        salonId,
-        updatedAt: new Date().toISOString(),
-        weeklySchedule: weeklySchedule.map(day => ({
-          ...day,
-          times: day.isOpen ? (day.times || []).filter(t => t.start && t.end) : [],
-        })),
-      };
+  if (!salon) {
+    return notFound();
+  }
 
-      await updateSchedule(salonId, scheduleToSave);
+  // 4. Загрузка пользователей (мастеров)
+  // Делаем это на сервере, чтобы клиент получил готовый объект, а не делал N запросов
+  const usersMap: Record<string, any> = {};
+  if (salon.members && salon.members.length > 0) {
+    // Получаем уникальные ID пользователей
+    const userIds = Array.from(new Set(salon.members.map((m: any) => m.userId)));
+    
+    const usersData = await Promise.all(
+      userIds.map((uid: string) => getUserByIdAction(uid))
+    );
 
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-      setTimeout(() => setIsScheduleModalOpen(false), 500);
-    } catch (e: unknown) {
-      console.error("Ошибка сохранения расписания:", e);
-      const errorMessage = e instanceof Error ? e.message : "Не удалось сохранить расписание. Пожалуйста, попробуйте еще раз.";
-      setModalError(errorMessage);
-    }
-  };
-
-  const handleStatusChange = async (appointmentId: string, newStatus: Appointment["status"]) => {
-    setModalError(null);
-    try {
-      await updateAppointment(salonId, appointmentId, { status: newStatus });
-      const updatedAppointments = appointments.map((apt) => 
-        apt.id === appointmentId ? { ...apt, status: newStatus } : apt
-      );
-      setAppointments(updatedAppointments);
-      if (selectedAppointment?.id === appointmentId) {
-        setSelectedAppointment(prev => prev ? { ...prev, status: newStatus } : null);
+    usersData.forEach((user) => {
+      if (user) {
+        usersMap[user.id] = user;
       }
-    } catch (err) {
-      console.error("Ошибка обновления статуса записи:", err);
-      const errorMessage = err instanceof Error ? err.message : "Не удалось обновить статус. Пожалуйста, проверьте ваше соединение и попробуйте снова.";
-      setModalError(errorMessage);
-    }
-  };
-  
-  const handleBookingSuccess = () => {
-    setIsManualBookingOpen(false);
-    setCurrentWeekOffset(prev => prev); 
-  };
-
-  const handleOpenToggle = (dayIdx: number, isOpen: boolean) => {
-    setWeeklySchedule(prev => prev.map((d, i) =>
-      i === dayIdx ? { 
-        ...d, 
-        isOpen, 
-        times: isOpen && (!d.times || d.times.length === 0) ? [{ start: "09:00", end: "18:00" }] : isOpen ? (d.times || []) : [] 
-      } : d
-    ));
-  };
-
-  const handleTimeChange = (dayIdx: number, timeIdx: number, field: "start" | "end", value: string) => {
-    setWeeklySchedule(prev => prev.map((d, i) =>
-      i === dayIdx ? {
-        ...d,
-        times: (d.times || []).map((t, j) => j === timeIdx ? { ...t, [field]: value } : t)
-      } : d
-    ));
-  };
-
-  const handleAddInterval = (dayIdx: number) => {
-    setWeeklySchedule(prev => prev.map((d, i) =>
-      i === dayIdx ? { ...d, times: [...(d.times || []), { start: "09:00", end: "18:00" }] } : d
-    ));
-  };
-
-  const handleRemoveInterval = (dayIdx: number, timeIdx: number) => {
-    setWeeklySchedule(prev => prev.map((d, i) =>
-      i === dayIdx ? { ...d, times: (d.times || []).filter((_, j) => j !== timeIdx) } : d
-    ));
-  };
-
-  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
-  if (loading) {
-    return <SalonSchedulePageSkeleton />;
+    });
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8 bg-red-50 border border-red-200 rounded-lg">
-        <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
-        <h3 className="text-lg font-semibold text-red-800">{t("error")}</h3>
-        <p className="text-red-700 mb-4">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
-        >
-          {t("retry")}
-        </button>
-      </div>
-    );
-  }
-
-  const PositionedAppointmentCard = ({ appointment }: { appointment: Appointment }) => {
-    const service = services.find((s) => s.id === appointment.serviceId);
-    const appointmentStart = new Date(appointment.startAt);
-    const startTimeString = appointmentStart.toTimeString().substring(0, 5);
-    const startMinutes = timeToMinutes(startTimeString);
-
-    const top = (startMinutes - DAY_START_MINUTES) * PX_PER_MINUTE;
-    const height = appointment.durationMinutes * PX_PER_MINUTE;
-
-    return (
-      <button
-        onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
-        style={{ 
-          top: `${top}px`, 
-          height: `calc(${height}px - 2px)`
-        }}
-        className={`absolute left-1 right-1 p-1.5 rounded-lg border flex flex-col overflow-hidden text-left transition-all hover:shadow-md hover:border-rose-400 ${getStatusColor(appointment.status)}`}
-      >
-        <div className="font-semibold text-xs truncate">{service?.name || t("service")}</div>
-        <div className="flex items-center gap-1 text-xs text-gray-700 mt-1">
-          <UserIcon className="w-3 h-3 flex-shrink-0" />
-          <span className="truncate">{appointment.customerName || t("client")}</span>
-        </div>
-        <div className="mt-auto pt-1 text-xs font-medium">
-          {getStatusText(appointment.status)}
-        </div>
-      </button>
-    );
-  };
-
-  const MobileAppointmentCard = ({ appointment }: { appointment: Appointment }) => {
-    const service = services.find((s) => s.id === appointment.serviceId);
-    return (
-      <div className="w-full text-left p-3 rounded-lg border bg-white">
-        <button 
-          onClick={() => { setSelectedAppointment(appointment); setModalError(null); }}
-          className="w-full text-left"
-        >
-          <div className="flex justify-between items-start">
-              <div>
-                  <div className="font-bold">{service?.name || t("service")}</div>
-                  <div className="text-sm text-gray-600">
-                      {new Date(appointment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({appointment.durationMinutes} мин)
-                  </div>
-              </div>
-              <div className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(appointment.status)}`}>
-                  {getStatusText(appointment.status)}
-              </div>
-          </div>
-          <div className="mt-2 pt-2 border-t border-current/20 text-sm">
-              <div className="flex items-center gap-2">
-                  <UserIcon className="w-4 h-4 text-gray-500" />
-                  <span>{appointment.customerName || t("client")}</span>
-              </div>
-          </div>
-        </button>
-        {appointment.customerUserId && (
-          <div className="mt-3 pt-2 border-t border-gray-200">
-            <ChatButton
-              salonId={salonId}
-              customerUserId={appointment.customerUserId}
-              customerName={appointment.customerName || t("client")}
-              appointmentId={appointment.id}
-              serviceId={appointment.serviceId}
-              className="w-full py-2 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium text-sm"
-              variant="button"
-            />
-          </div>
-        )}
-      </div>
-    );
-  };
-  
-  const MobileDayView = ({ date, dayIndex }: { date: Date, dayIndex: number }) => {
-    const dayAppointments = getAppointmentsForDay(date);
-    return (
-        <div className="border-b last:border-b-0 py-4">
-            <div className="flex items-center gap-3 mb-4">
-                <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center ${isTodayDate(date) ? 'bg-rose-600 text-white' : 'bg-gray-100'}`}>
-                    <span className="text-xs font-medium">{WEEKDAYS[dayIndex].shortLabel}</span>
-                    <span className="text-lg font-bold">{date.getDate()}</span>
-                </div>
-                <div>
-                    <div className="font-semibold">{WEEKDAYS[dayIndex].fullLabel}</div>
-                    <div className="text-sm text-gray-500">{date.toLocaleDateString('ru-RU', { month: 'long' })}</div>
-                </div>
-            </div>
-            {weekLoadingStates[currentWeekOffset] && dayAppointments.length === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-8 h-8 mx-auto mb-2 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="text-gray-500">{t("loading")}</p>
-              </div>
-            ) : (
-              dayAppointments.length > 0 ? (
-                <div className="space-y-3">
-                  {dayAppointments.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime()).map(apt => (
-                      <MobileAppointmentCard key={apt.id} appointment={apt} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <Calendar className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                  <p>{t("noAppointments")}</p>
-                </div>
-              )
-            )}
-        </div>
-    );
-  };
-
-  const AppointmentDetailsModal = () => {
-    if (!selectedAppointment) return null;
-
-    const service = services.find((s) => s.id === selectedAppointment.serviceId);
-    const employee = selectedAppointment.employeeId ? users[selectedAppointment.employeeId] : null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedAppointment(null)}>
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-          <div className="flex justify-between items-center p-6 border-b">
-            <h2 className="text-xl font-semibold">{service?.name || t("appointmentDetails")}</h2>
-            <button onClick={() => setSelectedAppointment(null)} className="p-2 hover:bg-gray-100 rounded-full">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="p-6 space-y-4">
-            {modalError && (
-              <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <span>{modalError}</span>
-              </div>
-            )}
-            <div className="space-y-3 text-gray-700">
-                <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-gray-400"/>
-                    <span>{new Date(selectedAppointment.startAt).toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-gray-400"/>
-                    <span>{new Date(selectedAppointment.startAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({selectedAppointment.durationMinutes} мин)</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <UserIcon className="w-5 h-5 text-gray-400"/>
-                    <span>{selectedAppointment.customerName || t("client")}</span>
-                </div>
-                {selectedAppointment.customerPhone && (
-                    <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-gray-400"/>
-                        <span>{selectedAppointment.customerPhone}</span>
-                    </div>
-                )}
-                {employee && (
-                    <div className="flex items-center gap-3">
-                        <Scissors className="w-5 h-5 text-gray-400"/>
-                        <span>{t("master")}: {employee.displayName}</span>
-                    </div>
-                )}
-                {selectedAppointment.notes && (
-                    <div className="flex items-start gap-3 pt-2">
-                        <FileText className="w-5 h-5 text-gray-400 mt-1"/>
-                        <div className="bg-gray-50 p-3 rounded-md border w-full">
-                            <p className="font-medium text-sm text-gray-600">{t("comment")}:</p>
-                            <p>{selectedAppointment.notes}</p>
-                        </div>
-                    </div>
-                )}
-            </div>
-            {canManageAppointments && (
-              <div>
-                  <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-1">{t("changeStatus")}</label>
-                  <select
-                      id="status-select"
-                      value={selectedAppointment.status}
-                      onChange={(e) => handleStatusChange(selectedAppointment.id, e.target.value as Appointment["status"])}
-                      className={`w-full px-3 py-2 border rounded-lg font-semibold transition-colors ${getStatusColor(selectedAppointment.status)}`}
-                  >
-                      <option value="pending">{t("status.pending")}</option>
-                      <option value="in_progress">{t("status.in_progress")}</option>
-                      <option value="completed">{t("status.completed")}</option>
-                  </select>
-              </div>
-            )}
-            {selectedAppointment.customerUserId && (
-              <div className="pt-2">
-                <ChatButton
-                  salonId={salonId}
-                  customerUserId={selectedAppointment.customerUserId}
-                  customerName={selectedAppointment.customerName || t("client")}
-                  appointmentId={selectedAppointment.id}
-                  serviceId={selectedAppointment.serviceId}
-                  className="w-full py-2.5 text-center rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
-                  variant="button"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
+  // 5. Рендер клиентского компонента с готовыми данными
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{salon?.name || t("title")}</h1>
-          <p className="text-gray-600 mt-1">
-            {t("showingAppointments", { count: filteredAppointments.length })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-           {success && (
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-medium">
-                {t("scheduleSaved")}
-              </div>
-            )}
-          {canManageAppointments && (
-            <>
-              <button
-                onClick={() => setIsManualBookingOpen(true)}
-                className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-              >
-                <Plus size={18} />
-                {t('createBooking') || 'Создать запись'}
-              </button>
-              <button
-                onClick={() => { setIsScheduleModalOpen(true); setModalError(null); }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Settings className="h-4 w-4" />
-                {t("setupSchedule")}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Filters & Calendar Navigation */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-col lg:flex-row gap-4 items-center">
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={() => setCurrentWeekOffset((w) => Math.max(0, w - 1))}
-              disabled={currentWeekOffset === 0}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <div className="text-center">
-              <div className="font-semibold">
-                {currentWeekOffset === 0 ? t("currentWeek") : t("week", { weekNum: currentWeekOffset + 1 })}
-              </div>
-              <div className="text-sm text-gray-500">
-                {weekDates[0]?.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} -{" "}
-                {weekDates[6]?.toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" })}
-              </div>
-            </div>
-            <button
-              onClick={() => setCurrentWeekOffset((w) => Math.min(maxWeeks, w + 1))}
-              disabled={currentWeekOffset === maxWeeks}
-              className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 h-px bg-gray-200 lg:h-auto lg:w-px"></div>
-          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="all">{t("filters.allStatuses")}</option>
-              <option value="pending">{t("status.pending")}</option>
-              <option value="in_progress">{t("status.in_progress")}</option>
-              <option value="completed">{t("status.completed")}</option>
-            </select>
-            <select
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value)}
-              className="w-full sm:w-48 px-3 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="all">{t("filters.allServices")}</option>
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Schedule View */}
-      {isMobileView ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-            {weekLoadingStates[currentWeekOffset] && appointments.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-8 h-8 mx-auto mb-2 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                <p className="text-gray-500">{t("loading")}</p>
-              </div>
-            ) : (
-              weekDates.map((date, index) => (
-                  <MobileDayView key={date.toISOString()} date={date} dayIndex={index} />
-              ))
-            )}
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
-            <div className="grid grid-cols-8 min-w-[1200px]">
-                <div className="text-sm text-center text-gray-500">
-                    {TIME_SLOTS.map((time) => (
-                    <div key={time} className="h-24 flex items-center justify-center">
-                        {time}
-                    </div>
-                    ))}
-                </div>
-                {weekDates.map((date, dayIndex) => {
-                    const dayKey = WEEKDAYS[dayIndex].key;
-                    const dayData = weeklySchedule.find((d) => d.day === dayKey);
-                    const isToday = isTodayDate(date);
-                    const dayAppointments = getAppointmentsForDay(date);
-
-                    return (
-                    <div key={dayKey} className="border-l border-gray-200">
-                        <div className={`text-center py-2 border-b border-gray-200 ${isToday ? "bg-rose-50" : ""}`}>
-                            <div className="font-semibold">{WEEKDAYS[dayIndex].label}</div>
-                            <div className={`text-xl font-bold ${isToday ? "text-rose-600" : ""}`}>
-                                {date.getDate()}
-                            </div>
-                        </div>
-                        <div className="relative">
-                            {TIME_SLOTS.map((time) => (
-                                <div
-                                    key={time}
-                                    className="h-24 border-b border-gray-100 border-dashed"
-                                ></div>
-                            ))}
-                            <div className="absolute inset-0">
-                                {weekLoadingStates[currentWeekOffset] && dayAppointments.length === 0 ? (
-                                  <div className="flex items-center justify-center h-full">
-                                    <div className="w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
-                                  </div>
-                                ) : (
-                                  dayAppointments.map((apt) => (
-                                      <PositionedAppointmentCard key={apt.id} appointment={apt} />
-                                  ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    );
-                })}
-            </div>
-        </div>
-      )}
-      
-      {/* Modals */}
-      <AppointmentDetailsModal />
-
-      <ManualBookingModal
-        isOpen={isManualBookingOpen}
-        onClose={() => setIsManualBookingOpen(false)}
-        salonId={params.salonId}
-        onBookingSuccess={handleBookingSuccess}
-      />
-
-      {isScheduleModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-xl font-semibold">{t("scheduleSetup")}</h2>
-                <button onClick={() => setIsScheduleModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="p-6 overflow-y-auto">
-                {modalError && (
-                  <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-center gap-2 mb-4">
-                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                      <span>{modalError}</span>
-                  </div>
-                )}
-                <div className="space-y-6">
-                  {weeklySchedule.map((d, i) => (
-                      <div key={d.day} className="border rounded-lg p-4 bg-gray-50">
-                        <div className="flex items-center gap-4 mb-3">
-                          <span className="font-semibold w-32">{WEEKDAYS.find(w => w.key === d.day)?.fullLabel}</span>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              checked={d.isOpen}
-                              onChange={e => handleOpenToggle(i, e.target.checked)}
-                            />
-                            <span className="text-sm">{t("open")}</span>
-                          </label>
-                        </div>
-                        {d.isOpen && (
-                          <div className="space-y-2 pl-4 border-l-2 border-blue-200">
-                            {(d.times || []).map((t, j) => (
-                              <div key={j} className="flex items-center gap-2">
-                                <input
-                                  type="time"
-                                  value={t.start}
-                                  onChange={e => handleTimeChange(i, j, "start", e.target.value)}
-                                  className="px-2 py-1 border rounded-md text-sm w-28"
-                                />
-                                <span>—</span>
-                                <input
-                                  type="time"
-                                  value={t.end}
-                                  onChange={e => handleTimeChange(i, j, "end", e.target.value)}
-                                  className="px-2 py-1 border rounded-md text-sm w-28"
-                                />
-                                <button onClick={() => handleRemoveInterval(i, j)} className="text-red-500 hover:text-red-700 p-1">
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                            ))}
-                            <button onClick={() => handleAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
-                              {t("addInterval")}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
-                <button onClick={() => setIsScheduleModalOpen(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300">
-                  {t("cancel")}
-                </button>
-                <button onClick={handleSaveSchedule} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                  {t("save")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-    </div>
+    <SalonSchedulePageClient
+      salonId={salonId}
+      initialSalon={salon}
+      initialServices={services || []}
+      initialSchedule={scheduleData?.weeklySchedule || []}
+      initialAppointments={appointments || []}
+      initialUsers={usersMap}
+    />
   );
 }

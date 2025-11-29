@@ -24,6 +24,7 @@ import { useEffect, useState } from "react"
 
 import ChatButton from "@/components/ChatButton"
 import RatingDisplay from "@/components/RatingDisplay"
+import RatingAttachment from "@/components/Rating/RatingAttachment"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 import ImageCarouselModal from "./components/ImageCarouselModal"
 
@@ -131,6 +132,19 @@ const ReviewItem = ({ review }: { review: ReviewWithResponse }) => {
       </div>
 
       <p className="text-gray-700 mt-3 leading-relaxed">{review.review}</p>
+
+      {/* Вложения */}
+      {review.attachments && review.attachments.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {review.attachments.map((attachment, index) => (
+            <RatingAttachment
+              key={index}
+              attachment={attachment}
+              isOwnRating={false}
+            />
+          ))}
+        </div>
+      )}
 
       {review.response && (
         <div className="mt-4 ml-4 pl-4 border-l-2 border-rose-200 bg-rose-50/50 rounded-r-lg p-4">

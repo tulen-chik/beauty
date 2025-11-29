@@ -36,6 +36,7 @@ import {
 
 import type { 
   SalonRating, 
+  SalonRatingAttachment,
   SalonRatingCategories, 
   SalonRatingHelpful, 
   SalonRatingResponse, 
@@ -54,7 +55,8 @@ interface SalonRatingContextType {
     categories?: SalonRatingCategories,
     appointmentId?: string,
     serviceId?: string,
-    isAnonymous?: boolean
+    isAnonymous?: boolean,
+    attachments?: SalonRatingAttachment[]
   ) => Promise<SalonRating>;
   getRating: (ratingId: string) => Promise<SalonRating | null>;
   updateRating: (ratingId: string, data: Partial<SalonRating>) => Promise<SalonRating>;
@@ -126,7 +128,8 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     categories?: SalonRatingCategories,
     appointmentId?: string,
     serviceId?: string,
-    isAnonymous = false
+    isAnonymous = false,
+    attachments?: SalonRatingAttachment[]
   ) => {
     setLoading(true);
     setError(null);
@@ -140,6 +143,7 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
         categories,
         appointmentId,
         serviceId,
+        attachments,
         isAnonymous,
         isVerified: false,
         status: "approved",

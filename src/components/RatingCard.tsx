@@ -2,6 +2,7 @@ import { Calendar, CheckCircle,MessageCircle, ThumbsDown, ThumbsUp, User } from 
 import React, { useState } from 'react';
 
 import RatingDisplay from './RatingDisplay';
+import RatingAttachment from '@/components/Rating/RatingAttachment';
 
 import type { SalonRating, SalonRatingResponse } from '@/types/database';
 
@@ -103,6 +104,19 @@ export default function RatingCard({
       <div className="text-gray-700 leading-relaxed">
         {rating.review}
       </div>
+
+        {/* Вложения
+        {rating.attachments && rating.attachments.length > 0 && (
+          <div className="space-y-2">
+            {rating.attachments.map((attachment, index) => (
+              <RatingAttachment
+                key={index}
+                attachment={attachment}
+                isOwnRating={false}
+              />
+            ))}
+          </div>
+        )} */}
 
       {/* Действия */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100">

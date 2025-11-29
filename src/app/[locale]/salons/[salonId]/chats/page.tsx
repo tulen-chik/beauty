@@ -56,6 +56,7 @@ export default function SalonChatsPage() {
         <div className="absolute top-0 left-0 w-full h-full md:static flex-1 z-10">
           <SalonChatViewPanel 
             selectedChatId={selectedChatId} 
+            salonId={salonId}
             onBack={() => handleSelectChat(null)} 
           />
         </div>

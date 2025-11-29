@@ -1,9 +1,9 @@
-import { Send, X } from 'lucide-react';
-import React, { useState } from 'react';
+import { Send, X, Paperclip, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 
 import RatingInput from './RatingInput';
-
-import type { SalonRatingCategories } from '@/types/database';
+import { uploadRatingFileAction } from '@/app/actions/storageActions';
+import type { SalonRatingCategories, SalonRatingAttachment } from '@/types/database';
 
 interface RatingFormProps {
   onSubmit: (data: {
@@ -11,6 +11,7 @@ interface RatingFormProps {
     review: string;
     categories?: SalonRatingCategories;
     isAnonymous: boolean;
+    attachments?: SalonRatingAttachment[];
   }) => void;
   onCancel?: () => void;
   loading?: boolean;
@@ -28,11 +29,15 @@ export default function RatingForm({
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [categories, setCategories] = useState<SalonRatingCategories>({});
   const [showCategories, setShowCategories] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<SalonRatingAttachment[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   // ИЗМЕНЕНИЕ: Состояние для хранения ошибок валидации
   const [errors, setErrors] = useState<{ rating?: string; review?: string }>({});
   // ИЗМЕНЕНИЕ: Состояние, чтобы отслеживать, пытался ли пользователь отправить форму
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categoryLabels = {
     service: 'Качество услуг',
@@ -67,10 +72,12 @@ export default function RatingForm({
 
     if (validateForm()) {
       const hasCategories = Object.keys(categories).length > 0;
+      const hasAttachments = uploadedFiles.length > 0;
       onSubmit({
         rating,
         review: review.trim(),
         categories: hasCategories ? categories : undefined,
+        attachments: hasAttachments ? uploadedFiles : undefined,
         isAnonymous
       });
     }
@@ -81,6 +88,56 @@ export default function RatingForm({
       ...prev,
       [category]: value
     }));
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingFile(true);
+    try {
+      // Generate a temporary rating ID for file upload
+      const tempRatingId = `temp_${Date.now()}`;
+      
+      // Convert File to base64 string for Server Action
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      let binaryString = '';
+      for (let i = 0; i < uint8Array.byteLength; i++) {
+        binaryString += String.fromCharCode(uint8Array[i]);
+      }
+      const base64String = btoa(binaryString);
+      
+      const fileData = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        base64: base64String
+      };
+      
+      const uploadedFile = await uploadRatingFileAction(tempRatingId, fileData);
+      const attachment: SalonRatingAttachment = {
+        url: uploadedFile.url,
+        filename: uploadedFile.filename,
+        size: uploadedFile.size,
+        type: uploadedFile.type
+      };
+      
+      // Add to uploaded files list
+      setUploadedFiles(prev => [...prev, attachment]);
+    } catch (error) {
+      console.error("Failed to upload file:", error);
+      alert("Не удалось загрузить файл. Попробуйте еще раз.");
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeUploadedFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // Эта переменная все еще полезна для блокировки кнопки
@@ -199,6 +256,59 @@ export default function RatingForm({
           Оставить анонимный отзыв
         </label>
       </div>
+
+      {/* Загрузка файлов */}
+      {/* <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-700">
+          Фотографии и файлы
+        </label>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileSelect}
+          disabled={uploadingFile || loading}
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx,.txt"
+        />
+        
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadingFile || loading}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <Paperclip className="w-4 h-4" />
+          {uploadingFile ? 'Загрузка...' : 'Прикрепить файл'}
+        </button>
+        
+        {uploadedFiles.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">Загруженные файлы:</p>
+            <div className="flex flex-wrap gap-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-md border border-gray-200">
+                  {file.type.startsWith('image/') ? (
+                    <img src={file.url} alt={file.filename} className="w-8 h-8 rounded object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4 text-gray-500" />
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-700 truncate max-w-24">{file.filename}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeUploadedFile(index)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div> */}
 
       {/* Кнопки (без изменений) */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">

@@ -6,6 +6,13 @@ export interface SalonRatingCategories {
   value?: number;
 }
 
+export interface SalonRatingAttachment {
+  url: string;
+  filename: string;
+  size: number;
+  type: string;
+}
+
 export interface SalonRating {
   id: string;
   salonId: string;
@@ -16,6 +23,7 @@ export interface SalonRating {
   rating: number;
   review: string;
   categories?: SalonRatingCategories;
+  attachments?: SalonRatingAttachment[];
   isAnonymous: boolean;
   isVerified: boolean;
   status: 'pending' | 'approved' | 'rejected';

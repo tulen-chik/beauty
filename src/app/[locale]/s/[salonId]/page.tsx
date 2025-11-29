@@ -25,6 +25,7 @@ import { useEffect, useState } from "react"
 
 import RatingStats from "@/components/RatingStats"
 import RatingDisplay from "@/components/RatingDisplay"
+import RatingAttachment from "@/components/Rating/RatingAttachment"
 
 import { useSalonRating } from "@/contexts"
 import { useSalon } from "@/contexts/SalonContext"
@@ -94,6 +95,18 @@ const ReviewsSkeleton = () => (
 
 // --- КОМПОНЕНТ ОТЗЫВА ---
 const ReviewItem = ({ review }: { review: ReviewWithResponse }) => {
+  console.log('Review attachments:', review.attachments);
+  
+  // ВРЕМЕННО: Добавляем тестовые вложения для проверки
+  const testAttachments = review.attachments || [
+    {
+      url: 'https://picsum.photos/200/150',
+      filename: 'test-image.jpg',
+      type: 'image/jpeg',
+      size: 12345
+    }
+  ];
+  
   return (
     <div className="border-b border-gray-100 last:border-0 py-6 first:pt-2">
       <div className="flex items-start justify-between mb-3">
@@ -102,8 +115,10 @@ const ReviewItem = ({ review }: { review: ReviewWithResponse }) => {
             <User className="w-5 h-5" />
           </div>
           <div>
-            <div className="font-semibold text-gray-900 text-sm">{review.customerName || "Гость"}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-semibold text-gray-900">
+              {review.isAnonymous ? 'Анонимный пользователь' : review.customerName}
+            </div>
+            <div className="text-sm text-gray-500">
               {new Date(review.createdAt).toLocaleDateString()}
             </div>
           </div>
@@ -112,6 +127,20 @@ const ReviewItem = ({ review }: { review: ReviewWithResponse }) => {
       </div>
 
       <p className="text-gray-700 text-sm leading-relaxed pl-[52px]">{review.review}</p>
+
+      {/* Вложения */}
+      {/* {testAttachments && testAttachments.length > 0 && (
+        <div className="mt-3 pl-[52px] space-y-2">
+          <p className="text-xs text-gray-500 mb-2">Вложения ({testAttachments.length}):</p>
+          {testAttachments.map((attachment, index) => (
+            <RatingAttachment
+              key={index}
+              attachment={attachment}
+              isOwnRating={false}
+            />
+          ))}
+        </div>
+      )} */}
 
       {review.response && (
         <div className="mt-4 ml-[52px] border-l-2 border-rose-200 bg-rose-50/50 rounded-r-lg p-3">

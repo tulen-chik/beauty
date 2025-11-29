@@ -169,7 +169,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleCreateRating = async (appointmentId: string, salonId: string, serviceId: string, data: { rating: number; review: string; categories?: any; isAnonymous: boolean; }) => {
+  const handleCreateRating = async (appointmentId: string, salonId: string, serviceId: string, data: { rating: number; review: string; categories?: any; isAnonymous: boolean; attachments?: any[]; }) => {
     if (!currentUser) return;
     setRatingLoading(true); setErrors({});
     try {
@@ -179,7 +179,7 @@ export default function ProfilePage() {
         return;
       }
       const ratingId = `rating_${Date.now()}`;
-      await createRating(ratingId, salonId, currentUser.userId, currentUser.displayName || "Аноним", data.rating, data.review, data.categories, appointmentId, serviceId, data.isAnonymous);
+      await createRating(ratingId, salonId, currentUser.userId, currentUser.displayName || "Аноним", data.rating, data.review, data.categories, appointmentId, serviceId, data.isAnonymous, data.attachments);
       setUserRatings(await getRatingsByCustomer(currentUser.userId));
       setMsg("Отзыв успешно отправлен!");
       setShowRatingForm(null);
@@ -266,7 +266,7 @@ export default function ProfilePage() {
 
         {showRatingForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="max-w-md w-full">
+            <div className="max-w-md w-full max-h-[90vh] overflow-y-auto">
               <RatingForm
                 onSubmit={(data) => {
                   const appointment = appointments.find(a => a.id === showRatingForm);

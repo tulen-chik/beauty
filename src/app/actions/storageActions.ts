@@ -162,3 +162,70 @@ export const deleteSalonAvatarAction = async (storagePath: string) => {
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
 };
+
+// Chat files
+export const uploadChatFileAction = async (chatId: string, fileData: { name: string; type: string; size: number; base64: string }) => {
+  const bucket = getBucket();
+  const id = `${Date.now()}-${fileData.name}`;
+  const path = `chatFiles/${chatId}/${id}`;
+  
+  // Convert base64 back to buffer
+  const buffer = Buffer.from(fileData.base64, 'base64');
+  await bucket.file(path).save(buffer, { resumable: false, contentType: fileData.type });
+  const [url] = await bucket.file(path).getSignedUrl({ action: 'read', expires: Date.now() + 1000 * 60 * 60 * 24 * 365 });
+  const uploadedAt = new Date().toISOString();
+  await getDb().collection('chatFiles').doc(id).set({ 
+    id, 
+    chatId, 
+    url, 
+    storagePath: path, 
+    filename: fileData.name,
+    size: fileData.size,
+    type: fileData.type,
+    uploadedAt 
+  });
+  return { id, chatId, url, storagePath: path, filename: fileData.name, size: fileData.size, type: fileData.type, uploadedAt };
+};
+
+export const deleteChatFileAction = async (storagePath: string) => {
+  if (!storagePath) return;
+  const bucket = getBucket();
+  await bucket.file(storagePath).delete({ ignoreNotFound: true });
+  const snap = await getDb().collection('chatFiles').where('storagePath', '==', storagePath).get();
+  if (!snap.empty) {
+    await Promise.all(snap.docs.map((d) => d.ref.delete()));
+  }
+};
+
+export const uploadRatingFileAction = async (ratingId: string, fileData: { name: string; type: string; size: number; base64: string }) => {
+  const bucket = getBucket();
+  const id = `${Date.now()}-${fileData.name}`;
+  const path = `ratingFiles/${ratingId}/${id}`;
+  
+  // Convert base64 back to buffer
+  const buffer = Buffer.from(fileData.base64, 'base64');
+  await bucket.file(path).save(buffer, { resumable: false, contentType: fileData.type });
+  const [url] = await bucket.file(path).getSignedUrl({ action: 'read', expires: Date.now() + 1000 * 60 * 60 * 24 * 365 });
+  const uploadedAt = new Date().toISOString();
+  await getDb().collection('ratingFiles').doc(id).set({ 
+    id, 
+    ratingId, 
+    url, 
+    storagePath: path, 
+    filename: fileData.name,
+    size: fileData.size,
+    type: fileData.type,
+    uploadedAt 
+  });
+  return { id, ratingId, url, storagePath: path, filename: fileData.name, size: fileData.size, type: fileData.type, uploadedAt };
+};
+
+export const deleteRatingFileAction = async (storagePath: string) => {
+  if (!storagePath) return;
+  const bucket = getBucket();
+  await bucket.file(storagePath).delete({ ignoreNotFound: true });
+  const snap = await getDb().collection('ratingFiles').where('storagePath', '==', storagePath).get();
+  if (!snap.empty) {
+    await Promise.all(snap.docs.map((d) => d.ref.delete()));
+  }
+};
