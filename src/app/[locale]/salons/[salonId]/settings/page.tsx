@@ -117,6 +117,7 @@ export default function SalonSettingsPage() {
     updateSalon, 
     updateAvatar, 
     removeAvatar, 
+    getSalonAvatar,
     loading: salonLoading 
   } = useSalon();
 
@@ -170,6 +171,8 @@ export default function SalonSettingsPage() {
     try {
       const salonData = await fetchSalon(salonId);
       if (salonData) {
+        const avatarUrl = await getSalonAvatar(salonId);
+        salonData.avatarUrl = avatarUrl?.url;
         setSalon(salonData);
         if (salonData.settings) {
           setSettings(prev => ({
@@ -308,6 +311,7 @@ export default function SalonSettingsPage() {
     setError(null);
     try {
       const updatedSalon = await updateAvatar(salonId, avatarFile);
+      updatedSalon.avatarUrl = (await getSalonAvatar(salonId))?.url;
       setSalon(updatedSalon);
       setSaved(t('sections.business.avatarSaved'));
       setTimeout(() => setSaved(null), 3000);

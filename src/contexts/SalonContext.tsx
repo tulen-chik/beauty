@@ -29,6 +29,8 @@ interface SalonContextType {
 
   updateAvatar: (salonId: string, file: File) => Promise<Salon>;
   removeAvatar: (salonId: string) => Promise<void>;
+  // Добавлен новый метод в интерфейс
+  getSalonAvatar: (salonId: string) => Promise<{ url: string; storagePath: string } | null>;
   
   loading: boolean;
   error: string | null;
@@ -119,7 +121,6 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
       if (currentUserSalons) {
         await salonActions.updateUserSalonsAction(userId, { salons: [...currentUserSalons.salons, newSalonEntry] });
       } else {
-        // ИСПРАВЛЕНО: Добавлен userId в объект данных
         await salonActions.createUserSalonsAction(userId, { userId, salons: [newSalonEntry] });
       }
       
@@ -218,6 +219,12 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [handleRequest, salons]);
 
+  // --- Новый метод: Получение аватара ---
+  const getSalonAvatar = useCallback((salonId: string) => {
+    // Передаем false вторым аргументом, чтобы не включать глобальный лоадер при загрузке картинки
+    return handleRequest(() => salonActions.getSalonAvatarAction(salonId), false);
+  }, [handleRequest]);
+
   const fetchSalonsByCity = useCallback((options: { city: string; limit: number; startAfterKey?: string }) => {
     return handleRequest(() => salonActions.getSalonsByCityPaginatedAction(options));
   }, [handleRequest]);
@@ -254,7 +261,6 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
           if (userSalonsData) {
             await salonActions.updateUserSalonsAction(userId, { salons: updatedUserSalonsList });
           } else if (newMemberInfo) {
-             // ИСПРАВЛЕНО: Добавлен userId в объект данных
              await salonActions.createUserSalonsAction(userId, { userId, salons: updatedUserSalonsList });
           }
 
@@ -268,9 +274,35 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
   }, [handleRequest, salons]);
   
   const value: SalonContextType = useMemo(() => ({
-    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error, updateAvatar, removeAvatar,
+    salons, 
+    userSalons, 
+    updateSalonMembers, 
+    fetchSalon, 
+    fetchUserSalons, 
+    createSalon, 
+    updateSalon, 
+    deleteSalon, 
+    fetchSalonsByCity, 
+    loading, 
+    error, 
+    updateAvatar, 
+    removeAvatar,
+    getSalonAvatar // Добавляем метод в value
   }), [
-    salons, userSalons, updateSalonMembers, fetchSalon, fetchUserSalons, createSalon, updateSalon, deleteSalon, fetchSalonsByCity, loading, error, updateAvatar, removeAvatar,
+    salons, 
+    userSalons, 
+    updateSalonMembers, 
+    fetchSalon, 
+    fetchUserSalons, 
+    createSalon, 
+    updateSalon, 
+    deleteSalon, 
+    fetchSalonsByCity, 
+    loading, 
+    error, 
+    updateAvatar, 
+    removeAvatar,
+    getSalonAvatar // Добавляем метод в зависимости
   ]);
 
   return <SalonContext.Provider value={value}>{children}</SalonContext.Provider>;

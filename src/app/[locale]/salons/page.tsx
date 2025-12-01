@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useTranslations } from 'next-intl'; 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { Building2 } from "lucide-react";
 
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
@@ -25,12 +26,86 @@ const SalonNameSkeleton = () => (
   <span className="inline-block h-6 w-40 bg-gray-200 rounded-md animate-pulse"></span>
 );
 
+// --- ИСПРАВЛЕННЫЙ КОМПОНЕНТ АВАТАРА ---
+const SalonAvatar = ({ salonId, className = "" }: { salonId: string; className?: string }) => {
+  const { getSalonAvatar, salons } = useSalon();
+  
+  const [fetchedUrl, setFetchedUrl] = useState<string | null>(null);
+  // Начинаем загрузку всегда, так как ссылка в БД может быть протухшей
+  const [isFetching, setIsFetching] = useState(true);
+
+  // Достаем салон из контекста только для проверки наличия, 
+  // но НЕ доверяем его avatarUrl, если это Signed URL
+  const contextSalon = useMemo(() => 
+    salons.find(s => s.id === salonId), 
+    [salons, salonId]
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadAvatar = async () => {
+      try {
+        // Всегда запрашиваем свежую ссылку
+        const avatarData = await getSalonAvatar(salonId);
+        if (isMounted && avatarData?.url) {
+          setFetchedUrl(avatarData.url);
+        }
+      } catch (error) {
+        console.error("Error loading salon avatar:", error);
+      } finally {
+        if (isMounted) setIsFetching(false);
+      }
+    };
+
+    loadAvatar();
+
+    return () => { isMounted = false; };
+  }, [salonId, getSalonAvatar]); // Убрали contextSalon из зависимостей, чтобы не блокировать загрузку
+
+  // ПРИОРИТЕТ: 
+  // 1. Свежая ссылка (fetchedUrl) - самая важная
+  // 2. Ссылка из контекста (contextSalon?.avatarUrl) - запасной вариант (на случай если это публичная ссылка без токена)
+  const finalAvatarUrl = fetchedUrl || contextSalon?.avatarUrl;
+
+  // Показываем скелетон, только если у нас вообще нет никакого URL и идет загрузка
+  if (!finalAvatarUrl && isFetching) {
+    return (
+      <div className={`w-12 h-12 bg-gray-200 rounded-full animate-pulse ${className}`} />
+    );
+  }
+
+  if (finalAvatarUrl) {
+    return (
+      <img 
+        src={finalAvatarUrl} 
+        alt="Salon Avatar"
+        className={`w-12 h-12 rounded-full object-cover border-2 border-gray-200 ${className}`}
+        // Если картинка протухла и вернула ошибку загрузки, можно скрыть её или показать заглушку
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          // Можно добавить логику повторного запроса, но проще показать заглушку
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className={`w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center border-2 border-rose-200 ${className}`}>
+      <Building2 className="w-6 h-6 text-rose-600" />
+    </div>
+  );
+};
+
 const SalonListItemSkeleton = () => (
   <li className="p-4 border rounded-xl flex flex-col md:flex-row md:items-center md:justify-between animate-pulse">
-    <div className="space-y-2 flex-1">
-      <div className="h-7 w-48 bg-gray-300 rounded-md"></div>
-      <div className="h-4 w-24 bg-gray-200 rounded-md"></div>
-      <div className="h-3 w-32 bg-gray-200 rounded-md"></div>
+    <div className="flex items-center gap-3 flex-1">
+      <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+      <div className="space-y-2">
+        <div className="h-7 w-48 bg-gray-300 rounded-md"></div>
+        <div className="h-4 w-24 bg-gray-200 rounded-md"></div>
+        <div className="h-3 w-32 bg-gray-200 rounded-md"></div>
+      </div>
     </div>
     <div className="mt-2 md:mt-0 h-10 w-full md:w-28 bg-gray-200 rounded-xl"></div>
   </li>
@@ -38,13 +113,11 @@ const SalonListItemSkeleton = () => (
 
 function SalonName({ salonId }: { salonId: string }) {
   const t = useTranslations('salons'); 
-  // Достаем также список salons, чтобы проверить кэш
   const { fetchSalon, salons } = useSalon();
   const [name, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Сначала проверяем, есть ли салон уже в контексте
     const existingSalon = salons.find(s => s.id === salonId);
     
     if (existingSalon) {
@@ -53,12 +126,9 @@ function SalonName({ salonId }: { salonId: string }) {
       return;
     }
 
-    // 2. Если нет, загружаем
     let isMounted = true;
     const getSalonName = async () => {
       try {
-        // Не устанавливаем loading в true здесь, если хотим избежать мигания, 
-        // но для скелетона имени это нужно.
         const salon = await fetchSalon(salonId);
         if (isMounted && salon) {
           setName(salon.name);
@@ -74,9 +144,7 @@ function SalonName({ salonId }: { salonId: string }) {
     getSalonName();
 
     return () => { isMounted = false; };
-    // Убрали 't' и 'salons' из зависимостей, чтобы избежать лишних ре-рендеров.
-    // fetchSalon стабилен благодаря useCallback в контексте.
-  }, [salonId, fetchSalon]); 
+  }, [salonId, fetchSalon, salons, t]); 
 
   if (loading) {
     return <SalonNameSkeleton />
@@ -102,9 +170,6 @@ export default function UserSalonsPage() {
 
   const hasMaxSalons = userSalons?.salons && userSalons.salons.length >= 3;
 
-  // ИСПРАВЛЕНИЕ: Показываем скелетоны ТОЛЬКО если идет загрузка И данных еще нет.
-  // Если данные есть (userSalons !== null), мы оставляем их на экране, даже если loading === true
-  // (например, когда SalonName подгружает детали).
   const showSkeletons = loading && !userSalons;
 
   return (
@@ -127,7 +192,6 @@ export default function UserSalonsPage() {
           </div>
         )}
         
-        {/* Используем исправленное условие */}
         {showSkeletons && (
           <ul className="space-y-4">
             <SalonListItemSkeleton />
@@ -141,7 +205,6 @@ export default function UserSalonsPage() {
           <div className="text-center text-gray-500">{t('noSalons')}</div>
         )}
         
-        {/* Рендерим список, если данные есть (даже если идет фоновая загрузка) */}
         {userSalons && (
           <ul className="space-y-4">
             {userSalons.salons.map((s) => {
@@ -149,14 +212,17 @@ export default function UserSalonsPage() {
 
               return (
                 <li key={s.salonId} className="p-4 border rounded-xl flex flex-col md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="font-semibold text-lg text-gray-900">
-                      <Link href={`/salons/${s.salonId}/appointments`} className="hover:underline text-rose-600">
-                        <SalonName salonId={s.salonId} />
-                      </Link>
+                  <div className="flex items-center gap-3">
+                    <SalonAvatar salonId={s.salonId} />
+                    <div>
+                      <div className="font-semibold text-lg text-gray-900">
+                        <Link href={`/salons/${s.salonId}/appointments`} className="hover:underline text-rose-600">
+                          <SalonName salonId={s.salonId} />
+                        </Link>
+                      </div>
+                      <div className="text-sm text-gray-600">{t('role', { role: translatedRole })}</div>
+                      <div className="text-xs text-gray-400">{t('joined', { date: new Date(s.joinedAt).toLocaleDateString() })}</div>
                     </div>
-                    <div className="text-sm text-gray-600">{t('role', { role: translatedRole })}</div>
-                    <div className="text-xs text-gray-400">{t('joined', { date: new Date(s.joinedAt).toLocaleDateString() })}</div>
                   </div>
                   <Link
                     href={`/salons/${s.salonId}/schedule`}

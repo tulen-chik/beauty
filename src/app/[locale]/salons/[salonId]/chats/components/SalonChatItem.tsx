@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useAppointment } from '@/contexts/AppointmentContext';
-// Импортируем действие для получения пользователя
-import { getUserByIdAction } from '@/app/actions/userActions'; 
+// 1. Импортируем правильный экшен для получения аватара
+import { getUserAvatarAction } from '@/app/actions/userActions'; 
 import { Chat, SalonService, Appointment } from '@/types/database';
 import { InitialAvatar, formatDate } from '@/components/Chat/Helpers';
 
@@ -21,45 +21,57 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
   
   const [service, setService] = useState<SalonService | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
-  // Добавляем состояние для аватара
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // 2. Добавляем состояния для аватара
+  const [freshAvatarUrl, setFreshAvatarUrl] = useState<string | null>(null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   const t = useTranslations('salonChats');
 
+  // Эффект для загрузки деталей (услуга, запись)
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoadingDetails(true);
-      
-      // 1. Загружаем данные пользователя (аватар)
-      if (chat.customerUserId) {
-        try {
-          const user = await getUserByIdAction(chat.customerUserId);
-          if (user && user.avatarUrl) {
-            setAvatarUrl(user.avatarUrl);
-          }
-        } catch (e) {
-          console.error("Failed to load user avatar", e);
-        }
-      }
-
-      // 2. Загружаем услугу
-      if (chat.serviceId) {
-        try { setService(await getService(chat.serviceId)); }
-        catch (e) { console.error(e); setService(null); }
-      }
-
-      // 3. Загружаем запись
-      if (chat.appointmentId && chat.salonId) {
-        try { setAppointment(await getAppointment(chat.salonId, chat.appointmentId)); }
-        catch (e) { console.error(e); setAppointment(null); }
-      }
-      
+      // Запускаем запросы параллельно
+      await Promise.all([
+        chat.serviceId ? getService(chat.serviceId).then(setService).catch(() => setService(null)) : Promise.resolve(),
+        (chat.appointmentId && chat.salonId) ? getAppointment(chat.salonId, chat.appointmentId).then(setAppointment).catch(() => setAppointment(null)) : Promise.resolve()
+      ]);
       setIsLoadingDetails(false);
     };
     
     loadDetails();
-  }, [chat.serviceId, chat.appointmentId, chat.salonId, chat.customerUserId, getService, getAppointment]);
+  }, [chat.serviceId, chat.appointmentId, chat.salonId, getService, getAppointment]);
+
+  // 3. Отдельный эффект для загрузки свежего аватара
+  useEffect(() => {
+    if (!chat.customerUserId) {
+      setIsAvatarLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const loadAvatar = async () => {
+      setIsAvatarLoading(true);
+      try {
+        const avatarData = await getUserAvatarAction(chat.customerUserId);
+        if (isMounted && avatarData?.url) {
+          setFreshAvatarUrl(avatarData.url);
+        }
+      } catch (e) {
+        console.error("Failed to load user avatar", e);
+      } finally {
+        if (isMounted) {
+          setIsAvatarLoading(false);
+        }
+      }
+    };
+    
+    loadAvatar();
+
+    return () => { isMounted = false; };
+  }, [chat.customerUserId]);
+
 
   return (
     <div
@@ -70,11 +82,13 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
           : 'hover:bg-slate-50 hover:border-slate-100'
       }`}
     >
-      {/* Логика отображения аватара */}
+      {/* 4. Обновленная логика отображения аватара */}
       <div className="w-12 h-12 flex-shrink-0">
-        {avatarUrl ? (
+        {isAvatarLoading ? (
+          <div className="w-full h-full rounded-full bg-slate-200 animate-pulse" />
+        ) : freshAvatarUrl ? (
           <img 
-            src={avatarUrl} 
+            src={freshAvatarUrl} 
             alt={chat.customerName} 
             className="w-full h-full rounded-full object-cover shadow-sm"
           />

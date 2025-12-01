@@ -134,6 +134,31 @@ export const getUserAvatar = async (userId: string) => {
 };
 
 /**
+ * Получает URL аватара салона.
+ * @param salonId - ID салона.
+ * @returns Объект с информацией об аватаре или null, если аватар не найден.
+ */
+export const getSalonAvatar = async (salonId: string) => {
+  const storage = getStorage();
+  const dirRef = storageRef(storage, `salonAvatars/${salonId}`);
+  const res = await listAll(dirRef);
+
+  if (res.items.length > 0) {
+    // Предполагаем, что у салона только один аватар. Берем первый.
+    const firstAvatarRef = res.items[0];
+    const url = await getDownloadURL(firstAvatarRef);
+    return {
+      id: firstAvatarRef.name,
+      salonId,
+      url,
+      storagePath: firstAvatarRef.fullPath,
+    };
+  }
+
+  return null; // Возвращаем null, если в папке салона нет файлов
+};
+
+/**
  * Загружает аватар салона в Firebase Storage.
  * @param salonId - ID салона.
  * @param file - Файл аватара для загрузки.
@@ -162,8 +187,6 @@ export const uploadSalonAvatar = async (salonId: string, file: File) => {
  * @param storagePath - Путь к файлу аватара в Storage.
  */
 export const deleteSalonAvatar = async (storagePath: string) => {
-  if (!storagePath) return;
-
   const storage = getStorage();
   const salonAvatarRef = storageRef(storage, storagePath);
   try {
@@ -175,4 +198,70 @@ export const deleteSalonAvatar = async (storagePath: string) => {
     }
     throw error;
   }
+};
+
+/**
+ * Загружает файл для сообщения чата.
+ * @param chatId - ID чата.
+ * @param messageId - ID сообщения.
+ * @param file - Файл для загрузки.
+ * @returns Объект с информацией о загруженном файле.
+ */
+export const uploadChatFile = async (chatId: string, messageId: string, file: File) => {
+  const storage = getStorage();
+  const id = `${Date.now()}-${file.name}`;
+  const path = `chatFiles/${chatId}/${messageId}/${id}`;
+  const fileRef = storageRef(storage, path);
+  await uploadBytes(fileRef, file);
+  const url = await getDownloadURL(fileRef);
+  return {
+    id,
+    chatId,
+    messageId,
+    url,
+    filename: file.name,
+    size: file.size,
+    type: file.type,
+    storagePath: path,
+    uploadedAt: new Date().toISOString(),
+  };
+};
+
+/**
+ * Удаляет файл сообщения чата.
+ * @param storagePath - Путь к файлу в Storage.
+ */
+export const deleteChatFile = async (storagePath: string) => {
+  const storage = getStorage();
+  const ref = storageRef(storage, storagePath);
+  await deleteObject(ref);
+};
+
+/**
+ * Получает файлы сообщения чата.
+ * @param chatId - ID чата.
+ * @param messageId - ID сообщения.
+ * @returns Массив объектов с информацией о файлах.
+ */
+export const getChatFiles = async (chatId: string, messageId: string) => {
+  const storage = getStorage();
+  const dirRef = storageRef(storage, `chatFiles/${chatId}/${messageId}`);
+  const res = await listAll(dirRef);
+  const files = await Promise.all(
+    res.items.map(async (itemRef) => {
+      const url = await getDownloadURL(itemRef);
+      return {
+        id: itemRef.name,
+        chatId,
+        messageId,
+        url,
+        filename: itemRef.name,
+        size: 0, // Размер не доступен через listAll, нужно получать через metadata
+        type: '', // Тип не доступен через listAll, нужно получать через metadata
+        storagePath: itemRef.fullPath,
+        uploadedAt: '',
+      };
+    })
+  );
+  return files;
 };

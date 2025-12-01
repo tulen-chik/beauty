@@ -1,11 +1,14 @@
 'use server';
 
 import { Firestore, Settings } from '@google-cloud/firestore';
+import { Storage } from '@google-cloud/storage'; // 1. Добавляем импорт
 import { userSchema } from '@/lib/firebase/schemas';
 import type { User } from '@/types/database';
 
-// Глобальная переменная для кэширования инстанса в dev-режиме (Next.js hot reload)
+// --- ИНИЦИАЛИЗАЦИЯ КЛИЕНТОВ ---
+
 let firestoreInstance: Firestore | null = null;
+let storageInstance: Storage | null = null;
 
 function getDb(): Firestore {
   if (!firestoreInstance) {
@@ -18,11 +21,26 @@ function getDb(): Firestore {
       },
       ignoreUndefinedProperties: true, 
     };
-
     firestoreInstance = new Firestore(firestoreSettings);
   }
   return firestoreInstance;
 }
+
+// 2. Добавляем функцию для инициализации Storage
+function getStorage(): Storage {
+  if (!storageInstance) {
+    storageInstance = new Storage({
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      credentials: {
+        client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      },
+    });
+  }
+  return storageInstance;
+}
+
+// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
 const readOperation = async <T>(collection: string, id: string): Promise<T | null> => {
   try {
@@ -36,6 +54,10 @@ const readOperation = async <T>(collection: string, id: string): Promise<T | nul
     throw err;
   }
 };
+
+// ==========================================
+// --- ДЕЙСТВИЯ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ (USER) ---
+// ==========================================
 
 export async function createUserAction(userId: string, data: Omit<User, 'id'>) {
   const validated = userSchema.parse(data);
@@ -63,10 +85,7 @@ export async function updateUserAction(userId: string, data: Partial<User>) {
   const docRef = db.collection('users').doc(userId);
   
   const snap = await docRef.get();
-  
-  if (!snap.exists) {
-    throw new Error('User not found');
-  }
+  if (!snap.exists) throw new Error('User not found');
 
   const current = snap.data() as User;
   const validated = userSchema.partial().parse(data);
@@ -92,12 +111,7 @@ export async function listUsersAction(): Promise<(User & { id: string })[]> {
 }
 
 export async function getUserByEmailAction(email: string) {
-  const snap = await getDb()
-    .collection('users')
-    .where('email', '==', email)
-    .limit(1)
-    .get();
-
+  const snap = await getDb().collection('users').where('email', '==', email).limit(1).get();
   if (snap.empty) return null;
   
   const d = snap.docs[0];
@@ -108,3 +122,48 @@ export async function getUserByIdAction(userId: string) {
   const d = await getDb().collection('users').doc(userId).get();
   return d.exists ? (d.data() as User) : null;
 }
+
+
+// ==========================================
+// --- ПОЛУЧЕНИЕ АВАТАРА ПОЛЬЗОВАТЕЛЯ ---
+// ==========================================
+
+/**
+ * 3. Новый метод для получения аватара пользователя.
+ * Генерирует свежую Signed URL для безопасного отображения на клиенте.
+ */
+export const getUserAvatarAction = async (userId: string) => {
+  try {
+    const storage = getStorage();
+    
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_ADMIN_PROJECT_ID}.appspot.com`;
+    const bucket = storage.bucket(bucketName);
+    
+    // Путь к аватарам пользователей
+    const prefix = `userAvatars/${userId}/`;
+
+    const [files] = await bucket.getFiles({ prefix });
+
+    if (files.length === 0) {
+      return null; // У пользователя нет аватара
+    }
+
+    const file = files[0]; // Берем первый файл
+
+    // Генерируем ссылку, действительную 2 часа
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 2, // 2 hours
+    });
+
+    return {
+      url,
+      storagePath: file.name,
+      userId
+    };
+
+  } catch (error) {
+    console.error(`Error getting user avatar for ${userId}:`, error);
+    return null;
+  }
+};
