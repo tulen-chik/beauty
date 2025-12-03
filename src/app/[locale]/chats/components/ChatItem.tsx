@@ -14,31 +14,59 @@ interface ChatItemProps {
 }
 
 export default function ChatItem({ chat, isActive, onClick }: ChatItemProps) {
-  const { fetchSalon } = useSalon();
+  // 1. Достаем getSalonAvatar вместе с fetchSalon
+  const { fetchSalon, getSalonAvatar } = useSalon();
   const { getService } = useSalonService();
   const { getAppointment } = useAppointment();
 
   const [salon, setSalon] = useState<Salon | null>(null);
+  // 2. Добавляем состояния для аватара
+  const [freshAvatarUrl, setFreshAvatarUrl] = useState<string | null>(null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(true);
+
   const [service, setService] = useState<SalonService | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
+  // Эффект для загрузки основной информации (имя салона, услуга, запись)
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoadingDetails(true);
-      fetchSalon(chat.salonId).then(setSalon).catch(console.error);
-      if (chat.serviceId) {
-        try { setService(await getService(chat.serviceId)); } 
-        catch (e) { console.error(e); setService(null); }
-      }
-      if (chat.appointmentId && chat.salonId) {
-        try { setAppointment(await getAppointment(chat.salonId, chat.appointmentId)); } 
-        catch (e) { console.error(e); setAppointment(null); }
-      }
+      // Запускаем все запросы параллельно для скорости
+      await Promise.all([
+        fetchSalon(chat.salonId).then(setSalon).catch(console.error),
+        chat.serviceId ? getService(chat.serviceId).then(setService).catch(() => setService(null)) : Promise.resolve(),
+        (chat.appointmentId && chat.salonId) ? getAppointment(chat.salonId, chat.appointmentId).then(setAppointment).catch(() => setAppointment(null)) : Promise.resolve()
+      ]);
       setIsLoadingDetails(false);
     };
     loadDetails();
   }, [chat.salonId, chat.serviceId, chat.appointmentId, fetchSalon, getService, getAppointment]);
+
+  // 3. Отдельный, независимый эффект для загрузки свежего аватара
+  useEffect(() => {
+    let isMounted = true;
+    const loadAvatar = async () => {
+      setIsAvatarLoading(true);
+      try {
+        const avatarData = await getSalonAvatar(chat.salonId);
+        if (isMounted && avatarData?.url) {
+          setFreshAvatarUrl(avatarData.url);
+        }
+      } catch (error) {
+        console.error(`Failed to load avatar for salon ${chat.salonId}:`, error);
+      } finally {
+        if (isMounted) {
+          setIsAvatarLoading(false);
+        }
+      }
+    };
+
+    loadAvatar();
+
+    return () => { isMounted = false; };
+  }, [chat.salonId, getSalonAvatar]);
+
 
   return (
     <div
@@ -49,15 +77,20 @@ export default function ChatItem({ chat, isActive, onClick }: ChatItemProps) {
           : 'hover:bg-slate-50 hover:border-slate-100'
       }`}
     >
-      {salon?.avatarUrl ? (
-        <img
-          src={salon.avatarUrl}
-          alt={salon.name}
-          className="w-12 h-12 rounded-full object-cover flex-shrink-0 bg-slate-200 shadow-sm"
-        />
-      ) : (
-        <InitialAvatar name={salon?.name || ''} className="w-12 h-12 rounded-full flex-shrink-0 text-lg shadow-sm" />
-      )}
+      {/* 4. Обновленный блок рендеринга аватара */}
+      <div className="w-12 h-12 rounded-full flex-shrink-0 shadow-sm">
+        {isAvatarLoading ? (
+          <div className="w-full h-full bg-slate-200 rounded-full animate-pulse"></div>
+        ) : freshAvatarUrl ? (
+          <img
+            src={freshAvatarUrl}
+            alt={salon?.name || 'Аватар салона'}
+            className="w-12 h-12 rounded-full object-cover bg-slate-200"
+          />
+        ) : (
+          <InitialAvatar name={salon?.name || ''} className="w-12 h-12 rounded-full text-lg" />
+        )}
+      </div>
       
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-center">

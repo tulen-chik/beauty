@@ -20,10 +20,13 @@ interface ChatViewPanelProps {
 export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelProps) {
   const { currentUser } = useUser();
   const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading, deleteChat } = useChat();
-  const { fetchSalon } = useSalon();
+  // 1. Достаем getSalonAvatar из контекста
+  const { fetchSalon, getSalonAvatar } = useSalon();
   const router = useRouter();
 
   const [salonData, setSalonData] = useState<Salon | null>(null);
+  // 2. Добавляем состояние для свежей ссылки на аватар
+  const [freshAvatarUrl, setFreshAvatarUrl] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -46,19 +49,44 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
     }
   }, [currentChat, fetchSalon, markMessagesAsRead, currentUser]);
 
+  // 3. Добавляем useEffect для загрузки свежего аватара
+  useEffect(() => {
+    if (!currentChat?.salonId) {
+      setFreshAvatarUrl(null);
+      return;
+    }
+
+    let isMounted = true;
+    const loadAvatar = async () => {
+      try {
+        const avatarData = await getSalonAvatar(currentChat.salonId);
+        if (isMounted && avatarData?.url) {
+          setFreshAvatarUrl(avatarData.url);
+        }
+      } catch (error) {
+        console.error("Failed to fetch salon avatar for chat:", error);
+        if (isMounted) setFreshAvatarUrl(null);
+      }
+    };
+
+    loadAvatar();
+
+    return () => { isMounted = false; };
+  }, [currentChat?.salonId, getSalonAvatar]);
+
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedChatId || !currentUser) return;
+    if ((!messageText.trim() && uploadedFiles.length === 0) || !selectedChatId || !currentUser) return;
     setIsSending(true);
     try {
-      const messageType = uploadedFiles && uploadedFiles.length > 0 ? 'file' : 'text';
-      const attachments = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : undefined;
-      await sendMessage(selectedChatId, currentUser.userId, 'customer', currentUser.displayName, messageText, messageType, attachments);
+      const messageType = uploadedFiles.length > 0 ? 'file' : 'text';
+      await sendMessage(selectedChatId, currentUser.userId, 'customer', currentUser.displayName, messageText, messageType, uploadedFiles);
       setMessageText('');
-      setUploadedFiles([]); // Clear uploaded files after sending
+      setUploadedFiles([]);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -72,7 +100,6 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
 
     setUploadingFile(true);
     try {
-      // Convert File to base64 string for Server Action
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       let binaryString = '';
@@ -81,36 +108,23 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
       }
       const base64String = btoa(binaryString);
       
-      const fileData = {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        base64: base64String
-      };
+      const fileData = { name: file.name, type: file.type, size: file.size, base64: base64String };
       
       const uploadedFile = await uploadChatFileAction(selectedChatId, fileData);
-      const attachment = {
-        url: uploadedFile.url,
-        filename: uploadedFile.filename,
-        size: uploadedFile.size,
-        type: uploadedFile.type
-      };
+      const attachment = { url: uploadedFile.url, filename: uploadedFile.filename, size: uploadedFile.size, type: uploadedFile.type };
       
-      // Add to uploaded files list, don't send message yet
-      setUploadedFiles(prev => prev ? [...prev, attachment] : [attachment]);
+      setUploadedFiles(prev => [...prev, attachment]);
     } catch (error) {
       console.error("Failed to upload file:", error);
       alert("Не удалось загрузить файл. Попробуйте еще раз.");
     } finally {
       setUploadingFile(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const removeUploadedFile = (index: number) => {
-    setUploadedFiles(prev => prev ? prev.filter((_, i) => i !== index) : []);
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteChat = async () => {
@@ -129,9 +143,7 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
   };
 
   const handleSalonClick = () => {
-    if (currentChat?.salonId) {
-      router.push(`/s/${currentChat.salonId}`);
-    }
+    if (currentChat?.salonId) router.push(`/s/${currentChat.salonId}`);
   };
   
   const getMessageStatusIcon = (status: string) => {
@@ -142,9 +154,7 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
   if (!selectedChatId) {
     return (
       <main className="hidden md:flex flex-1 flex-col items-center justify-center bg-slate-50">
-        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
-            <MessageCircle className="w-10 h-10 text-slate-300" />
-        </div>
+        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-sm"><MessageCircle className="w-10 h-10 text-slate-300" /></div>
         <h2 className="text-lg font-medium text-slate-600">Выберите чат, чтобы начать общение</h2>
       </main>
     );
@@ -154,61 +164,37 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
       return <ChatViewSkeleton />;
   }
 
+  // 4. Определяем итоговый URL для отображения
+  const displayAvatarUrl = freshAvatarUrl || salonData?.avatarUrl;
+
   return (
     <main className="flex-1 flex flex-col h-full bg-slate-50">
       {/* Header */}
       <header className="flex items-center gap-4 p-4 bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-10">
-        <button onClick={onBack} className="md:hidden p-2 -ml-2 text-slate-500 hover:text-rose-600 transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-        </button>
+        <button onClick={onBack} className="md:hidden p-2 -ml-2 text-slate-500 hover:text-rose-600 transition-colors"><ArrowLeft className="w-5 h-5" /></button>
         
         <div className="relative">
-            {salonData?.avatarUrl ? (
-                <img src={salonData.avatarUrl} alt={salonData.name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" />
+            {/* Используем displayAvatarUrl */}
+            {displayAvatarUrl ? (
+                <img src={displayAvatarUrl} alt={salonData?.name || ''} className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm" />
             ) : (
                 <InitialAvatar name={salonData?.name || ''} className="w-10 h-10 rounded-full text-sm ring-2 ring-white shadow-sm" />
             )}
-            {/* Индикатор онлайн (опционально) */}
-            {/* <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div> */}
         </div>
 
-        <button 
-          onClick={handleSalonClick}
-          className="flex-1 text-left hover:bg-slate-50 rounded-lg p-2 -m-2 transition-colors"
-        >
+        <button onClick={handleSalonClick} className="flex-1 text-left hover:bg-slate-50 rounded-lg p-2 -m-2 transition-colors">
           <h2 className="font-bold text-slate-800 text-sm leading-tight">{salonData?.name}</h2>
-          <p className="text-xs text-slate-500 truncate mt-0.5">
-            {salonData?.city ? `${salonData.city}, ${salonData.address}` : 'Салон красоты'}
-          </p>
+          <p className="text-xs text-slate-500 truncate mt-0.5">{salonData?.city ? `${salonData.city}, ${salonData.address}` : 'Салон красоты'}</p>
         </button>
 
         <div className="relative">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-            title="Удалить чат"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-
+          <button onClick={() => setShowDeleteConfirm(true)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Удалить чат"><Trash2 className="w-5 h-5" /></button>
           {showDeleteConfirm && (
             <div className="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-20 min-w-[200px]">
               <p className="text-sm text-slate-700 mb-3">Вы уверены, что хотите удалить этот чат?</p>
               <div className="flex gap-2">
-                <button
-                  onClick={handleDeleteChat}
-                  disabled={isDeleting}
-                  className="flex-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isDeleting ? 'Удаление...' : 'Удалить'}
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={isDeleting}
-                  className="flex-1 px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Отмена
-                </button>
+                <button onClick={handleDeleteChat} disabled={isDeleting} className="flex-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">{isDeleting ? 'Удаление...' : 'Удалить'}</button>
+                <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="flex-1 px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 disabled:opacity-50">Отмена</button>
               </div>
             </div>
           )}
@@ -223,44 +209,21 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
           
           return (
             <React.Fragment key={message.id}>
-              {showDateSeparator && (
-                <div className="flex justify-center my-6">
-                  <span className="text-[11px] font-medium text-slate-400 bg-slate-100/80 px-3 py-1 rounded-full">
-                    {new Date(message.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}
-                  </span>
-                </div>
-              )}
-              
+              {showDateSeparator && <div className="flex justify-center my-6"><span className="text-[11px] font-medium text-slate-400 bg-slate-100/80 px-3 py-1 rounded-full">{new Date(message.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}</span></div>}
               <div className={`flex items-end gap-3 animate-pop-in group ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                 {!isOwnMessage && (
-                  salonData?.avatarUrl ? (
-                    <img src={salonData.avatarUrl} alt="Salon Avatar" className="w-8 h-8 rounded-full self-end mb-1 bg-slate-200 shadow-sm" />
+                  // Используем displayAvatarUrl и здесь
+                  displayAvatarUrl ? (
+                    <img src={displayAvatarUrl} alt="Salon Avatar" className="w-8 h-8 rounded-full self-end mb-1 bg-slate-200 shadow-sm" />
                   ) : (
                     <InitialAvatar name={salonData?.name || ''} className="w-8 h-8 rounded-full self-end mb-1 text-[10px] shadow-sm" />
                   )
                 )}
-                
-                <div
-                  className={`max-w-[85%] sm:max-w-lg px-5 py-3 shadow-sm transition-all ${
-                    isOwnMessage
-                      ? 'bg-rose-600 text-white rounded-2xl rounded-tr-sm shadow-rose-100'
-                      : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'
-                  }`}
-                >
-                  {message.content && (
-                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>
-                  )}
-                  {message.attachments?.map((attachment, index) => (
-                    <MessageAttachment
-                      key={index}
-                      attachment={attachment}
-                      isOwnMessage={isOwnMessage}
-                    />
-                  ))}
+                <div className={`max-w-[85%] sm:max-w-lg px-5 py-3 shadow-sm transition-all ${isOwnMessage ? 'bg-rose-600 text-white rounded-2xl rounded-tr-sm shadow-rose-100' : 'bg-white text-slate-700 border border-slate-100 rounded-2xl rounded-tl-sm'}`}>
+                  {message.content && <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>}
+                  {message.attachments?.map((attachment, idx) => <MessageAttachment key={idx} attachment={attachment} isOwnMessage={isOwnMessage} />)}
                   <div className={`flex items-center gap-1.5 mt-1 ${isOwnMessage ? 'justify-end text-rose-100/90' : 'justify-start text-slate-400'}`}>
-                    <span className="text-[10px] font-medium">
-                      {formatMessageTime(message.createdAt)}
-                    </span>
+                    <span className="text-[10px] font-medium">{formatMessageTime(message.createdAt)}</span>
                     {isOwnMessage && getMessageStatusIcon(message.status)}
                   </div>
                 </div>
@@ -271,102 +234,31 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Overlay для подтверждения удаления */}
-      {showDeleteConfirm && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-10 md:hidden"
-          onClick={() => setShowDeleteConfirm(false)}
-        />
-      )}
+      {showDeleteConfirm && <div className="fixed inset-0 bg-black/20 z-10 md:hidden" onClick={() => setShowDeleteConfirm(false)} />}
 
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-100">
-        <input
-          ref={fileInputRef}
-          type="file"
-          onChange={handleFileSelect}
-          disabled={uploadingFile || isSending}
-          className="hidden"
-          accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx"
-        />
-        
+        <input ref={fileInputRef} type="file" onChange={handleFileSelect} disabled={uploadingFile || isSending} className="hidden" accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx" />
         <div className="flex items-end gap-3 max-w-4xl mx-auto">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploadingFile || isSending}
-            className={`p-3 rounded-full shadow-md transition-all duration-200 flex-shrink-0 mb-0.5 ${
-              uploadingFile || isSending
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:shadow-lg'
-            }`}
-            title="Прикрепить файл"
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
-
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploadingFile || isSending} className={`p-3 rounded-full shadow-md transition-all duration-200 flex-shrink-0 mb-0.5 ${uploadingFile || isSending ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:shadow-lg'}`} title="Прикрепить файл"><Paperclip className="w-5 h-5" /></button>
           <div className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl focus-within:border-rose-300 focus-within:ring-4 focus-within:ring-rose-50 transition-all duration-200">
-            <textarea
-              placeholder="Написать сообщение..."
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-              rows={1}
-              disabled={uploadingFile}
-              className="w-full px-4 py-3 bg-transparent border-none focus:ring-0 text-slate-800 placeholder:text-slate-400 resize-none min-h-[48px] max-h-32 disabled:opacity-50"
-              style={{ height: 'auto', overflow: 'hidden' }}
-              onInput={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = `${target.scrollHeight}px`;
-              }}
-            />
+            <textarea placeholder="Написать сообщение..." value={messageText} onChange={(e) => setMessageText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()} rows={1} disabled={uploadingFile} className="w-full px-4 py-3 bg-transparent border-none focus:ring-0 text-slate-800 placeholder:text-slate-400 resize-none min-h-[48px] max-h-32 disabled:opacity-50" style={{ height: 'auto', overflow: 'hidden' }} onInput={(e) => { const target = e.target as HTMLTextAreaElement; target.style.height = 'auto'; target.style.height = `${target.scrollHeight}px`; }} />
           </div>
-          
-          <button
-            onClick={() => handleSendMessage()}
-            disabled={!messageText.trim() || isSending || uploadingFile}
-            className={`p-3 rounded-full shadow-md transition-all duration-200 flex-shrink-0 mb-0.5 ${
-              !messageText.trim() || isSending || uploadingFile
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
-                : 'bg-rose-600 text-white hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-200 active:scale-95'
-            }`}
-          >
-            <Send className="w-5 h-5 ml-0.5" />
-          </button>
+          <button onClick={handleSendMessage} disabled={(!messageText.trim() && uploadedFiles.length === 0) || isSending || uploadingFile} className={`p-3 rounded-full shadow-md transition-all duration-200 flex-shrink-0 mb-0.5 ${(!messageText.trim() && uploadedFiles.length === 0) || isSending || uploadingFile ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' : 'bg-rose-600 text-white hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-200 active:scale-95'}`}><Send className="w-5 h-5 ml-0.5" /></button>
         </div>
-        
-        {uploadingFile && (
-          <div className="mt-2 text-center">
-            <span className="text-xs text-slate-500">Загрузка файла...</span>
-          </div>
-        )}
-
-        {/* Uploaded files preview */}
-        {uploadedFiles && uploadedFiles.length > 0 && (
+        {uploadingFile && <div className="mt-2 text-center"><span className="text-xs text-slate-500">Загрузка файла...</span></div>}
+        {uploadedFiles.length > 0 && (
           <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
                 <div key={index} className="flex items-center gap-2 bg-white px-3 py-2 rounded-md border border-slate-200 shadow-sm">
-                  {file.type.startsWith('image/') ? (
-                    <img src={file.url} alt={file.filename} className="w-6 h-6 rounded object-cover" />
-                  ) : (
-                    <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center">
-                      <span className="text-xs text-slate-600">📄</span>
-                    </div>
-                  )}
+                  {file.type.startsWith('image/') ? <img src={file.url} alt={file.filename} className="w-6 h-6 rounded object-cover" /> : <div className="w-6 h-6 bg-slate-100 rounded flex items-center justify-center"><span className="text-xs text-slate-600">📄</span></div>}
                   <span className="text-xs text-slate-700 truncate max-w-32">{file.filename}</span>
-                  <button
-                    onClick={() => removeUploadedFile(index)}
-                    className="text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <button onClick={() => removeUploadedFile(index)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
                 </div>
               ))}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              {messageText.trim() ? 'Файлы загружены. Нажмите "Отправить" чтобы добавить их к сообщению.' : 'Напишите текст сообщения, чтобы отправить файлы.'}
-            </p>
+            <p className="text-xs text-slate-500 mt-2">{messageText.trim() ? 'Файлы загружены. Нажмите "Отправить" чтобы добавить их к сообщению.' : 'Напишите текст сообщения, чтобы отправить файлы.'}</p>
           </div>
         )}
       </div>

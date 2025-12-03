@@ -6,6 +6,8 @@ import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useAppointment } from '@/contexts/AppointmentContext';
 // --- ДОБАВЛЕНО: Импортируем хук useUser для доступа к контексту ---
 import { useUser } from '@/contexts/UserContext'; 
+// 1. Импортируем правильный экшен для получения аватара
+import { getUserAvatarAction } from '@/app/actions/userActions'; 
 import { Chat, SalonService, Appointment } from '@/types/database';
 import { InitialAvatar, formatDate } from '@/components/Chat/Helpers';
 
@@ -24,10 +26,14 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
   const [service, setService] = useState<SalonService | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // 2. Добавляем состояния для аватара
+  const [freshAvatarUrl, setFreshAvatarUrl] = useState<string | null>(null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(true);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
   const t = useTranslations('salonChats');
 
+  // Эффект для загрузки деталей (услуга, запись)
   useEffect(() => {
     const loadDetails = async () => {
       setIsLoadingDetails(true);
@@ -53,6 +59,38 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
       if (chat.serviceId) {
         try { setService(await getService(chat.serviceId)); }
         catch (e) { console.error(e); setService(null); }
+      // Запускаем запросы параллельно
+      await Promise.all([
+        chat.serviceId ? getService(chat.serviceId).then(setService).catch(() => setService(null)) : Promise.resolve(),
+        (chat.appointmentId && chat.salonId) ? getAppointment(chat.salonId, chat.appointmentId).then(setAppointment).catch(() => setAppointment(null)) : Promise.resolve()
+      ]);
+      setIsLoadingDetails(false);
+    };
+    
+    loadDetails();
+  }, [chat.serviceId, chat.appointmentId, chat.salonId, getService, getAppointment]);
+
+  // 3. Отдельный эффект для загрузки свежего аватара
+  useEffect(() => {
+    if (!chat.customerUserId) {
+      setIsAvatarLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const loadAvatar = async () => {
+      setIsAvatarLoading(true);
+      try {
+        const avatarData = await getUserAvatarAction(chat.customerUserId);
+        if (isMounted && avatarData?.url) {
+          setFreshAvatarUrl(avatarData.url);
+        }
+      } catch (e) {
+        console.error("Failed to load user avatar", e);
+      } finally {
+        if (isMounted) {
+          setIsAvatarLoading(false);
+        }
       }
 
       // 3. Загружаем запись (без изменений)
@@ -67,6 +105,13 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
     loadDetails();
     // --- ДОБАВЛЕНО: getAvatar в массив зависимостей ---
   }, [chat.serviceId, chat.appointmentId, chat.salonId, chat.customerUserId, getService, getAppointment, getAvatar]);
+    };
+    
+    loadAvatar();
+
+    return () => { isMounted = false; };
+  }, [chat.customerUserId]);
+
 
   return (
     <div
@@ -78,10 +123,13 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
       }`}
     >
       {/* Логика отображения аватара (без изменений) */}
+      {/* 4. Обновленная логика отображения аватара */}
       <div className="w-12 h-12 flex-shrink-0">
-        {avatarUrl ? (
+        {isAvatarLoading ? (
+          <div className="w-full h-full rounded-full bg-slate-200 animate-pulse" />
+        ) : freshAvatarUrl ? (
           <img 
-            src={avatarUrl} 
+            src={freshAvatarUrl} 
             alt={chat.customerName} 
             className="w-full h-full rounded-full object-cover shadow-sm"
           />

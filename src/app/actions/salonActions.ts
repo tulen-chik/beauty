@@ -1,6 +1,7 @@
 'use server';
 
 import { Firestore, Settings, Transaction } from '@google-cloud/firestore';
+import { Storage } from '@google-cloud/storage'; // <--- Добавляем импорт Storage
 import { revalidatePath } from 'next/cache';
 
 // Импортируем схемы и типы
@@ -21,6 +22,18 @@ import type {
   UserSalons,
 } from '@/types/database';
 
+// УБИРАЕМ импорт клиентской функции
+// import { getSalonAvatar } from '@/lib/firebase/storage'; 
+
+// Инициализация Storage (если еще нет в этом файле)
+const storage = new Storage({
+  projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+  credentials: {
+    client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+    private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  },
+});
+
 // --- Инициализация Firestore (Singleton) ---
 let firestoreInstance: Firestore | null = null;
 
@@ -28,17 +41,33 @@ function getDb(): Firestore {
   if (!firestoreInstance) {
     const firestoreSettings: Settings = {
       projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
-      databaseId: 'beautyfirestore', // Указываем ID базы данных
+      databaseId: 'beautyfirestore',
       credentials: {
         client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
         private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
       },
-      ignoreUndefinedProperties: true, // Важно для записи объектов с необязательными полями
+      ignoreUndefinedProperties: true,
     };
 
     firestoreInstance = new Firestore(firestoreSettings);
   }
   return firestoreInstance;
+}
+
+// --- Инициализация Storage (Singleton) ---
+let storageInstance: Storage | null = null;
+
+function getStorage(): Storage {
+  if (!storageInstance) {
+    storageInstance = new Storage({
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      credentials: {
+        client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      },
+    });
+  }
+  return storageInstance;
 }
 
 // --- Вспомогательная функция чтения ---
@@ -129,7 +158,6 @@ export const updateUserSalonsAction = async (userId: string, data: Partial<UserS
   await db.collection('userSalons').doc(userId).set(data, { merge: true });
   
   const updated = await readDoc<UserSalons>('userSalons', userId);
-  // Если документ не найден после обновления (крайне маловероятно при merge), возвращаем то, что есть
   if (!updated) throw new Error('Failed to update user salons');
   
   return { ...(updated as UserSalons), userId };
@@ -173,9 +201,6 @@ export const getInvitationsBySalonIdAction = async (salonId: string): Promise<Sa
   return snap.docs.map((d) => ({ ...(d.data() as Omit<SalonInvitation, 'id'>), id: d.id }));
 };
 
-/**
- * Принимает приглашение в салон (Атомарная операция через runTransaction).
- */
 export const acceptInvitationAction = async (invitationId: string, userId: string): Promise<void> => {
   const db = getDb();
   
@@ -218,7 +243,6 @@ export const acceptInvitationAction = async (invitationId: string, userId: strin
       if (userSalonsSnap.exists) {
         tx.update(userSalonsRef, { salons: updatedUserSalonsList });
       } else {
-        // Если документа userSalons нет, создаем его
         tx.set(userSalonsRef, { userId, salons: updatedUserSalonsList }, { merge: true });
       }
     }
@@ -277,9 +301,6 @@ export const getServicesBySalonAction = async (salonId: string): Promise<SalonSe
   return snap.docs.map((d) => ({ ...(d.data() as Omit<SalonService, 'id'>), id: d.id }));
 };
 
-/**
- * Получает услуги конкретного салона с пагинацией
- */
 export const getSalonServicesBySalonPaginatedAction = async (options: {
   salonId: string;
   limit: number;
@@ -312,9 +333,6 @@ export const getSalonServicesBySalonPaginatedAction = async (options: {
   return { services, nextKey };
 };
 
-/**
- * Получает услуги с постраничной загрузкой
- */
 export const getSalonServicesPaginatedAction = async (options: { 
   limit: number; 
   startAfterKey?: string 
@@ -346,9 +364,6 @@ export const getSalonServicesPaginatedAction = async (options: {
   return { services, nextKey };
 };
 
-/**
- * Получает услуги по городу с пагинацией
- */
 export const getSalonServicesByCityPaginatedAction = async (options: {
   city: string;
   limit: number;
@@ -416,9 +431,6 @@ export const deleteSalonScheduleAction = async (salonId: string): Promise<void> 
 // --- Сложные запросы (Пагинация Салонов) ---
 // ==========================================
 
-/**
- * Получает салоны в указанном городе с постраничной загрузкой.
- */
 export const getSalonsByCityPaginatedAction = async (options: {
   city: string;
   limit: number;
@@ -448,4 +460,51 @@ export const getSalonsByCityPaginatedAction = async (options: {
   const nextKey = hasNext ? docs[docs.length - 1].id : null;
   
   return { salons, nextKey };
+};
+
+// ==========================================
+// --- ПОЛУЧЕНИЕ АВАТАРА (СЕРВЕРНАЯ ЛОГИКА) ---
+// ==========================================
+
+/**
+ * Получает аватар салона напрямую через Google Cloud Storage (Admin SDK).
+ * Генерирует свежий Signed URL, чтобы избежать ошибки ExpiredToken.
+ */
+export const getSalonAvatarAction = async (salonId: string) => {
+  try {
+    const storage = getStorage();
+    
+    // Определяем имя бакета. Обычно это PROJECT_ID.appspot.com или из переменной окружения
+    const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_ADMIN_PROJECT_ID}.appspot.com`;
+    const bucket = storage.bucket(bucketName);
+    
+    const prefix = `salonAvatars/${salonId}/`;
+
+    // Получаем список файлов в папке
+    const [files] = await bucket.getFiles({ prefix });
+
+    if (files.length === 0) {
+      return null;
+    }
+
+    // Берем первый файл (предполагаем, что аватар один)
+    const file = files[0];
+
+    // Генерируем подписанную ссылку, действительную 2 часа
+    // Это решает проблему с протухшими токенами
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 1000 * 60 * 60 * 2, // 2 часа
+    });
+
+    return {
+      url,
+      storagePath: file.name,
+      salonId
+    };
+
+  } catch (error) {
+    console.error('Error getting salon avatar on server:', error);
+    return null;
+  }
 };
