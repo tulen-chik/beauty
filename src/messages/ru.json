@@ -1131,7 +1131,9 @@
     "noMessages": "Нет сообщений",
     "chatByAppointment": "Чат по записи",
     "linkedToService": "Связан с услугой",
-    "yesterday": "Вчера"
+    "yesterday": "Вчера",
+    "noResultsTitle": "Клиенты не найдены",
+    "noResultsDesc": "Попробуйте изменить поисковый запрос."
   },
   "chat": {
     "loadingChat": "Загрузка чата...",

@@ -1,12 +1,24 @@
 "use client";
-import { Building2, Menu,X } from "lucide-react";
-import { usePathname,useRouter } from "next/navigation";
+import { 
+  Building2, 
+  Menu, 
+  X, 
+  LayoutGrid, 
+  ClipboardList, 
+  Calendar, 
+  MessageSquare, 
+  Star, 
+  Users, 
+  Settings, 
+  Megaphone, 
+  BarChart3 
+} from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { useSalon } from "@/contexts";
-import { useUser } from "@/contexts";
+import { useSalon, useUser } from "@/contexts";
 
 export default function SalonCrmLayout({ 
   children, 
@@ -35,122 +47,112 @@ export default function SalonCrmLayout({
     return entry?.role || null;
   }, [userSalons, salonId]);
 
-  const MENU = [
-    // { key: "appointments", label: t('menu.appointments'), path: "/appointments" },
-    { key: "services", label: t('menu.services'), path: "/services" },
-    { key: "schedule", label: t('menu.schedule'), path: "/schedule" },
-    { key: "chats", label: t('menu.chats'), path: "/chats" },
-    { key: "ratings", label: t('menu.ratings'), path: "/ratings" },
-    { key: "staff", label: t('menu.staff'), path: "/staff" },
-    { key: "settings", label: t('menu.settings'), path: "/settings" },
-    { key: "promotion", label: t('menu.promotion'), path: "/promotion" },
-    { key: "analytics", label: t('menu.analytics'), path: "/analytics" },
-  ];
+  const MENU_ITEMS = useMemo(() => [
+    // { key: "appointments", label: t('menu.appointments'), path: "/appointments", icon: ClipboardList },
+    { key: "services", label: t('menu.services'), path: "/services", icon: LayoutGrid },
+    { key: "schedule", label: t('menu.schedule'), path: "/schedule", icon: Calendar },
+    { key: "chats", label: t('menu.chats'), path: "/chats", icon: MessageSquare },
+    { key: "ratings", label: t('menu.ratings'), path: "/ratings", icon: Star },
+    { key: "staff", label: t('menu.staff'), path: "/staff", icon: Users },
+    { key: "settings", label: t('menu.settings'), path: "/settings", icon: Settings },
+    { key: "promotion", label: t('menu.promotion'), path: "/promotion", icon: Megaphone },
+    { key: "analytics", label: t('menu.analytics'), path: "/analytics", icon: BarChart3 },
+  ], [t]);
 
   const FILTERED_MENU = useMemo(() => {
     if (currentRole === 'employee') {
-      return MENU.filter((i) => i.key !== 'settings' && i.key !== 'promotion');
+      return MENU_ITEMS.filter((i) => i.key !== 'settings' && i.key !== 'promotion');
     }
-    return MENU;
-  }, [MENU, currentRole]);
+    return MENU_ITEMS;
+  }, [MENU_ITEMS, currentRole]);
 
   const handleMenuClick = (path: string) => {
     router.push(`/${locale}/salons/${salonId}${path}`);
     setMobileMenuOpen(false);
   };
 
+  const NavMenu = () => (
+    <nav className="flex flex-col gap-2">
+      {FILTERED_MENU.map((item) => (
+        <button
+          key={item.key}
+          onClick={() => handleMenuClick(item.path)}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all text-sm ${
+            activePath === item.path 
+              ? "bg-rose-600 text-white shadow-md shadow-rose-200" 
+              : "hover:bg-slate-200/60 text-slate-700"
+          }`}
+        >
+          <item.icon className="w-5 h-5" />
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50">
-        {/* Mobile Header */}
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+      <div className="min-h-screen bg-slate-50">
+        <div className="lg:flex">
+          {/* Desktop Sidebar */}
+          <aside className="hidden lg:flex flex-col w-64 h-screen p-4 bg-slate-100/70 border-r border-slate-200/80 sticky top-0">
+            <div className="flex items-center gap-3 px-3 py-2 mb-8">
+              <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200">
+                <Building2 className="w-6 h-6 text-rose-600" />
+              </div>
+              <span className="text-lg font-bold text-slate-800">{t('menu.title')}</span>
+            </div>
+            <NavMenu />
+          </aside>
+
+          {/* Mobile Header */}
+          <header className="lg:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-sm border-b border-slate-200/80">
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200">
+                  <Building2 className="w-5 h-5 text-rose-600" />
+                </div>
+                <span className="font-bold text-slate-800">{t('menu.title')}</span>
+              </div>
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="p-2 rounded-lg hover:bg-slate-100"
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-rose-600" />
-                <span className="font-semibold text-gray-900">{t('menu.salon')}</span>
-              </div>
             </div>
-          </div>
-        </div>
+          </header>
 
-        {/* Mobile Menu Overlay */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setMobileMenuOpen(false)}>
-            <div className="fixed top-0 left-0 w-64 h-full bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="w-5 h-5 text-rose-600" />
-                    <span className="font-semibold text-gray-900">{t('menu.title')}</span>
+          {/* Mobile Menu Overlay */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-40" onClick={() => setMobileMenuOpen(false)}>
+              <div 
+                className="fixed top-0 left-0 w-72 h-full bg-white shadow-2xl p-4 flex flex-col" 
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-lg shadow-sm border border-slate-200">
+                      <Building2 className="w-6 h-6 text-rose-600" />
+                    </div>
+                    <span className="text-lg font-bold text-slate-800">{t('menu.title')}</span>
                   </div>
                   <button
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-1 rounded-lg hover:bg-gray-100"
+                    className="p-2 rounded-lg hover:bg-slate-100"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
-              </div>
-              <div className="p-4 space-y-2">
-                {FILTERED_MENU.map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => handleMenuClick(item.path)}
-                    className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all ${
-                      activePath === item.path 
-                        ? "bg-rose-600 text-white" 
-                        : "hover:bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+                <NavMenu />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Desktop Layout */}
-        <div className="hidden lg:flex lg:min-h-[calc(100vh-3rem)] lg:py-6 lg:px-2 lg:items-start lg:justify-center">
-          <div className="w-full max-w-7xl flex bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden min-h-[calc(100vh-6rem)]">
-            {/* Основной контент */}
-            <div className="flex-1 p-6 min-w-0 overflow-auto">
-              {children}
-            </div>
-            {/* Меню справа */}
-            <aside className="w-64 border-l border-gray-100 bg-gray-50 p-8 flex flex-col gap-2 flex-shrink-0">
-              <div className="text-lg font-bold text-gray-800 mb-4">{t('menu.title')}</div>
-              {FILTERED_MENU.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => router.push(`/${locale}/salons/${salonId}${item.path}`)}
-                  className={`text-left px-4 py-2 rounded-xl font-medium transition-all ${
-                    activePath === item.path 
-                      ? "bg-rose-600 text-white" 
-                      : "hover:bg-rose-100 text-gray-800"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </aside>
-          </div>
-        </div>
-
-        {/* Mobile Content */}
-        <div className="lg:hidden p-4 overflow-hidden">
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden max-w-full">
-            <div className="p-4 sm:p-6 overflow-x-auto">
-              {children}
-            </div>
-          </div>
+          {/* Main Content */}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
         </div>
       </div>
     </ProtectedRoute>
