@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useAppointment } from '@/contexts/AppointmentContext';
-// Импортируем действие для получения пользователя
-import { getUserByIdAction } from '@/app/actions/userActions'; 
+// --- ДОБАВЛЕНО: Импортируем хук useUser для доступа к контексту ---
+import { useUser } from '@/contexts/UserContext'; 
 import { Chat, SalonService, Appointment } from '@/types/database';
 import { InitialAvatar, formatDate } from '@/components/Chat/Helpers';
 
@@ -18,10 +18,11 @@ interface SalonChatItemProps {
 export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItemProps) {
   const { getService } = useSalonService();
   const { getAppointment } = useAppointment();
+  // --- ДОБАВЛЕНО: Получаем метод getAvatar из UserContext ---
+  const { getAvatar } = useUser();
   
   const [service, setService] = useState<SalonService | null>(null);
   const [appointment, setAppointment] = useState<Appointment | null>(null);
-  // Добавляем состояние для аватара
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   
@@ -31,25 +32,30 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
     const loadDetails = async () => {
       setIsLoadingDetails(true);
       
-      // 1. Загружаем данные пользователя (аватар)
+      // --- ИЗМЕНЕНО: Логика получения аватара ---
+      // Теперь мы используем метод getAvatar из контекста,
+      // который напрямую обращается к Firebase Storage.
       if (chat.customerUserId) {
         try {
-          const user = await getUserByIdAction(chat.customerUserId);
-          if (user && user.avatarUrl) {
-            setAvatarUrl(user.avatarUrl);
+          const avatarData = await getAvatar(chat.customerUserId);
+          if (avatarData) {
+            setAvatarUrl(avatarData.url);
+          } else {
+            setAvatarUrl(null); // Убедимся, что аватар сброшен, если не найден
           }
         } catch (e) {
-          console.error("Failed to load user avatar", e);
+          console.error("Failed to load user avatar via getAvatar", e);
+          setAvatarUrl(null);
         }
       }
 
-      // 2. Загружаем услугу
+      // 2. Загружаем услугу (без изменений)
       if (chat.serviceId) {
         try { setService(await getService(chat.serviceId)); }
         catch (e) { console.error(e); setService(null); }
       }
 
-      // 3. Загружаем запись
+      // 3. Загружаем запись (без изменений)
       if (chat.appointmentId && chat.salonId) {
         try { setAppointment(await getAppointment(chat.salonId, chat.appointmentId)); }
         catch (e) { console.error(e); setAppointment(null); }
@@ -59,7 +65,8 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
     };
     
     loadDetails();
-  }, [chat.serviceId, chat.appointmentId, chat.salonId, chat.customerUserId, getService, getAppointment]);
+    // --- ДОБАВЛЕНО: getAvatar в массив зависимостей ---
+  }, [chat.serviceId, chat.appointmentId, chat.salonId, chat.customerUserId, getService, getAppointment, getAvatar]);
 
   return (
     <div
@@ -70,7 +77,7 @@ export default function SalonChatItem({ chat, isActive, onClick }: SalonChatItem
           : 'hover:bg-slate-50 hover:border-slate-100'
       }`}
     >
-      {/* Логика отображения аватара */}
+      {/* Логика отображения аватара (без изменений) */}
       <div className="w-12 h-12 flex-shrink-0">
         {avatarUrl ? (
           <img 

@@ -11,8 +11,9 @@ import {
 } from '@/app/actions/userActions';
 // --- ДОБАВЛЕНО: Импорт функций для работы с аватарами ---
 import {
-  uploadUserAvatarAction as uploadUserAvatar,
-  deleteUserAvatarAction as deleteUserAvatar,
+  uploadUserAvatarAction,
+  deleteUserAvatarAction,
+  getUserAvatarAction,
 } from '@/app/actions/storageActions';
 
 import type { User } from '@/types/database';
@@ -36,6 +37,7 @@ interface UserContextType {
   // --- ДОБАВЛЕНО: Новые методы для аватаров ---
   uploadAvatar: (file: File) => Promise<void>;
   removeAvatar: () => Promise<void>;
+  getAvatar: (userId: string) => Promise<{ url: string, storagePath: string } | null>; // Новый метод
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -386,7 +388,7 @@ const register = async (email: string, password: string, displayName: string) =>
 
       // Если был старый аватар — удаляем файл и запись о нем
       if (currentUser.avatarStoragePath) {
-        await deleteUserAvatar(currentUser.avatarStoragePath);
+        await deleteUserAvatarAction(currentUser.avatarStoragePath);
       }
 
       // Отправляем файл через API роут (Server Actions не принимают File напрямую)
@@ -428,7 +430,7 @@ const register = async (email: string, password: string, displayName: string) =>
       setLoading(true);
       setError(null);
 
-      await deleteUserAvatar(currentUser.avatarStoragePath);
+      await deleteUserAvatarAction(currentUser.avatarStoragePath);
 
       await updateUserAction(currentUser.userId, {
         avatarUrl: '',
@@ -444,6 +446,19 @@ const register = async (email: string, password: string, displayName: string) =>
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getAvatar = async (userId: string) => {
+    try {
+      const avatarData = await getUserAvatarAction(userId);
+      if (avatarData) {
+        return { url: avatarData.url, storagePath: avatarData.storagePath };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user avatar:", error);
+      return null;
     }
   };
 
@@ -468,6 +483,7 @@ const register = async (email: string, password: string, displayName: string) =>
         // --- ДОБАВЛЕНО: Передаем новые методы в провайдер ---
         uploadAvatar,
         removeAvatar,
+        getAvatar,
       }}
     >
       {children}

@@ -8,7 +8,8 @@ import { InitialAvatar, formatMessageTime } from '@/components/Chat/Helpers';
 import { ChatViewSkeleton } from '@/components/Chat/Skeletons';
 import MessageAttachment from '@/components/Chat/MessageAttachment';
 import { uploadChatFileAction } from '@/app/actions/storageActions';
-import { getUserByIdAction } from '@/app/actions/userActions';
+// Больше не нужен прямой импорт userActions
+// import { getUserByIdAction } from '@/app/actions/userActions';
 import type { ChatMessage } from '@/types/database';
 
 interface SalonChatViewPanelProps {
@@ -18,7 +19,8 @@ interface SalonChatViewPanelProps {
 }
 
 export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: SalonChatViewPanelProps) {
-  const { currentUser } = useUser();
+  // --- ИЗМЕНЕНО: Получаем getAvatar из контекста ---
+  const { currentUser, getAvatar } = useUser();
   const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading, deleteChat } = useChat();
 
   const [messageText, setMessageText] = useState('');
@@ -34,56 +36,50 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
   const messages = selectedChatId ? chatMessages[selectedChatId] || [] : [];
 
   useEffect(() => {
-    // Логика салона: помечаем сообщения как прочитанные, если есть непрочитанные для салона
     if (currentChat && salonId && currentChat.unreadCount.salon > 0) {
-      console.log('Marking messages as read for salon:', {
-        chatId: currentChat.id,
-        userId: salonId, // Используем salonId как userId для фильтрации
-        currentUserUserId: currentUser?.userId,
-        unreadCount: currentChat.unreadCount
-      });
       markMessagesAsRead(currentChat.id, salonId);
     }
-  }, [currentChat, currentUser, markMessagesAsRead, salonId]);
+  }, [currentChat, markMessagesAsRead, salonId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Загрузка аватара клиента
+  // --- ИЗМЕНЕНО: Логика загрузки аватара клиента ---
   useEffect(() => {
     const loadCustomerAvatar = async () => {
+      // Сначала сбрасываем аватар, чтобы избежать показа старого
+      setCustomerAvatarUrl(null);
       if (currentChat?.customerUserId) {
         try {
-          const user = await getUserByIdAction(currentChat.customerUserId);
-          if (user && user.avatarUrl) {
-            setCustomerAvatarUrl(user.avatarUrl);
-          } else {
-            setCustomerAvatarUrl(null);
+          // Используем метод getAvatar из контекста
+          const avatarData = await getAvatar(currentChat.customerUserId);
+          if (avatarData) {
+            setCustomerAvatarUrl(avatarData.url);
           }
         } catch (error) {
           console.error("Failed to load customer avatar:", error);
-          setCustomerAvatarUrl(null);
+          // Устанавливать в null не нужно, так как мы это сделали в начале
         }
-      } else {
-        setCustomerAvatarUrl(null);
       }
     };
 
     loadCustomerAvatar();
-  }, [currentChat?.customerUserId]);
+    // --- ДОБАВЛЕНО: getAvatar в массив зависимостей ---
+  }, [currentChat?.customerUserId, getAvatar]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !selectedChatId || !currentUser) return;
+    if ((!messageText.trim() && uploadedFiles.length === 0) || !selectedChatId || !currentUser) return;
     setIsSending(true);
     try {
       const senderName = currentUser.displayName || 'Салон';
-      const messageType = uploadedFiles && uploadedFiles.length > 0 ? 'file' : 'text';
-      const attachments = uploadedFiles && uploadedFiles.length > 0 ? uploadedFiles : undefined;
-      // Логика салона: отправляем как 'salon'
+      const messageType = uploadedFiles.length > 0 ? 'file' : 'text';
+      const attachments = uploadedFiles.length > 0 ? uploadedFiles : undefined;
+      
       await sendMessage(selectedChatId, currentUser.userId, 'salon', senderName, messageText, messageType, attachments);
+      
       setMessageText('');
-      setUploadedFiles([]); // Clear uploaded files after sending
+      setUploadedFiles([]);
     } catch (error) {
       console.error("Failed to send message:", error);
     } finally {
@@ -117,7 +113,6 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
 
     setUploadingFile(true);
     try {
-      // Convert File to base64 string for Server Action
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
       let binaryString = '';
@@ -141,8 +136,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
         type: uploadedFile.type
       };
       
-      // Add to uploaded files list, don't send message yet
-      setUploadedFiles(prev => prev ? [...prev, attachment] : [attachment]);
+      setUploadedFiles(prev => [...prev, attachment]);
     } catch (error) {
       console.error("Failed to upload file:", error);
       alert("Не удалось загрузить файл. Попробуйте еще раз.");
@@ -155,7 +149,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
   };
 
   const removeUploadedFile = (index: number) => {
-    setUploadedFiles(prev => prev ? prev.filter((_, i) => i !== index) : []);
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   if (!selectedChatId) {
@@ -173,6 +167,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
     return <ChatViewSkeleton />;
   }
 
+  // --- Оставшаяся часть JSX без изменений ---
   return (
     <main className="flex-1 flex flex-col h-full bg-slate-50">
       {/* Header */}
@@ -332,7 +327,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
               placeholder="Написать сообщение..."
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
               rows={1}
               disabled={uploadingFile}
               className="w-full px-4 py-3 bg-transparent border-none focus:ring-0 text-slate-800 placeholder:text-slate-400 resize-none min-h-[48px] max-h-32 disabled:opacity-50"
@@ -347,9 +342,9 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
           
           <button
             onClick={handleSendMessage}
-            disabled={!messageText.trim() || isSending || uploadingFile}
+            disabled={(!messageText.trim() && uploadedFiles.length === 0) || isSending || uploadingFile}
             className={`p-3 rounded-full shadow-md transition-all duration-200 flex-shrink-0 mb-0.5 ${
-              !messageText.trim() || isSending || uploadingFile
+              (!messageText.trim() && uploadedFiles.length === 0) || isSending || uploadingFile
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none' 
                 : 'bg-rose-600 text-white hover:bg-rose-700 hover:shadow-lg hover:shadow-rose-200 active:scale-95'
             }`}
@@ -364,8 +359,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
           </div>
         )}
 
-        {/* Uploaded files preview */}
-        {uploadedFiles && uploadedFiles.length > 0 && (
+        {uploadedFiles.length > 0 && (
           <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (

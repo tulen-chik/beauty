@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle, LogOut, UserCircle, XCircle, Camera, Save } f
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { User } from "@/types/database";
+import { useUser } from "@/contexts/UserContext";
 
 type FormErrors = {
   displayName?: string;
@@ -12,7 +13,7 @@ type FormErrors = {
 };
 
 interface ProfileSettingsProps {
-  currentUser: User;
+  currentUser: User & { userId: string };
   onSaveProfile: (displayName: string) => Promise<void>;
   onAvatarUpload: (file: File) => Promise<void>;
   onAvatarRemove: () => Promise<void>;
@@ -31,12 +32,41 @@ export default function ProfileSettings({
   const [displayName, setDisplayName] = useState(currentUser.displayName || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  // --- ИЗМЕНЕНО: Начальное состояние всегда null, чтобы дождаться загрузки ---
+  const [displayAvatarUrl, setDisplayAvatarUrl] = useState<string | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { getAvatar } = useUser();
 
+  // Этот useEffect теперь отвечает только за displayName
   useEffect(() => {
     setDisplayName(currentUser.displayName || "");
   }, [currentUser.displayName]);
+
+  // --- ИЗМЕНЕНО: useEffect для получения аватара ИСКЛЮЧИТЕЛЬНО через getAvatar ---
+  useEffect(() => {
+    // Определяем асинхронную функцию для получения аватара
+    const fetchAvatar = async () => {
+      if (currentUser.userId) {
+        try {
+          // Вызываем метод из контекста
+          const avatarData = await getAvatar(currentUser.userId);
+          // Устанавливаем URL, если данные пришли, иначе — null
+          setDisplayAvatarUrl(avatarData ? avatarData.url : null);
+        } catch (error) {
+          console.error("Failed to fetch user avatar:", error);
+          setDisplayAvatarUrl(null); // В случае ошибки тоже сбрасываем
+        }
+      }
+    };
+    
+    // Вызываем функцию
+    fetchAvatar();
+    
+    // Зависимости: userId для идентификации и getAvatar, если он может измениться
+  }, [currentUser.userId, getAvatar]);
+
 
   const avatarInitials = useMemo(() => {
     const name = currentUser?.displayName || currentUser?.email || '';
@@ -63,8 +93,8 @@ export default function ProfileSettings({
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 20 * 1024 * 1024) { // 2MB
-        setLocalErrors({ ...localErrors, avatar: "Размер файла не должен превышать 2 МБ." });
+      if (file.size > 20 * 1024 * 1024) { // 20MB
+        setLocalErrors({ ...localErrors, avatar: "Размер файла не должен превышать 20 МБ." });
         return;
       }
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -123,8 +153,8 @@ export default function ProfileSettings({
               <div className="relative h-28 w-28 rounded-full ring-4 ring-white shadow-lg overflow-hidden bg-slate-100">
                 {avatarPreviewUrl ? (
                   <Image src={avatarPreviewUrl} alt="Preview" fill className="object-cover" />
-                ) : currentUser.avatarUrl ? (
-                  <Image src={currentUser.avatarUrl} alt="Avatar" fill className="object-cover" />
+                ) : displayAvatarUrl ? (
+                  <Image src={displayAvatarUrl} alt="Avatar" fill className="object-cover" />
                 ) : (
                   <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-rose-100 to-rose-50 text-rose-500">
                     {avatarInitials ? (
@@ -135,7 +165,6 @@ export default function ProfileSettings({
                   </div>
                 )}
                 
-                {/* Overlay for upload */}
                 <button 
                   type="button" 
                   onClick={() => fileInputRef.current?.click()} 
@@ -166,7 +195,7 @@ export default function ProfileSettings({
                   >
                     Загрузить фото
                   </button>
-                  {currentUser.avatarUrl && (
+                  {displayAvatarUrl && (
                     <button 
                       onClick={onAvatarRemove} 
                       disabled={isAvatarUploading} 
