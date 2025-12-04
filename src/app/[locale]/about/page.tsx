@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default function AboutPage() {
-  const t = useTranslations("pages.about")
   const tCommon = useTranslations("common")
 
   return (
@@ -19,37 +18,54 @@ export default function AboutPage() {
           <span>{tCommon("backToHome")}</span>
         </Link>
 
-        <div className="prose prose-lg max-w-none">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t("title")}</h1>
-          <p className="text-xl text-gray-600 mb-8">{t("subtitle")}</p>
-          
-          <div className="mb-12">
-            <p className="text-gray-700 leading-relaxed mb-6">{t("description")}</p>
+        <div className="prose prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-relaxed">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">О компании</h1>
           </div>
 
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t("mission.title")}</h2>
-            <p className="text-gray-700 leading-relaxed">{t("mission.description")}</p>
-          </div>
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Общие сведения</h2>
+            <p className="text-gray-700 leading-relaxed">
+              ИП Солдатенко Анастасия Дмитриевна оказывает услуги в сфере обработки данных и предоставления услуг по размещению информации.
+            </p>
+          </section>
 
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t("values.title")}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[0, 1, 2].map((index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-100">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                    {t(`values.items.${index}.title`)}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {t(`values.items.${index}.description`)}
-                  </p>
-                </div>
-              ))}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Реквизиты организации</h2>
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <ul className="space-y-3">
+                <li>
+                  <strong>Полное юридическое наименование:</strong> ИП Солдатенко Анастасия Дмитриевна
+                </li>
+                <li>
+                  <strong>Адрес по месту нахождения:</strong> 220112, г. Минск, ул. Янки Лучины, дом 70
+                </li>
+                <li>
+                  <strong>УНП:</strong> 193911137
+                </li>
+                <li>
+                  <strong>ОКВЭД:</strong> 63119 Прочая обработка данных, предоставление услуг по размещению информации и связанная с этим деятельность
+                </li>
+                <li>
+                  <strong>Электронная почта:</strong> <a href="mailto:soldatenkonastasia@gmail.com" className="text-rose-600 hover:underline">soldatenkonastasia@gmail.com</a>
+                </li>
+              </ul>
             </div>
-          </div>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 mt-8">Контакты</h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              По всем вопросам, связанным с работой сервиса, вы можете обратиться к нам через электронную почту:
+            </p>
+            <div className="mt-6 p-6 bg-rose-50 rounded-lg border border-rose-100">
+              <p className="text-gray-700 mb-2">
+                Email: <a href="mailto:soldatenkonastasia@gmail.com" className="text-rose-600 hover:underline font-medium">soldatenkonastasia@gmail.com</a>
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </div>
   )
 }
-

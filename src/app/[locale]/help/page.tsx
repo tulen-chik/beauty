@@ -130,10 +130,10 @@ export default function HelpPage() {
                 <div>
                   <p className="text-sm text-gray-600 font-medium">{t("contactSupport.email")}</p>
                   <a 
-                    href={`mailto:${tFooter("emailValue")}`} 
+                    href={`mailto:Charming.belarus@gmail.com`} 
                     className="text-rose-600 hover:underline"
                   >
-                    {tFooter("emailValue")}
+                    {"Charming.belarus@gmail.com"}
                   </a>
                 </div>
               </div>
@@ -143,10 +143,10 @@ export default function HelpPage() {
                 <div>
                   <p className="text-sm text-gray-600 font-medium">{t("contactSupport.phone")}</p>
                   <a 
-                    href={`tel:${tFooter("phoneValue").replace(/\s/g, "").replace(/[()]/g, "")}`} 
+                    href={"tel:+375447403616"} 
                     className="text-rose-600 hover:underline"
                   >
-                    {tFooter("phoneValue")}
+                    {"+375447403616"}
                   </a>
                 </div>
               </div>

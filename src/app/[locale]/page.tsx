@@ -376,19 +376,19 @@ export default function Home() {
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3 text-sm text-gray-600">
                     <Mail className="w-4 h-4 text-rose-600 shrink-0" />
-                    <a href={`mailto:${t("footer.emailValue")}`} className="hover:text-rose-600 transition-colors">
-                      {t("footer.emailValue")}
+                    <a href={`mailto:Charming.belarus@gmail.com `} className="hover:text-rose-600 transition-colors">
+                      {"Charming.belarus@gmail.com "}
                     </a>
                   </li>
                   <li className="flex items-center gap-3 text-sm text-gray-600">
                     <Phone className="w-4 h-4 text-rose-600 shrink-0" />
-                    <a href={`tel:${t("footer.phoneValue").replace(/\s/g, '').replace(/[()]/g, '')}`} className="hover:text-rose-600 transition-colors">
-                      {t("footer.phoneValue")}
+                    <a href={`tel:+375447403616`} className="hover:text-rose-600 transition-colors">
+                      {"+375447403616"}
                     </a>
                   </li>
                   <li className="flex items-start gap-3 text-sm text-gray-600">
                     <MapPin className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                    <span>{t("footer.location")}</span>
+                    <span>{"220112, г. Минск, ул. Янки Лучины, дом 70"}</span>
                   </li>
                 </ul>
               </div>
@@ -443,7 +443,7 @@ export default function Home() {
             <div className="pt-8 border-t border-gray-200">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <p className="text-gray-400 text-sm text-center md:text-left">
-                  &copy; {new Date().getFullYear()} Charming. {t("footer.copyright")}.
+                  &copy; {new Date().getFullYear()} Ип Солдатенко Анастасия Дмитриевна УНП 193911137 А1.
                 </p>
                 <div className="flex gap-6">
                   <Link 
