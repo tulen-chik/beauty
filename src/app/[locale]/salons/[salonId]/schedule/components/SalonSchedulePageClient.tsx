@@ -667,8 +667,8 @@ export default function SalonSchedulePageClient({
             )}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
-            <div className="grid grid-cols-8 min-w-[1200px]">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto max-w-full">
+            <div className="grid grid-cols-8 min-w-[900px] lg:min-w-[1000px]">
                 <div className="text-sm text-center text-gray-500">
                     {TIME_SLOTS.map((time) => (
                     <div key={time} className="h-24 flex items-center justify-center">
