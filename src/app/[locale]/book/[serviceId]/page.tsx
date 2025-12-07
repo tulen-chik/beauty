@@ -10,9 +10,6 @@ import { getServiceImages } from "@/lib/firebase/database"
 
 import ChatButton from "@/components/ChatButton"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
-// --- ИЗМЕНЕНИЕ: УДАЛЕНЫ ИМПОРТЫ СПИННЕРОВ ---
-// import { LoadingSpinner } from "@/components/ui/LoadingSpinner"
-// import { LoadingSpinnerSmall } from "@/components/ui/LoadingSpinnerSmall"
 
 import { useAppointment } from "@/contexts/AppointmentContext"
 import { useSalon } from "@/contexts/SalonContext"

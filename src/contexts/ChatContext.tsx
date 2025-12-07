@@ -20,7 +20,7 @@ import type { Chat, ChatMessage, ChatMessageType, ChatNotification, ChatParticip
 // Интерфейс контекста
 interface ChatContextType {
   // Chat operations
-  createOrGetChat: (salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string) => Promise<Chat>;
+  createOrGetChat: (salonId: string, customerUserId: string, customerName: string, createdBy?: 'salon' | 'customer', appointmentId?: string, serviceId?: string) => Promise<Chat>;
   getChatsBySalon: (salonId: string) => Promise<Chat[]>;
   getChatsByCustomer: (customerUserId: string) => Promise<Chat[]>;
   getChatByAppointment: (appointmentId: string) => Promise<Chat | null>;
@@ -176,12 +176,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   // --- РЕАЛИЗАЦИЯ МЕТОДОВ ЧЕРЕЗ ВАШИ ОПЕРАЦИИ ---
 
   // 1. Chat Operations
-  const createOrGetChat = useCallback((salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string) => 
+  const createOrGetChat = useCallback((salonId: string, customerUserId: string, customerName: string, createdBy: 'salon' | 'customer' = 'customer', appointmentId?: string, serviceId?: string) => 
     handleRequest(() => {
       assertString(salonId, 'Не указан ID салона');
       assertString(customerUserId, 'Не указан ID клиента');
       assertString(customerName, 'Не указано имя клиента');
-      return chatOperations.createOrGet(salonId, customerUserId, customerName, appointmentId, serviceId);
+      return chatOperations.createOrGet(salonId, customerUserId, customerName, createdBy, appointmentId, serviceId);
     }), 
   [handleRequest]);
 

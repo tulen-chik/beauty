@@ -3,7 +3,8 @@
 import { Firestore, Settings, Transaction } from '@google-cloud/firestore';
 import { appointmentSchema } from '@/lib/firebase/schemas';
 import type { Appointment, AppointmentStatus } from '@/types/database';
-import { sendEmail } from '@/lib/email';
+import { sendEmail, resolveRecipientEmails } from './emailActions';
+import { getEmailTemplate } from '@/lib/emailTemplates';
 import type { User } from '@/types/user';
 import {
   validateId,
@@ -188,20 +189,23 @@ export async function createAppointmentAction(
     
     // Best-effort уведомление по email. Ошибки не прерывают создание записи
     try {
-      const recipients = await resolveRecipientEmails(salonId, validated.employeeId);
+      const recipients = await resolveRecipientEmails(salonId, validated.employeeId, undefined);
       if (recipients.length > 0) {
-        const subject = 'Новая запись в расписании';
         const start = new Date(validated.startAt);
         const timeStr = isNaN(start.getTime()) ? validated.startAt : start.toLocaleString('ru-RU');
-        const html = `
-          <div>
-            <p>Появилась новая запись в салоне <strong>${salonId}</strong>.</p>
-            <p>Время: <strong>${timeStr}</strong></p>
-            ${validated.customerName ? `<p>Клиент: <strong>${validated.customerName}</strong></p>` : ''}
-            ${validated.notes ? `<p>Заметки: ${validated.notes}</p>` : ''}
-          </div>
-        `;
-        await sendEmail({ to: recipients, subject, html, text: `Новая запись. Время: ${timeStr}` });
+        const emailTemplate = getEmailTemplate('appointment_created', {
+          salonId,
+          customerName: validated.customerName,
+          timeStr,
+          notes: validated.notes
+        });
+        
+        await sendEmail({ 
+          to: recipients, 
+          subject: emailTemplate.subject, 
+          html: emailTemplate.html, 
+          text: emailTemplate.text 
+        });
       }
     } catch (e) {
       console.error('[appointments] failed to send email notification:', e);
@@ -524,47 +528,3 @@ export async function checkAppointmentAvailabilityAction(
 }
 
 // --- Helpers ---
-async function resolveRecipientEmails(salonId: string, employeeId?: string): Promise<string[]> {
-  const db = getDb();
-  try {
-    if (!salonId || typeof salonId !== 'string') {
-      return [];
-    }
-    
-    const salonSnap = await db.collection('salons').doc(salonId).get();
-    if (!salonSnap.exists) return [];
-    
-    const salon = salonSnap.data() as { members?: Array<{ userId: string }> } | undefined;
-    const members = salon?.members || [];
-
-    const targetUserIds = employeeId
-      ? members.filter((m) => m.userId === employeeId).map((m) => m.userId)
-      : members.map((m) => m.userId);
-
-    if (targetUserIds.length === 0) return [];
-
-    // Получаем email пользователей
-    const userDocs = await Promise.all(
-      targetUserIds.map((uid) => {
-        if (!uid || typeof uid !== 'string') return null;
-        return db.collection('users').doc(uid).get();
-      })
-    );
-
-    const emails: string[] = [];
-    for (const d of userDocs) {
-      if (d && d.exists) {
-        const u = d.data() as User;
-        if (u?.email && typeof u.email === 'string' && u.email.includes('@')) {
-          emails.push(u.email);
-        }
-      }
-    }
-
-    // Убираем дубликаты и пустые
-    return Array.from(new Set(emails.filter(Boolean)));
-  } catch (err) {
-    console.error('[appointments] resolveRecipientEmails error:', err);
-    return [];
-  }
-}

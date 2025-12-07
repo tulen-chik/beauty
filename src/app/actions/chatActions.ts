@@ -8,6 +8,8 @@ import { ZodType } from 'zod';
 // Импортируйте ваши схемы и типы
 import { chatSchema, chatMessageSchema, chatParticipantSchema, chatNotificationSchema } from '@/lib/firebase/schemas';
 import type { Chat, ChatMessage, ChatNotification, ChatParticipant } from '@/types/database';
+import { sendEmail, resolveRecipientEmails } from './emailActions';
+import { getEmailTemplate } from '@/lib/emailTemplates';
 
 // --- Инициализация Firebase Admin SDK (выполняется один раз) ---
 function getDb(): Database {
@@ -47,6 +49,7 @@ export const createOrGetChatAction = async (
   salonId: string,
   customerUserId: string,
   customerName: string,
+  createdBy: 'salon' | 'customer',
   appointmentId?: string,
   serviceId?: string
 ): Promise<Chat> => {
@@ -80,6 +83,47 @@ export const createOrGetChatAction = async (
 
   const validatedData = chatSchema.parse(chatData);
   await getDb().ref(`chats/${chatId}`).set(validatedData);
+  
+  // Отправка email-уведомлений при создании нового чата
+  try {
+    if (createdBy === 'salon') {
+      // Салон создал чат - отправляем уведомление пользователю
+      const customerEmails = await resolveRecipientEmails(salonId, undefined, customerUserId);
+      if (customerEmails.length > 0) {
+        const emailTemplate = getEmailTemplate('chat_created_by_salon', {
+          customerName
+        });
+        
+        await sendEmail({ 
+          to: customerEmails, 
+          subject: emailTemplate.subject, 
+          html: emailTemplate.html, 
+          text: emailTemplate.text 
+        });
+      }
+    } else {
+      // Пользователь создал чат - отправляем уведомление всем членам салона
+      const salonEmails = await resolveRecipientEmails(salonId);
+      if (salonEmails.length > 0) {
+        const emailTemplate = getEmailTemplate('chat_created_by_customer', {
+          customerName,
+          appointmentId,
+          serviceId
+        });
+        
+        await sendEmail({ 
+          to: salonEmails, 
+          subject: emailTemplate.subject, 
+          html: emailTemplate.html, 
+          text: emailTemplate.text 
+        });
+      }
+    }
+  } catch (emailError) {
+    console.error('[chat] Failed to send email notification:', emailError);
+    // Не прерываем создание чата из-за ошибки отправки email
+  }
+  
   return { ...validatedData, id: chatId };
 };
 

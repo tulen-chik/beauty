@@ -19,7 +19,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import dynamic from "next/dynamic"; // Для ленивой загрузки
 
 // --- COMPONENTS ---
-import ChatButton from "@/components/ChatButton";
+import SalonChatButton from "@/components/SalonChatButton";
 
 // Динамический импорт тяжелой модалки (код загрузится только при клике)
 const ManualBookingModal = dynamic(() => import("./ManualBookingModal"), {
@@ -510,7 +510,7 @@ export default function SalonSchedulePageClient({
             )}
             {selectedAppointment.customerUserId && (
               <div className="pt-2">
-                <ChatButton
+                <SalonChatButton
                   salonId={salonId}
                   customerUserId={selectedAppointment.customerUserId}
                   customerName={selectedAppointment.customerName || t("client")}

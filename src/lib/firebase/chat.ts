@@ -3,6 +3,7 @@ import { get, ref, query, orderByChild, equalTo } from 'firebase/database';
 import { createOperation, deleteOperation,readOperation, updateOperation } from './crud';
 import { db } from './init';
 import { chatSchema } from './schemas';
+import { getEmailTemplate } from '@/lib/emailTemplates';
 
 import type { Chat } from '@/types/database';
 
@@ -91,7 +92,7 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
     }
   },
 
-  createOrGet: async (salonId: string, customerUserId: string, customerName: string, appointmentId?: string, serviceId?: string): Promise<Chat> => {
+  createOrGet: async (salonId: string, customerUserId: string, customerName: string, createdBy: 'salon' | 'customer' = 'customer', appointmentId?: string, serviceId?: string): Promise<Chat> => {
     try {
       assertString(salonId, 'salonId');
       assertString(customerUserId, 'customerUserId');
@@ -138,6 +139,36 @@ getBySalon: async (salonId: string): Promise<Chat[]> => {
       }
 
       await chatOperations.create(chatId, chatData);
+      
+      // Best-effort уведомление по email. Ошибки не прерывают создание чата
+      try {
+        const { sendEmail, resolveRecipientEmails } = await import('@/app/actions/emailActions');
+        const recipients = createdBy === 'salon' 
+          ? await resolveRecipientEmails(salonId, undefined, customerUserId)
+          : await resolveRecipientEmails(salonId);
+          
+        if (recipients.length > 0) {
+          const templateType = createdBy === 'salon' 
+            ? 'chat_created_by_salon' 
+            : 'chat_created_by_customer';
+            
+          const emailTemplate = getEmailTemplate(templateType, {
+            customerName,
+            appointmentId,
+            serviceId
+          });
+          
+          await sendEmail({ 
+            to: recipients, 
+            subject: emailTemplate.subject, 
+            html: emailTemplate.html, 
+            text: emailTemplate.text 
+          });
+        }
+      } catch (e) {
+        console.error('[chat] failed to send email notification:', e);
+      }
+      
       return { ...chatData, id: chatId } as Chat;
     } catch (error) {
       console.error('Error creating or getting chat:', error);

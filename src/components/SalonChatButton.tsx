@@ -2,14 +2,14 @@
 
 import { Loader2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Импортируем useRouter для редиректа
+import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
 import { useChat } from '@/contexts/ChatContext';
 import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useUser } from '@/contexts/UserContext';
 
-interface ChatButtonProps {
+interface SalonChatButtonProps {
   salonId: string;
   customerUserId: string;
   customerName: string;
@@ -19,21 +19,21 @@ interface ChatButtonProps {
   variant?: 'button' | 'link';
 }
 
-export default function  ChatButton({
+export default function SalonChatButton({
   salonId,
   customerUserId,
   customerName,
-  appointmentId, // <-- appointmentId уже доступен здесь
+  appointmentId,
   serviceId,
   className = '',
   variant = 'button'
-}: ChatButtonProps) {
+}: SalonChatButtonProps) {
   const { currentUser } = useUser();
   const { createOrGetChat, loading } = useChat();
   const { getService } = useSalonService();
   const [isCreating, setIsCreating] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const router = useRouter(); // Инициализируем роутер
+  const router = useRouter();
 
   const handleCreateChat = async () => {
     if (!currentUser) return;
@@ -59,16 +59,15 @@ export default function  ChatButton({
         return;
       }
 
-      // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-      // Передаем аргументы в правильном порядке: createdBy, appointmentId, затем serviceId
-      const chat = await createOrGetChat(sid, customerUserId, customerName, 'customer', appointmentId, serviceId);
+      // Создаем чат от имени салона
+      const chat = await createOrGetChat(sid, customerUserId, customerName, 'salon', appointmentId, serviceId);
       
       if (!chat || !chat.id) {
         throw new Error('Invalid chat response');
       }
       
-      // После создания чата сразу переходим на его страницу
-      router.push(`/chats`);
+      // После создания чата сразу переходим на страницу чатов салона
+      router.push(`/salons/${sid}/chats`);
 
     } catch (err: any) {
       console.error('Error creating chat:', err);
@@ -78,9 +77,7 @@ export default function  ChatButton({
     }
   };
 
-  // Я немного упростил логику отображения, чтобы она была более предсказуемой.
-  // Кнопка всегда будет делать одно и то же - создавать/получать чат и переходить в него.
-  const buttonText = variant === 'link' ? 'Открыть чат' : 'Создать чат';
+  const buttonText = variant === 'link' ? 'Открыть чат' : 'Написать клиенту';
   const buttonBaseClasses = variant === 'link' 
     ? 'inline-flex items-center gap-2 text-rose-600 hover:text-rose-700 font-medium'
     : 'inline-flex items-center justify-center gap-2 px-3 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
