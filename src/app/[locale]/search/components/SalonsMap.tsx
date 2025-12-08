@@ -134,7 +134,7 @@ export const SalonsMap = React.memo(({
   }
 
   return (
-    <div className="relative w-full h-full rounded-lg border border-gray-200 overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden">
       {/* Скелетон показывается поверх карты, пока API не загрузится */}
       {!isApiLoaded && <MapSkeleton />}
       

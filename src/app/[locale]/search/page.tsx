@@ -25,6 +25,12 @@ interface ProcessedService extends SalonService {
   categoryName?: string;
 }
 
+ // --- КЕШИ ДЛЯ ОПТИМИЗАЦИИ ---
+const imageCache = new Map<string, string>();
+const promotionCache = new Map<string, { isPromoted: boolean; endDate?: string; timestamp: number }>();
+const ratingStatsCache = new Map<string, { stats: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
+
 // --- КОНСТАНТЫ ---
 const DEBOUNCE_DELAY = 300;
 const PAGE_SIZE = 15;
@@ -111,17 +117,30 @@ export default function SearchPage() {
               setAllSalons(prev => [...prev, ...response.salons]);
               setSalonsById(prev => ({ ...prev, ...Object.fromEntries(response.salons.map(s => [s.id, s])) }));
 
-              // рейтинги для пришедшей страницы салонов
-              for (const salon of response.salons) {
+              // рейтинги для пришедшей страницы салонов с кешированием
+              const ratingPromises = response.salons.map(async (salon) => {
+                const cached = ratingStatsCache.get(salon.id);
+                if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+                  return { salonId: salon.id, stats: cached.stats };
+                }
+                
                 try {
                   const stats = await getRatingStats(salon.id);
-                  localRatings[salon.id] = stats;
-                  // обновляем по мере получения
-                  setSalonRatings(prev => ({ ...prev, [salon.id]: stats }));
+                  ratingStatsCache.set(salon.id, { stats, timestamp: Date.now() });
+                  return { salonId: salon.id, stats };
                 } catch (error) {
                   console.warn(`Failed to load ratings for salon ${salon.id}`, error);
+                  return { salonId: salon.id, stats: null };
                 }
-              }
+              });
+              
+              const ratingResults = await Promise.all(ratingPromises);
+              ratingResults.forEach(({ salonId, stats }) => {
+                if (stats) {
+                  localRatings[salonId] = stats;
+                  setSalonRatings(prev => ({ ...prev, [salonId]: stats }));
+                }
+              });
 
               currentSalonNextKey = response.nextKey ?? undefined;
               hasMoreSalons = !!response.nextKey;
@@ -166,33 +185,91 @@ export default function SearchPage() {
 
 
   const processServicesChunk = useCallback(async (chunk: SalonService[], currentSalonsMap: Record<string, Salon>): Promise<ProcessedService[]> => {
-    return Promise.all(
-      chunk.map(async (service) => {
-        const salon = currentSalonsMap[service.salonId];
-        const firstCategoryId = service.categoryIds?.[0];
-        const category = firstCategoryId ? categoriesById[firstCategoryId] : undefined;
-        let imageUrl = "";
-        let isPromoted = false;
+    // Сначала обрабатываем базовые данные без изображений и промоушенов
+    const baseProcessedServices = chunk.map((service) => {
+      const salon = currentSalonsMap[service.salonId];
+      const firstCategoryId = service.categoryIds?.[0];
+      const category = firstCategoryId ? categoriesById[firstCategoryId] : undefined;
+      
+      return { 
+        ...service, 
+        salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, 
+        imageUrl: '', 
+        isPromoted: false,
+        promotionEndDate: undefined,
+        categoryName: category?.name || '',
+      };
+    });
+
+    // Запускаем загрузку изображений и промоушенов в фоне, не блокируя основной рендер
+    const serviceIds = chunk.map(s => s.id);
+    
+    // Асинхронная загрузка изображений
+    (async () => {
+      const imagePromises = serviceIds.map(async (serviceId) => {
+        if (imageCache.has(serviceId)) {
+          return { serviceId, imageUrl: imageCache.get(serviceId)! };
+        }
         
         try {
-          const imgs = await getServiceImages(service.id);
-          if (imgs?.length > 0) imageUrl = imgs[0].url;
-        } catch (e) { /* Игнорируем ошибку */ }
+          const imgs = await getServiceImages(serviceId);
+          const imageUrl = imgs?.length > 0 ? imgs[0].url : '';
+          imageCache.set(serviceId, imageUrl);
+          return { serviceId, imageUrl };
+        } catch (e) {
+          return { serviceId, imageUrl: '' };
+        }
+      });
+      
+      const imageResults = await Promise.all(imagePromises);
+      const imageMap = Object.fromEntries(imageResults.map(r => [r.serviceId, r.imageUrl]));
+      
+      // Обновляем услуги с загруженными изображениями
+      setServices(prev => prev.map(service => {
+        if (serviceIds.includes(service.id)) {
+          return { ...service, imageUrl: imageMap[service.id] || '' };
+        }
+        return service;
+      }));
+    })();
+    
+    // Асинхронная загрузка промоушенов
+    (async () => {
+      const promotionPromises = serviceIds.map(async (serviceId) => {
+        const cached = promotionCache.get(serviceId);
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          return { serviceId, isPromoted: cached.isPromoted, endDate: cached.endDate };
+        }
         
         try {
-          const promotion = await findActiveServicePromotion(service.id);
-          if (promotion?.status === 'active') isPromoted = true;
-        } catch (e) { /* Игнорируем ошибку */ }
-        
-        return { 
-          ...service, 
-          salon: salon ? { id: salon.id, name: salon.name, address: salon.address } : null, 
-          imageUrl, 
-          isPromoted, 
-          categoryName: category?.name || '',
-        };
-      })
-    );
+          const promotion = await findActiveServicePromotion(serviceId);
+          const isPromoted = promotion?.status === 'active';
+          const endDate = promotion?.endDate;
+          promotionCache.set(serviceId, { isPromoted, endDate, timestamp: Date.now() });
+          return { serviceId, isPromoted, endDate };
+        } catch (e) {
+          return { serviceId, isPromoted: false };
+        }
+      });
+      
+      const promotionResults = await Promise.all(promotionPromises);
+      const promotionMap = Object.fromEntries(promotionResults.map(r => [r.serviceId, { isPromoted: r.isPromoted, endDate: r.endDate }]));
+      
+      // Обновляем услуги с загруженными промоушенами
+      setServices(prev => prev.map(service => {
+        if (serviceIds.includes(service.id)) {
+          return { 
+            ...service, 
+            isPromoted: promotionMap[service.id]?.isPromoted || false,
+            promotionEndDate: promotionMap[service.id]?.endDate
+          };
+        }
+        return service;
+      }));
+    })();
+    
+    // Возвращаем базовые данные сразу, не дожидаясь загрузки изображений и промоушенов
+    return baseProcessedServices;
   }, [categoriesById, findActiveServicePromotion]);
 
   const fetchServices = useCallback(async (isLoadMore = false, currentSalonsMap = salonsById) => {
@@ -230,7 +307,7 @@ export default function SearchPage() {
     } finally {
       if (isLoadMore) setIsLoadingMore(false);
     }
-  }, [selectedSalonId, nextKey, getServicesByCity, getServicesBySalonPaginated, processServicesChunk, debouncedQuery, currentCity, salonsById]);
+  }, [selectedSalonId, nextKey, getServicesByCity, getServicesBySalonPaginated, processServicesChunk, currentCity]);
   
   useEffect(() => {
     if (loading) return;
@@ -239,7 +316,7 @@ export default function SearchPage() {
     setNextKey(undefined);
     setHasMore(true);
     fetchServices(false);
-  }, [selectedSalonId, debouncedQuery, selectedCategory, sortBy]);
+  }, [selectedSalonId, debouncedQuery, selectedCategory, sortBy, currentCity]);
 
   // По мере загрузки справочника салонов дополняем уже полученные услуги данными салона
   useEffect(() => {
@@ -256,7 +333,7 @@ export default function SearchPage() {
       }
       return s;
     }));
-  }, [salonsById]);
+  }, [salonsById, salonRatings]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), DEBOUNCE_DELAY);

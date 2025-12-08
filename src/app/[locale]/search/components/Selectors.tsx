@@ -169,8 +169,8 @@ export const ServiceCard = React.memo(({ service, locale, salonRating }: { servi
                   </div>
                 )}
 
-                {salonRating && (
-                  <div className={`flex items-center gap-1.5 mt-1 ${service.salon ? 'pl-5' : ''}`}>
+                {service.salon && salonRating && (
+                  <div className="flex items-center gap-1.5 mt-1 pl-5">
                     <RatingDisplay rating={salonRating.averageRating} size="sm" />
                     <span className="text-xs text-slate-400 font-medium">({salonRating.totalRatings})</span>
                   </div>
