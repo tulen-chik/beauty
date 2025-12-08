@@ -1,14 +1,12 @@
 "use client"
 
-import { ArrowLeft, Calendar, CheckCircle, ChevronLeft, ChevronRight, Clock, Shield, User } from "lucide-react"
-import Image from "next/image"
+import { ArrowLeft, Calendar, CheckCircle, Clock } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useState } from "react"
 
 import { getServiceImages } from "@/lib/firebase/database"
 
-import ChatButton from "@/components/ChatButton"
 import { SalonScheduleDisplay } from "@/components/SalonScheduleDisplay"
 
 import { useAppointment } from "@/contexts/AppointmentContext"
@@ -16,6 +14,12 @@ import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { useUser } from "@/contexts/UserContext"
+
+import BookingHeader from "./components/BookingHeader"
+import BookingCalendar from "./components/BookingCalendar"
+import TimeSelector from "./components/TimeSelector"
+import BookingForm from "./components/BookingForm"
+import BookingActions from "./components/BookingActions"
 
 // --- НАЧАЛО: НОВЫЙ КОМПОНЕНТ SKELETON ---
 
@@ -516,22 +520,7 @@ export default function BookServicePage() {
     }
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString(params.locale, { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
-    })
-  }
-
-  const isToday = (date: Date) => {
-    return date.toDateString() === new Date().toDateString()
-  }
-
-  const isSelected = (date: Date) => {
-    return selectedDate.toDateString() === date.toDateString()
-  }
-
+  
   // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
     return <BookServicePageSkeleton />;
@@ -558,29 +547,13 @@ export default function BookServicePage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto p-3 sm:p-4">
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-              <Image src={previewUrl || "/placeholder.svg"} alt={service?.name || "service"} fill className="object-cover" />
-            </div>
-            <div className="flex-1">
-              <div className="text-lg font-bold text-gray-900">{service?.name}</div>
-              {salon && (
-                <div className="text-sm text-gray-600">{salon.name}{salon.address ? ` • ${salon.address}` : ""}</div>
-              )}
-              {service?.durationMinutes && (
-                <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  <span>{service.durationMinutes} {t('header.minutes')}</span>
-                </div>
-              )}
-            </div>
-            {service?.price !== undefined && (
-              <div className="text-rose-600 font-bold">{service.price} {"Br"}</div>
-            )}
-          </div>
+          <BookingHeader 
+            service={service}
+            salon={salon}
+            previewUrl={previewUrl}
+            t={t}
+          />
 
-          {/* Form */}
           <div className="p-3 sm:p-4 space-y-6">
             {success && (
               <div className="flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-lg p-3">
@@ -603,258 +576,61 @@ export default function BookServicePage() {
                 </div>
               </div>
             ) : !loading && (
-              // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
               <div className="bg-gray-100 rounded-lg p-4 h-24 animate-pulse"></div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Calendar */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t('calendar.title')} <span className="text-red-500">*</span>
-                </h3>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <span className="font-medium">
-                    {currentMonth.toLocaleDateString(params.locale, { month: 'long', year: 'numeric' })}
-                  </span>
-                  <button
-                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                    className="p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+              <BookingCalendar
+                currentMonth={currentMonth}
+                calendarDays={calendarDays}
+                selectedDate={selectedDate}
+                dayAvailability={dayAvailability}
+                locale={params.locale}
+                t={t}
+                onMonthChange={setCurrentMonth}
+                onDateSelect={setSelectedDate}
+              />
 
-                <div className="grid grid-cols-7 gap-1 mb-2">
-                  {t.raw('calendar.daysOfWeek').map((day: string) => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-                      {day}
-                    </div>
-                  ))}
-                </div>
-                
-                <div className="grid grid-cols-7 gap-1">
-                  {calendarDays.map((date) => {
-                    const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
-                    const dateKey = date.toISOString().split('T')[0];
-                    const status = dayAvailability[dateKey];
-                    const isAvailableForBooking = status === 'available';
-
-                    return (
-                      <button
-                        key={dateKey}
-                        onClick={() => { if (isAvailableForBooking) setSelectedDate(date) }}
-                        disabled={!isAvailableForBooking}
-                        className={`
-                          p-2 text-sm rounded-lg transition-colors border
-                          ${isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-                          ${status === 'loading' ? 'opacity-50' : ''}
-                          ${isToday(date) ? 'border-blue-500' : 'border-transparent'}
-                          ${isSelected(date) ? 'bg-rose-600 text-white font-bold ring-2 ring-rose-300' : ''}
-                          
-                          ${isAvailableForBooking 
-                            ? 'bg-green-50 border-green-200 font-semibold hover:bg-green-100' 
-                            : 'bg-gray-50'
-                          }
-                          
-                          ${!isAvailableForBooking ? 'text-gray-400 cursor-not-allowed' : ''}
-                          ${isSelected(date) && isAvailableForBooking ? 'bg-rose-600 text-white' : ''}
-                        `}
-                      >
-                        {date.getDate()}
-                      </button>
-                    )
-                  })}
-                </div>
-                 <div className="mt-4 text-xs text-gray-500 space-y-1">
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-100 border border-green-200"></div><span>- {t('calendar.legendAvailable')}</span></div>
-                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-gray-50"></div><span>- {t('calendar.legendUnavailable')}</span></div>
-                </div>
-              </div>
-
-              {/* Time Selection */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t('timeSelector.title')} <span className="text-red-500">*</span>
-                </h3>
-                
-                {formErrors.selectedTime && (
-                  <p className="mb-2 text-sm text-red-600">{formErrors.selectedTime}</p>
-                )}
-
-                {selectedDate && salonSchedule ? (
-                  <div>
-                    <div className="text-sm text-gray-600 mb-3">
-                      {formatDate(selectedDate)} • {salon?.name || ''}
-                    </div>
-                    
-                    {loadingTimeSlots ? (
-                      // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-pulse">
-                        {[...Array(6)].map((_, i) => (
-                          <div key={i} className="h-12 bg-gray-200 rounded-lg"></div>
-                        ))}
-                      </div>
-                    ) : availableTimeSlots.length > 0 ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-2">
-                        {availableTimeSlots.map((slot, index) => (
-                          <button
-                            key={index}
-                            onClick={() => { 
-                              if (slot.available) {
-                                setSelectedTime(slot.startTime);
-                                if (formErrors.selectedTime) {
-                                  setFormErrors(prev => ({ ...prev, selectedTime: '' }));
-                                }
-                              }
-                            }}
-                            disabled={!slot.available}
-                            className={`
-                              p-3 text-sm rounded-lg border transition-colors
-                              ${slot.available 
-                                ? selectedTime === slot.startTime
-                                  ? 'bg-rose-600 text-white border-rose-600'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-rose-400 hover:bg-rose-50'
-                                : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                              }
-                            `}
-                            title={slot.reason || `${t('timeSelector.slotLabel')}: ${slot.displayTime}`}
-                          >
-                            {slot.displayTime}
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                        <Calendar className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                        <p>{t('timeSelector.noSlots')}</p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                    <Calendar className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                    <p>{t('timeSelector.selectDatePrompt')}</p>
-                  </div>
-                )}
-              </div>
+              <TimeSelector
+                selectedDate={selectedDate}
+                salon={salon}
+                salonSchedule={salonSchedule}
+                loadingTimeSlots={loadingTimeSlots}
+                availableTimeSlots={availableTimeSlots}
+                selectedTime={selectedTime}
+                formErrors={formErrors}
+                t={t}
+                onTimeSelect={setSelectedTime}
+                onClearError={(field) => setFormErrors(prev => ({ ...prev, [field]: '' }))}
+              />
             </div>
 
-            {/* Other Form Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.staffLabel')}</label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <select
-                    value={employeeId}
-                    onChange={(e) => setEmployeeId(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
-                  >
-                    <option value="">{t('fields.staffAny')}</option>
-                    {employees.map((m: { userId: string }) => (
-                      <option key={m.userId} value={m.userId}>
-                        {employeeNames[m.userId] || m.userId}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('fields.customerNameLabel')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => {
-                    setCustomerName(e.target.value);
-                    if (formErrors.customerName) {
-                      setFormErrors(prev => ({ ...prev, customerName: '' }));
-                    }
-                  }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 ${formErrors.customerName ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder={t('fields.customerNamePlaceholder')}
-                  required
-                />
-                {formErrors.customerName ? (
-                  <p className="mt-1 text-xs text-red-600">{formErrors.customerName}</p>
-                ) : currentUser ? (
-                  <p className="mt-1 text-xs text-green-600">{t('fields.autofillMessage')}</p>
-                ) : null}
-              </div>
-            </div>
+            <BookingForm
+              employeeId={employeeId}
+              customerName={customerName}
+              customerPhone={customerPhone}
+              notes={notes}
+              employees={employees}
+              employeeNames={employeeNames}
+              currentUser={currentUser}
+              formErrors={formErrors}
+              t={t}
+              onEmployeeChange={setEmployeeId}
+              onCustomerNameChange={setCustomerName}
+              onCustomerPhoneChange={setCustomerPhone}
+              onNotesChange={setNotes}
+              onClearError={(field) => setFormErrors(prev => ({ ...prev, [field]: '' }))}
+            />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {"+375 (29) 123-45-67"} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={customerPhone}
-                  onChange={(e) => {
-                    setCustomerPhone(e.target.value);
-                    if (formErrors.customerPhone) {
-                      setFormErrors(prev => ({ ...prev, customerPhone: '' }));
-                    }
-                  }}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 ${formErrors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder={"+375 (29) 123-45-67"}
-                  required
-                />
-                {formErrors.customerPhone && <p className="mt-1 text-xs text-red-600">{formErrors.customerPhone}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.notesLabel')}</label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500"
-                  placeholder={t('fields.notesPlaceholder')}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              {currentUser && salon && (
-                <ChatButton
-                  salonId={salon.id}
-                  customerUserId={currentUser.userId}
-                  customerName={currentUser.displayName || ""}
-                  serviceId={serviceId}
-                  className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
-                  variant="button"
-                />
-              )}
-              <button
-                onClick={() => router.back()}
-                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium"
-                disabled={submitting}
-              >
-                {t('buttons.cancel')}
-              </button>
-              <button
-                onClick={handleBook}
-                disabled={submitting}
-                className="px-5 py-2 rounded-lg bg-rose-600 text-white font-semibold hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? t('buttons.submitting') : t('buttons.bookNow')}
-              </button>
-            </div>
-
-            <div className="pt-2 text-xs text-gray-500 flex items-center gap-2">
-              <Shield className="w-3 h-3" />
-              <span>{t('messages.privacyNotice')}</span>
-            </div>
+            <BookingActions
+              currentUser={currentUser}
+              salon={salon}
+              serviceId={serviceId}
+              submitting={submitting}
+              t={t}
+              onCancel={() => router.back()}
+              onSubmit={handleBook}
+            />
           </div>
         </div>
       </div>
