@@ -387,7 +387,7 @@ export default function SalonSchedulePageClient({
 
   // --- MAIN RENDER ---
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-full overflow-hidden">
       <ScheduleHeader
         salon={salon}
         filteredAppointmentsCount={filteredAppointments.length}

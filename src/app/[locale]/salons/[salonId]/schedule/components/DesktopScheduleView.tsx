@@ -120,8 +120,8 @@ export default function DesktopScheduleView({
   getStatusColor
 }: DesktopScheduleViewProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto max-w-full">
-      <div className="grid grid-cols-8 min-w-[900px] lg:min-w-[1000px]">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-auto">
+      <div className="grid grid-cols-8 min-w-[600px] sm:min-w-[700px] md:min-w-[800px] lg:min-w-[900px] xl:min-w-[1000px]">
         <div className="text-sm text-center text-gray-500">
           {TIME_SLOTS.map((time) => (
             <div key={time} className="h-24 flex items-center justify-center">

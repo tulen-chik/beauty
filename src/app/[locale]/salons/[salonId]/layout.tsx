@@ -55,7 +55,7 @@ export default function SalonCrmLayout({
     { key: "ratings", label: t('menu.ratings'), path: "/ratings", icon: Star },
     { key: "staff", label: t('menu.staff'), path: "/staff", icon: Users },
     { key: "settings", label: t('menu.settings'), path: "/settings", icon: Settings },
-    { key: "promotion", label: t('menu.promotion'), path: "/promotion", icon: Megaphone },
+    // { key: "promotion", label: t('menu.promotion'), path: "/promotion", icon: Megaphone },
     { key: "analytics", label: t('menu.analytics'), path: "/analytics", icon: BarChart3 },
   ], [t]);
 
@@ -150,8 +150,10 @@ export default function SalonCrmLayout({
           )}
 
           {/* Main Content */}
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
-            {children}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-x-hidden">
+            <div className="w-full max-w-full">
+              {children}
+            </div>
           </main>
         </div>
       </div>

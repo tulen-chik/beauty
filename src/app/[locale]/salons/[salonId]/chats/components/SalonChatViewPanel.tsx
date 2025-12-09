@@ -198,7 +198,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
                 <button
                   onClick={handleDeleteChat}
                   disabled={isDeleting}
-                  className="flex-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                  className="flex-1 px-3 py-1.5 text-sm bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
                 >
                   {isDeleting ? 'Удаление...' : 'Удалить'}
                 </button>

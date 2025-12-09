@@ -12,13 +12,17 @@ import {
   X, 
   XCircle,
   ImageIcon,
-  MoreHorizontal
+  MoreHorizontal,
+  HelpCircle
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
+
+// --- COMPONENTS ---
+import AppBookingInfoModal from "./components/AppBookingInfoModal";
 
 // --- SKELETON COMPONENTS (Без изменений) ---
 const ServiceCardSkeleton = () => (
@@ -105,6 +109,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [showAppBookingInfo, setShowAppBookingInfo] = useState(false);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -733,7 +738,17 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                           onChange={(e) => setForm(f => ({ ...f, isApp: e.target.checked }))}
                           className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="ml-3 text-sm font-medium text-slate-700">{t("modal.form.isAppLabel")}</span>
+                        <div className="flex items-center gap-2 ml-3">
+                          <span className="text-sm font-medium text-slate-700">{t("modal.form.isAppLabel")}</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowAppBookingInfo(true)}
+                            className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                            title={t("modal.form.isAppInfo") || "Что это значит?"}
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </label>
                     </div>
                   </div>
@@ -778,6 +793,13 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
             </div>
           </div>
         )}
+
+        {/* App Booking Info Modal */}
+        <AppBookingInfoModal
+          isOpen={showAppBookingInfo}
+          onClose={() => setShowAppBookingInfo(false)}
+          t={t}
+        />
       </div>
     </div>
   );

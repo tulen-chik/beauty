@@ -1008,6 +1008,7 @@
         "categoriesLabel": "Categories",
         "isActiveLabel": "Service is active",
         "isAppLabel": "Booking via app",
+        "isAppInfo": "What does this mean?",
         "cancelButton": "Cancel",
         "saveButton": "Save Changes",
         "addButton": "Add Service",
@@ -1020,7 +1021,24 @@
         "categoryCreateFailed": "Failed to create category",
         "maxCategories": "You can add a maximum of 6 categories per service"
       }
-    }
+      },
+      "appBookingInfo": {
+        "title": "Booking via App",
+        "enabled": {
+          "title": "When option is enabled",
+          "description": "Clients can directly book services through the app, selecting convenient times. This simplifies the booking process and increases the number of bookings."
+        },
+        "disabled": {
+          "title": "When option is disabled",
+          "description": "Clients cannot book through the app, but can contact the salon via chat to check availability and make bookings.",
+          "chatNote": "Only chat with salon is available"
+        },
+        "recommendation": {
+          "title": "Recommendation",
+          "description": "Enable this option if you want to automate the booking process. You'll always be able to manage available slots and confirm bookings."
+        },
+        "button": "Got it"
+      }
   },
 "SalonPromotionsPage": {
     "loading": "Loading data...",

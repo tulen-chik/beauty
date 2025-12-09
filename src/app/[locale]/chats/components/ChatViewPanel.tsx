@@ -193,7 +193,7 @@ export default function ChatViewPanel({ selectedChatId, onBack }: ChatViewPanelP
             <div className="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-20 min-w-[200px]">
               <p className="text-sm text-slate-700 mb-3">Вы уверены, что хотите удалить этот чат?</p>
               <div className="flex gap-2">
-                <button onClick={handleDeleteChat} disabled={isDeleting} className="flex-1 px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">{isDeleting ? 'Удаление...' : 'Удалить'}</button>
+                <button onClick={handleDeleteChat} disabled={isDeleting} className="flex-1 px-3 py-1.5 text-sm bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50">{isDeleting ? 'Удаление...' : 'Удалить'}</button>
                 <button onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting} className="flex-1 px-3 py-1.5 text-sm bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 disabled:opacity-50">Отмена</button>
               </div>
             </div>

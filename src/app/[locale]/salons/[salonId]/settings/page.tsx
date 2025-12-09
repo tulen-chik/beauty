@@ -28,12 +28,13 @@ import { useSalon } from '@/contexts/SalonContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useUser } from '@/contexts/UserContext';
 
-import type { Salon, SalonMember } from '@/types/database';
-import type { SalonSubscription, SalonSubscriptionPlan } from '@/types/subscriptions';
+import SettingsPageSkeleton from './components/SettingsPageSkeleton';
+import BusinessSettingsSection from './components/BusinessSettingsSection';
+import SubscriptionSection from './components/SubscriptionSection';
+import BusinessSettingsSkeleton from './components/BusinessSettingsSkeleton';
+import SubscriptionSkeleton from './components/SubscriptionSkeleton';
 
-// --- ИНТЕРФЕЙСЫ И ВЛОЖЕННЫЕ КОМПОНЕНТЫ ---
-
-interface SalonSettings {
+type SalonSettings = {
   business: {
     name: string;
     email: string;
@@ -63,6 +64,11 @@ interface SalonSettings {
     whatsapp: boolean;
   };
 }
+
+import type { Salon, SalonMember } from '@/types/database';
+import type { SalonSubscription, SalonSubscriptionPlan } from '@/types/subscriptions';
+
+// --- ИНТЕРФЕЙСЫ И ВЛОЖЕННЫЕ КОМПОНЕНТЫ ---
 
 const MapSelector = ({ 
   onLocationSelect, 
@@ -131,6 +137,9 @@ export default function SalonSettingsPage() {
   } = useSubscription();
   
   const [salon, setSalon] = useState<Salon | null>(null);
+  const [isSalonLoading, setIsSalonLoading] = useState(false);
+  const [isSubscriptionsLoading, setIsSubscriptionsLoading] = useState(false);
+  const [isPlansLoading, setIsPlansLoading] = useState(false);
   const [settings, setSettings] = useState<SalonSettings>({
     business: { name: '', email: '', phone: '', address: '', timezone: 'Europe/Moscow', currency: 'RUB', coordinates: undefined },
     notifications: { email: true, sms: false, push: true, reminderTime: 24 },
@@ -161,13 +170,15 @@ export default function SalonSettingsPage() {
 
   useEffect(() => {
     if (salonId && currentUser) {
-      loadSalon();
-      loadSubscriptions();
-      loadAvailablePlans();
+      // Запускаем загрузку последовательно с задержкой для инкрементального эффекта
+      setTimeout(() => loadSalon(), 0);
+      setTimeout(() => loadSubscriptions(), 300);
+      setTimeout(() => loadAvailablePlans(), 600);
     }
   }, [salonId, currentUser]);
 
   const loadSalon = async () => {
+    setIsSalonLoading(true);
     try {
       const salonData = await fetchSalon(salonId);
       if (salonData) {
@@ -197,11 +208,14 @@ export default function SalonSettingsPage() {
     } catch (err) {
       console.error('Error loading salon:', err);
       setError(t('error.loadFailed'));
+    } finally {
+      setIsSalonLoading(false);
     }
   };
 
   const loadSubscriptions = async () => {
     if (!salonId) return;
+    setIsSubscriptionsLoading(true);
     try {
       const subs = await getSalonSubscriptions(salonId);
       const subsWithPlanNames = await Promise.all(
@@ -214,16 +228,21 @@ export default function SalonSettingsPage() {
     } catch (err) {
       console.error('Error loading subscriptions:', err);
       setError(t('error.loadSubscriptionsFailed'));
+    } finally {
+      setIsSubscriptionsLoading(false);
     }
   };
 
   const loadAvailablePlans = async () => {
+    setIsPlansLoading(true);
     try {
       const plans = await getActiveSubscriptionPlans();
       setAvailablePlans(plans);
     } catch (err) {
       console.error('Error loading available plans:', err);
       setError(t('error.loadPlansFailed'));
+    } finally {
+      setIsPlansLoading(false);
     }
   };
 
@@ -341,20 +360,13 @@ export default function SalonSettingsPage() {
 
   // --- РЕНДЕРИНГ ---
 
-  if (userLoading || salonLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-rose-600 mb-4" />
-          <p className="text-gray-600">{t('loadingTitle')}</p>
-        </div>
-      </div>
-    );
+  if (userLoading || isSalonLoading || (!isSalonLoading && !salon)) {
+    return <SettingsPageSkeleton />;
   }
 
   if (!currentUser) return <ProtectedRoute><div></div></ProtectedRoute>;
 
-  if (!salon) {
+  if (!isSalonLoading && !salon) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
@@ -366,7 +378,7 @@ export default function SalonSettingsPage() {
     );
   }
 
-  const userRole = salon.members.find((member: SalonMember) => member.userId === currentUser.userId)?.role;
+  const userRole = salon?.members?.find((member: SalonMember) => member.userId === currentUser.userId)?.role;
   const canEditSettings = userRole === 'owner' || userRole === 'manager';
 
   if (!canEditSettings) {
@@ -404,93 +416,57 @@ export default function SalonSettingsPage() {
 
         <div className="space-y-6 sm:space-y-8">
           {/* --- Секция Подписки --- */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* ... Код секции подписок и модального окна ... */}
-          </motion.div>
+          {/* {isSubscriptionsLoading ? (
+            <SubscriptionSkeleton />
+          ) : (
+            <SubscriptionSection
+              subscriptions={subscriptions}
+              availablePlans={availablePlans}
+              loading={isSubscriptionsLoading}
+              saving={saving}
+              error={error}
+              success={saved}
+              t={t}
+              onPurchase={handlePurchase}
+              onOpenModal={(planId) => {
+                setSelectedPlanId(planId);
+                setIsPurchaseModalOpen(true);
+              }}
+              onCloseModal={() => {
+                setIsPurchaseModalOpen(false);
+                setSelectedPlanId(null);
+              }}
+              isModalOpen={isPurchaseModalOpen}
+              selectedPlanId={selectedPlanId}
+            />
+          )} */}
 
           {/* --- Секция Бизнес-информации --- */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
-              <div className="flex items-center gap-3">
-                <Building2 className="h-5 w-5 text-rose-600" />
-                <h2 className="text-lg font-semibold text-gray-900">{t('sections.business.title')}</h2>
-              </div>
-            </div>
-            <div className="p-4 sm:p-6 space-y-8">
-              
-              {/* --- БЛОК АВАТАРА --- */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">{t('sections.business.avatar')}</label>
-                <div className="flex items-center gap-5">
-                  <div className="group relative h-24 w-24 sm:h-28 sm:w-28 rounded-full ring-2 ring-rose-200 shadow-sm overflow-hidden">
-                    {avatarPreviewUrl ? (
-                      <Image src={avatarPreviewUrl} alt="Предпросмотр аватара" fill className="object-cover" />
-                    ) : salon.avatarUrl ? (
-                      <Image src={salon.avatarUrl} alt="Аватар салона" fill className="object-cover" />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-rose-50 to-rose-100">
-                        {salonInitials ? <span className="text-3xl font-semibold text-rose-600">{salonInitials}</span> : <Building2 className="h-10 w-10 text-rose-300" />}
-                      </div>
-                    )}
-                    <button type="button" onClick={() => !isAvatarUploading && fileInputRef.current?.click()} disabled={isAvatarUploading} className="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black/40 text-white text-xs font-medium transition-opacity" aria-label="Изменить аватар">Изменить</button>
-                    {isAvatarUploading && <div className="absolute inset-0 flex items-center justify-center bg-white/60"><div className="h-6 w-6 rounded-full border-2 border-rose-500 border-t-transparent animate-spin" /></div>}
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                    {!avatarFile ? (
-                      <>
-                        <button onClick={() => fileInputRef.current?.click()} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">{t('sections.business.changeAvatar')}</button>
-                        {salon.avatarUrl && <button onClick={handleAvatarRemove} disabled={isAvatarUploading} className="text-sm font-medium text-red-600 hover:text-red-800 disabled:opacity-50">{t('sections.business.removeAvatar')}</button>}
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                         <button onClick={handleAvatarUpload} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-rose-400">{t('sections.business.saveAvatar')}</button>
-                         <button onClick={cancelAvatarChange} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">{t('common.cancel')}</button>
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-500 mt-1">{t('sections.business.avatarHint')}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* --- Остальные поля формы --- */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('sections.business.name')}</label>
-                  <input type="text" value={settings.business.name} onChange={(e) => updateSetting('business', 'name', e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('sections.business.email')} <span className="text-gray-500 text-xs">({t('sections.business.optional')})</span></label>
-                  <input type="email" value={settings.business.email} onChange={(e) => updateSetting('business', 'email', e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base" placeholder={t('sections.business.emailPlaceholder')} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('sections.business.phone')} <span className="text-gray-500 text-xs">({t('sections.business.optional')})</span></label>
-                  <input type="tel" value={settings.business.phone} onChange={(e) => updateSetting('business', 'phone', e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base" placeholder={t('sections.business.phonePlaceholder')} />
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('sections.business.address')}</label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input type="text" value={settings.business.address} onChange={(e) => updateSetting('business', 'address', e.target.value)} className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base" placeholder="Введите адрес или выберите на карте" />
-                    <button type="button" onClick={() => setShowMap(!showMap)} className="px-4 py-2.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-2 font-medium transition-colors">
-                      <Map className="h-4 w-4" />
-                      <span>{showMap ? 'Скрыть карту' : 'Показать карту'}</span>
-                    </button>
-                  </div>
-                </div>
-                {showMap && <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden pt-4"><MapSelector onLocationSelect={handleLocationSelect} initialCoordinates={settings.business.coordinates} /></motion.div>}
-              </div>
-              
-              <div className="flex justify-end pt-4 border-t border-gray-100">
-                <button onClick={() => handleSave('business')} disabled={saving || isAvatarUploading} className="flex items-center gap-2 px-5 py-2.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">
-                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
-                  <span>{t('sections.business.save')}</span>
-                </button>
-              </div>
-            </div>
-          </motion.div>
+          {isSalonLoading ? (
+            <BusinessSettingsSkeleton />
+          ) : (
+            <BusinessSettingsSection
+              settings={settings}
+              salon={salon}
+              salonInitials={salonInitials}
+              avatarFile={avatarFile}
+              avatarPreviewUrl={avatarPreviewUrl}
+              isAvatarUploading={isAvatarUploading}
+              fileInputRef={fileInputRef}
+              loading={saving}
+              t={t}
+              onUpdateSetting={updateSetting}
+              onSave={handleSave}
+              onFileChange={handleFileChange}
+              onAvatarUpload={handleAvatarUpload}
+              onAvatarRemove={handleAvatarRemove}
+              onCancelAvatarChange={cancelAvatarChange}
+              onShowMap={() => setShowMap(!showMap)}
+              showMap={showMap}
+              MapSelector={MapSelector}
+              onLocationSelect={handleLocationSelect}
+            />
+          )}
         </div>
       </div>
     </div>

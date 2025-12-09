@@ -37,8 +37,8 @@ export default function ScheduleFilters({
   onServiceFilterChange
 }: ScheduleFiltersProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex flex-col lg:flex-row gap-4 items-center">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 overflow-x-hidden">
+      <div className="flex flex-col lg:flex-row gap-4 items-center min-w-0">
         <div className="flex items-center justify-center gap-2">
           <button
             onClick={() => onWeekChange(Math.max(0, currentWeekOffset - 1))}
