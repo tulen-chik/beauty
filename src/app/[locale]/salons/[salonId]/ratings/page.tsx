@@ -9,6 +9,7 @@ import RatingCard from '@/components/RatingCard';
 import RatingStats from '@/components/RatingStats';
 import { useSalonRating } from '@/contexts';
 import { useUser } from '@/contexts';
+import { useToast } from '@/contexts';
 
 // --- КОМПОНЕНТЫ SKELETON (Оставлены без изменений) ---
 const RatingCardSkeleton = () => (
@@ -81,6 +82,7 @@ export default function SalonRatingsPage() {
   } = useSalonRating();
   
   const { currentUser } = useUser();
+  const { success, error: showError } = useToast();
   
   // Состояние для модального окна ответа
   const [selectedRatingId, setSelectedRatingId] = useState<string | null>(null);
@@ -97,23 +99,33 @@ export default function SalonRatingsPage() {
   }, [salonId]);
 
   const loadData = async () => {
-    await Promise.all([
-      loadRatingsAndResponses(),
-      getRatingStats(salonId)
-    ]);
+    try {
+      await Promise.all([
+        loadRatingsAndResponses(),
+        getRatingStats(salonId)
+      ]);
+    } catch (error) {
+      console.error('Error loading ratings data:', error);
+      showError('Не удалось загрузить отзывы. Попробуйте обновить страницу.');
+    }
   };
 
   const loadRatingsAndResponses = async () => {
-    const salonRatings = await getRatingsBySalon(salonId);
-    
-    const responsesData: Record<string, any[]> = {};
-    // Загружаем ответы для каждого рейтинга
-    await Promise.all(salonRatings.map(async (rating) => {
-      const ratingResponses = await getResponsesByRating(rating.id);
-      responsesData[rating.id] = ratingResponses;
-    }));
-    
-    setResponses(responsesData);
+    try {
+      const salonRatings = await getRatingsBySalon(salonId);
+      
+      const responsesData: Record<string, any[]> = {};
+      // Загружаем ответы для каждого рейтинга
+      await Promise.all(salonRatings.map(async (rating) => {
+        const ratingResponses = await getResponsesByRating(rating.id);
+        responsesData[rating.id] = ratingResponses;
+      }));
+      
+      setResponses(responsesData);
+    } catch (error) {
+      console.error('Error loading ratings and responses:', error);
+      throw error; // Re-throw to handle in loadData
+    }
   };
 
   const handleOpenResponseModal = (ratingId: string) => {
@@ -148,9 +160,10 @@ export default function SalonRatingsPage() {
       // Обновляем данные
       await loadRatingsAndResponses();
       handleCloseResponseModal();
+      success('Ответ успешно отправлен');
     } catch (error) {
       console.error('Ошибка при отправке ответа:', error);
-      alert('Не удалось отправить ответ. Попробуйте позже.');
+      showError('Не удалось отправить ответ. Попробуйте позже.');
     } finally {
       setIsSubmitting(false);
     }

@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useServiceCategory } from "@/contexts/ServiceCategoryContext";
+import { useToast } from "@/contexts";
 
 // --- COMPONENTS ---
 import AppBookingInfoModal from "./components/AppBookingInfoModal";
@@ -85,6 +86,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   const { salonId } = params;
   const { getServicesBySalon, createService, loading: serviceLoading, error: serviceError, getImages, uploadImage, deleteImage } = useSalonService();
   const { getCategoriesBySalon, createCategory, loading: categoryLoading, error: categoryError } = useServiceCategory();
+  const { success, error: showError, dismissAll } = useToast();
   
   const [categories, setCategories] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
@@ -113,30 +115,36 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
   useEffect(() => {
     const loadAll = async () => {
-      const svc = await getServicesBySalon(salonId);
-      setServices(svc || []);
-      
-      const map: Record<string, any[]> = {};
-      const loadingMap: Record<string, boolean> = {};
-      
-      for (const s of svc || []) {
-        loadingMap[s.id] = true;
-        setImagesLoading({ ...loadingMap });
-        try {
-          map[s.id] = await getImages(s.id);
-        } catch (error) {
-          map[s.id] = [];
+      try {
+        const svc = await getServicesBySalon(salonId);
+        setServices(svc || []);
+        
+        const map: Record<string, any[]> = {};
+        const loadingMap: Record<string, boolean> = {};
+        
+        for (const s of svc || []) {
+          loadingMap[s.id] = true;
+          setImagesLoading({ ...loadingMap });
+          try {
+            map[s.id] = await getImages(s.id);
+          } catch (error) {
+            console.error(`Failed to load images for service ${s.id}:`, error);
+            map[s.id] = [];
+          }
+          loadingMap[s.id] = false;
+          setImagesLoading({ ...loadingMap });
         }
-        loadingMap[s.id] = false;
-        setImagesLoading({ ...loadingMap });
+        setImagesMap(map);
+        
+        const cats = await getCategoriesBySalon(salonId);
+        setCategories(cats || []);
+      } catch (error) {
+        console.error('Error loading services data:', error);
+        showError('Не удалось загрузить данные. Попробуйте обновить страницу.');
       }
-      setImagesMap(map);
-      
-      const cats = await getCategoriesBySalon(salonId);
-      setCategories(cats || []);
     };
     loadAll();
-  }, [salonId, getServicesBySalon, getImages, getCategoriesBySalon]);
+  }, [salonId, getServicesBySalon, getImages, getCategoriesBySalon, showError]);
 
   useEffect(() => {
     if (editingService) {
@@ -172,14 +180,14 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
+    dismissAll();
 
     if (!form.name.trim()) {
-      setFormError(t("modal.errors.nameRequired"));
+      showError(t("modal.errors.nameRequired"));
       return;
     }
     if (!form.durationMinutes || form.durationMinutes <= 0) {
-      setFormError(t("modal.errors.durationInvalid"));
+      showError(t("modal.errors.durationInvalid"));
       return;
     }
 
@@ -203,12 +211,16 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       if (editingService) {
         const imgs = await getImages(editingService.id);
         setImagesMap(prev => ({ ...prev, [editingService.id]: imgs }));
+        success('Услуга успешно обновлена');
+      } else {
+        success('Услуга успешно создана');
       }
       
       setShowModal(false);
       setEditingService(null);
     } catch (e: any) {
-      setFormError(e?.message ?? t("modal.errors.genericSaveError"));
+      console.error('Error saving service:', e);
+      showError(e?.message ?? t("modal.errors.genericSaveError"));
     }
   };
 
@@ -223,8 +235,10 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       await uploadImage(serviceId, file);
       const imgs = await getImages(serviceId);
       setImagesMap((prev) => ({ ...prev, [serviceId]: imgs }));
+      success('Фото успешно загружено');
     } catch (e) {
-      console.error("can't load image")
+      console.error("Failed to upload image:", e);
+      showError('Не удалось загрузить фото. Попробуйте еще раз.');
     } finally {
       setImagesLoading((prev) => ({ ...prev, [serviceId]: false }));
     }
@@ -236,8 +250,10 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       await deleteImage(storagePath);
       const imgs = await getImages(serviceId);
       setImagesMap((prev) => ({ ...prev, [serviceId]: imgs }));
+      success('Фото успешно удалено');
     } catch (e) {
-      console.error("can't load image")
+      console.error("Failed to delete image:", e);
+      showError('Не удалось удалить фото. Попробуйте еще раз.');
     } finally {
       setImagesLoading((prev) => ({ ...prev, [serviceId]: false }));
     }
@@ -253,7 +269,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       }
       
       if (prev.categoryIds.length >= 6) {
-        setFormError(t("modal.errors.maxCategories"));
+        showError(t("modal.errors.maxCategories"));
         return prev;
       }
       
@@ -301,7 +317,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     if (!newCategoryName.trim()) return;
     
     setIsCreatingCategory(true);
-    setFormError(null);
+    dismissAll();
     try {
       const newCategoryId = `cat_${Date.now()}`;
       
@@ -322,9 +338,10 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       
       setNewCategoryName("");
       setShowNewCategoryInput(false);
+      success('Категория успешно создана');
     } catch (error: any) {
       console.error("Failed to create category:", error);
-      setFormError(error.message || t("modal.errors.categoryCreateFailed"));
+      showError(error.message || t("modal.errors.categoryCreateFailed"));
     } finally {
       setIsCreatingCategory(false);
     }
@@ -353,6 +370,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
             onClick={() => {
               setEditingService(null);
               setShowModal(true);
+              dismissAll();
             }}
             className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 bg-rose-600 text-white hover:bg-rose-700 active:scale-95 h-12 px-6 shadow-lg shadow-rose-200"
           >
@@ -360,13 +378,6 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
             {t("header.addServiceButton")}
           </button>
         </div>
-
-        {(serviceError || categoryError) && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-8 flex items-center gap-2">
-            <XCircle className="h-5 w-5" />
-            <p>{serviceError || categoryError}</p>
-          </div>
-        )}
 
         {/* Services Grid */}
         {services.length === 0 ? (

@@ -14,6 +14,7 @@ import { useSalon } from "@/contexts/SalonContext"
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
 import { useUser } from "@/contexts/UserContext"
+import { useToast } from "@/contexts"
 
 import BookingHeader from "./components/BookingHeader"
 import BookingCalendar from "./components/BookingCalendar"
@@ -126,6 +127,7 @@ export default function BookServicePage() {
   const router = useRouter()
   const { serviceId } = params
   const { currentUser } = useUser()
+  const { success, error: showError, dismissAll } = useToast()
   const t = useTranslations('bookingPage')
   
   const { fetchSalon } = useSalon()
@@ -136,9 +138,7 @@ export default function BookServicePage() {
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [success, setSuccess] = useState<string | null>(null)
 
   const [service, setService] = useState<Service | null>(null)
   const [salon, setSalon] = useState<any>(null)
@@ -168,17 +168,16 @@ export default function BookServicePage() {
     const load = async () => {
       try {
         setLoading(true)
-        setSubmissionError(null)
         
         if (!getService || !fetchSalon || !getSchedule) {
-          setSubmissionError(t('messages.errorContext'))
+          showError(t('messages.errorContext'))
           setLoading(false)
           return
         }
         
         const svc = await getService(serviceId)
         if (!svc) {
-          setSubmissionError(t('messages.errorServiceNotFound'))
+          showError(t('messages.errorServiceNotFound'))
           setLoading(false)
           return
         }
@@ -205,7 +204,7 @@ export default function BookServicePage() {
         }
         
       } catch (e: any) {
-        if (!isCancelled) setSubmissionError(e.message || t('messages.errorLoading'))
+        if (!isCancelled) showError(e.message || t('messages.errorLoading'))
       } finally {
         if (!isCancelled) setLoading(false)
       }
@@ -461,8 +460,7 @@ export default function BookServicePage() {
     }
     
     setSubmitting(true)
-    setSubmissionError(null)
-    setSuccess(null)
+    dismissAll()
     
     try {
       const startAt = combineDateTimeToIso(selectedDate, selectedTime)
@@ -475,7 +473,7 @@ export default function BookServicePage() {
       )
       
       if (!ok) {
-        setSubmissionError(t('messages.errorSlotTaken'))
+        showError(t('messages.errorSlotTaken'))
         setSubmitting(false)
         generateTimeSlots()
         return
@@ -511,10 +509,11 @@ export default function BookServicePage() {
       
       await createAppointment(service!.salonId, appointmentId, appointmentData)
 
-      setSuccess(t('successMessage'))
+      success(t('successMessage'))
+      setTimeout(() => router.push('/profile'), 2000)
     } catch (e: any) {
       console.error(e)
-      setSubmissionError(e.message || t('messages.errorGeneric'))
+      showError(e.message || t('messages.errorGeneric'))
     } finally {
       setSubmitting(false)
     }
@@ -526,12 +525,12 @@ export default function BookServicePage() {
     return <BookServicePageSkeleton />;
   }
 
-  if (submissionError && !service) {
+  if (!service) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-6 text-center">
           <div className="text-red-600 font-semibold mb-2">{t('errorTitle')}</div>
-          <div className="text-gray-700 mb-4">{submissionError}</div>
+          <div className="text-gray-700 mb-4">{t('messages.errorServiceNotFound')}</div>
           <button
             onClick={() => router.back()}
             className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium"
@@ -555,15 +554,6 @@ export default function BookServicePage() {
           />
 
           <div className="p-3 sm:p-4 space-y-6">
-            {success && (
-              <div className="flex items-center gap-2 bg-green-50 text-green-700 border border-green-200 rounded-lg p-3">
-                <CheckCircle className="w-4 h-4" />
-                <span>{success}</span>
-              </div>
-            )}
-            {submissionError && (
-              <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg p-3">{submissionError}</div>
-            )}
 
             {salonSchedule && salonSchedule.weeklySchedule && salonSchedule.weeklySchedule.length > 0 ? (
               <div className="bg-gray-50 rounded-lg p-4">

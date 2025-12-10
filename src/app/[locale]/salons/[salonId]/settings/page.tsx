@@ -27,6 +27,7 @@ import { ModalPortal } from '@/components/ui/ModalPortal';
 import { useSalon } from '@/contexts/SalonContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/contexts';
 
 import SettingsPageSkeleton from './components/SettingsPageSkeleton';
 import BusinessSettingsSection from './components/BusinessSettingsSection';
@@ -135,6 +136,7 @@ export default function SalonSettingsPage() {
     createSubscription,
     loading: subscriptionLoading 
   } = useSubscription();
+  const { success, error: showError, dismissAll } = useToast();
   
   const [salon, setSalon] = useState<Salon | null>(null);
   const [isSalonLoading, setIsSalonLoading] = useState(false);
@@ -148,8 +150,6 @@ export default function SalonSettingsPage() {
   });
   
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [subscriptions, setSubscriptions] = useState<(SalonSubscription & { planName?: string })[]>([]);
   const [availablePlans, setAvailablePlans] = useState<SalonSubscriptionPlan[]>([]);
@@ -207,7 +207,7 @@ export default function SalonSettingsPage() {
       }
     } catch (err) {
       console.error('Error loading salon:', err);
-      setError(t('error.loadFailed'));
+      showError('Не удалось загрузить данные салона. Попробуйте обновить страницу.');
     } finally {
       setIsSalonLoading(false);
     }
@@ -227,7 +227,7 @@ export default function SalonSettingsPage() {
       setSubscriptions(subsWithPlanNames);
     } catch (err) {
       console.error('Error loading subscriptions:', err);
-      setError(t('error.loadSubscriptionsFailed'));
+      showError('Не удалось загрузить подписки. Попробуйте обновить страницу.');
     } finally {
       setIsSubscriptionsLoading(false);
     }
@@ -240,7 +240,7 @@ export default function SalonSettingsPage() {
       setAvailablePlans(plans);
     } catch (err) {
       console.error('Error loading available plans:', err);
-      setError(t('error.loadPlansFailed'));
+      showError('Не удалось загрузить доступные планы. Попробуйте обновить страницу.');
     } finally {
       setIsPlansLoading(false);
     }
@@ -249,6 +249,7 @@ export default function SalonSettingsPage() {
   const handlePurchase = async (planId: string) => {
     if (!salonId) return;
     setSaving(true);
+    dismissAll();
     try {
       const plan = availablePlans.find(p => p.id === planId);
       if (!plan) throw new Error('Selected plan not found');
@@ -264,11 +265,10 @@ export default function SalonSettingsPage() {
       });
       setIsPurchaseModalOpen(false);
       loadSubscriptions();
-      setSaved(t('sections.subscription.purchaseSuccess'));
-      setTimeout(() => setSaved(null), 3000);
+      success('Подписка успешно оформлена');
     } catch (err) {
       console.error('Error purchasing subscription:', err);
-      setError(t('error.purchaseFailed'));
+      showError('Не удалось оформить подписку. Попробуйте еще раз.');
     } finally {
       setSaving(false);
     }
@@ -280,10 +280,10 @@ export default function SalonSettingsPage() {
 
   const handleSave = async (section: keyof SalonSettings) => {
     setSaving(true);
-    setError(null);
+    dismissAll();
     try {
       if (section === 'business' && settings.business.email && !settings.business.email.includes('@')) {
-        setError(t('error.invalidEmail'));
+        showError('Введите корректный email адрес');
         setSaving(false);
         return;
       }
@@ -293,11 +293,10 @@ export default function SalonSettingsPage() {
       
       const updated = await updateSalon(salonId, updatedSalonData);
       setSalon(updated);
-      setSaved(t(`sections.${section}.saved`));
-      setTimeout(() => setSaved(null), 3000);
+      success('Настройки успешно сохранены');
     } catch (err) {
       console.error('Error saving settings:', err);
-      setError(t('error.saveFailed'));
+      showError('Не удалось сохранить настройки. Попробуйте еще раз.');
     } finally {
       setSaving(false);
     }
@@ -310,9 +309,8 @@ export default function SalonSettingsPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) { setError(t('error.avatarSize')); return; }
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError(t('error.avatarType')); return; }
-      setError(null);
+      if (file.size > 2 * 1024 * 1024) { showError('Размер файла не должен превышать 2 МБ'); return; }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { showError('Поддерживаемые форматы: JPEG, PNG, WebP'); return; }
       setAvatarFile(file);
       setAvatarPreviewUrl(URL.createObjectURL(file));
     }
@@ -327,32 +325,32 @@ export default function SalonSettingsPage() {
   const handleAvatarUpload = async () => {
     if (!avatarFile) return;
     setIsAvatarUploading(true);
-    setError(null);
+    dismissAll();
     try {
       const updatedSalon = await updateAvatar(salonId, avatarFile);
       updatedSalon.avatarUrl = (await getSalonAvatar(salonId))?.url;
       setSalon(updatedSalon);
-      setSaved(t('sections.business.avatarSaved'));
-      setTimeout(() => setSaved(null), 3000);
+      success('Аватар успешно загружен');
       cancelAvatarChange();
     } catch (e: any) {
-      setError(e.message || t('error.avatarUploadFailed'));
+      console.error('Error uploading avatar:', e);
+      showError(e.message || 'Не удалось загрузить аватар. Попробуйте еще раз.');
     } finally {
       setIsAvatarUploading(false);
     }
   };
 
   const handleAvatarRemove = async () => {
-    if (!salon?.avatarUrl || !window.confirm(t('sections.business.confirmAvatarRemove'))) return;
+    if (!salon?.avatarUrl || !window.confirm('Вы уверены, что хотите удалить аватар?')) return;
     setIsAvatarUploading(true);
-    setError(null);
+    dismissAll();
     try {
       await removeAvatar(salonId);
       setSalon(prev => prev ? { ...prev, avatarUrl: '', avatarStoragePath: '' } : null);
-      setSaved(t('sections.business.avatarRemoved'));
-      setTimeout(() => setSaved(null), 3000);
+      success('Аватар успешно удален');
     } catch (e: any) {
-      setError(e.message || t('error.avatarRemoveFailed'));
+      console.error('Error removing avatar:', e);
+      showError(e.message || 'Не удалось удалить аватар. Попробуйте еще раз.');
     } finally {
       setIsAvatarUploading(false);
     }
@@ -400,19 +398,6 @@ export default function SalonSettingsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{t('title')}</h1>
           <p className="text-sm sm:text-base text-gray-600">{t('subtitle')}</p>
         </motion.div>
-
-        {saved && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-800">
-            <CheckCircle className="h-5 w-5" />
-            <span className="font-medium text-sm sm:text-base">{saved}</span>
-          </motion.div>
-        )}
-        {error && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-800">
-            <AlertCircle className="h-5 w-5" />
-            <span className="font-medium text-sm sm:text-base">{error}</span>
-          </motion.div>
-        )}
 
         <div className="space-y-6 sm:space-y-8">
           {/* --- Секция Подписки --- */}

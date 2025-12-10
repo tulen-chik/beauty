@@ -19,6 +19,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { usePromotion } from "@/contexts/PromotionContext"
 import { useSalonService } from "@/contexts/SalonServiceContext"
+import { useToast } from "@/contexts"
 
 import type { SalonService } from "@/types/database"
 import type { PromotionAnalytics, ServicePromotion, ServicePromotionPlan } from "@/types/database"
@@ -74,6 +75,7 @@ export default function SalonServicePromotionsPage() {
     findAnalyticsForPromotion,
     loading: promotionLoading,
   } = usePromotion()
+  const { success, error: showError } = useToast()
 
   const [services, setServices] = useState<SalonService[]>([])
   const [promotions, setPromotions] = useState<ServicePromotion[]>([])
@@ -110,6 +112,7 @@ export default function SalonServicePromotionsPage() {
         try {
           map[s.id] = await getImages(s.id)
         } catch (error) {
+          console.error(`Failed to load images for service ${s.id}:`, error)
           map[s.id] = []
         }
         loadingMap[s.id] = false
@@ -154,8 +157,10 @@ export default function SalonServicePromotionsPage() {
       setPromotions(updatedPromotions)
 
       setShowPurchaseModal(false)
+      success(`Продвижение услуги «${serviceToPromote.name}» успешно запущено!`)
     } catch (error) {
       console.error("Failed to create promotion:", error)
+      showError('Не удалось запустить продвижение. Попробуйте еще раз.')
     }
   }
 
@@ -168,6 +173,7 @@ export default function SalonServicePromotionsPage() {
       setAnalyticsData(data)
     } catch (error) {
       console.error("Failed to fetch analytics:", error)
+      showError('Не удалось загрузить аналитику. Попробуйте еще раз.')
       setAnalyticsData([])
     } finally {
       setAnalyticsLoading(false)

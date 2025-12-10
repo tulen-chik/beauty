@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
 import { useGeolocation } from '@/contexts/GeolocationContext'; // Import the hook
+import { useToast } from '@/contexts';
 
 interface Props {
   locale: string;
@@ -17,6 +18,7 @@ interface Props {
 export default function SiteHeader({ locale }: Props) {
   const { currentUser, loading: authLoading } = useUser();
   const { city, error: geoError, loading: geoLoading } = useGeolocation(); // Use the context
+  const { error: showError } = useToast();
   const pathname = usePathname();
   const t = useTranslations('common');
 
@@ -33,10 +35,10 @@ export default function SiteHeader({ locale }: Props) {
   }, [isMenuOpen]);
 
   useEffect(() => {
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
+    if (geoError) {
+      showError('Не удалось определить местоположение. Проверьте разрешения геолокации в браузере.');
     }
-  }, [pathname]);
+  }, [geoError, showError]);
 
   useEffect(() => {
     if (isMenuOpen) {

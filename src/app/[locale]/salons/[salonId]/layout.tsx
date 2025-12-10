@@ -19,6 +19,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useSalon, useUser } from "@/contexts";
+import { useToast } from "@/contexts";
 
 export default function SalonCrmLayout({ 
   children, 
@@ -35,12 +36,16 @@ export default function SalonCrmLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { userSalons, fetchUserSalons } = useSalon();
   const { currentUser } = useUser();
+  const { error: showError } = useToast();
 
   useEffect(() => {
     if (!userSalons && currentUser?.userId) {
-      fetchUserSalons(currentUser.userId).catch(() => {});
+      fetchUserSalons(currentUser.userId).catch((error) => {
+        console.error('Error fetching user salons:', error);
+        showError('Не удалось загрузить данные салонов. Попробуйте обновить страницу.');
+      });
     }
-  }, [userSalons, currentUser?.userId, fetchUserSalons]);
+  }, [userSalons, currentUser?.userId, fetchUserSalons, showError]);
 
   const currentRole = useMemo(() => {
     const entry = userSalons?.salons?.find((s) => s.salonId === salonId);

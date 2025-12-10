@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Check, CheckCheck, MessageCircle, Send, Trash2, Paperclip, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useChat } from '@/contexts/ChatContext';
+import { useToast } from '@/contexts';
 import { InitialAvatar, formatMessageTime } from '@/components/Chat/Helpers';
 import { ChatViewSkeleton } from '@/components/Chat/Skeletons';
 import MessageAttachment from '@/components/Chat/MessageAttachment';
@@ -20,6 +21,7 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
   // Получаем getAvatar из контекста, как и в других компонентах
   const { currentUser, getAvatar } = useUser();
   const { currentChat, sendMessage, markMessagesAsRead, chatMessages, loading: isContextLoading, deleteChat } = useChat();
+  const { success, error: showError } = useToast();
 
   const [messageText, setMessageText] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -79,8 +81,10 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
       // Очищаем поля после успешной отправки
       setMessageText('');
       setUploadedFiles([]);
+      success('Сообщение отправлено');
     } catch (error) {
       console.error("Failed to send message:", error);
+      showError('Не удалось отправить сообщение. Попробуйте еще раз.');
     } finally {
       setIsSending(false);
     }
@@ -97,10 +101,11 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
     try {
       await deleteChat(selectedChatId);
       setShowDeleteConfirm(false);
+      success('Чат успешно удален');
       onBack();
     } catch (error) {
       console.error("Failed to delete chat:", error);
-      alert("Не удалось удалить чат. Попробуйте еще раз.");
+      showError('Не удалось удалить чат. Попробуйте еще раз.');
     } finally {
       setIsDeleting(false);
     }
@@ -126,9 +131,10 @@ export default function SalonChatViewPanel({ selectedChatId, salonId, onBack }: 
       const attachment = { url: uploadedFile.url, filename: uploadedFile.filename, size: uploadedFile.size, type: uploadedFile.type };
       
       setUploadedFiles(prev => [...prev, attachment]);
+      success('Файл успешно загружен');
     } catch (error) {
       console.error("Failed to upload file:", error);
-      alert("Не удалось загрузить файл. Попробуйте еще раз.");
+      showError('Не удалось загрузить файл. Попробуйте еще раз.');
     } finally {
       setUploadingFile(false);
       if (fileInputRef.current) {

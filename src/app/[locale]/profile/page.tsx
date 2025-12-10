@@ -15,7 +15,7 @@ import UserRatings from "./components/UserRatings";
 import RatingForm from "@/components/RatingForm"
 
 // Контексты и типы
-import { useSalonInvitation, useSalonRating, useSalonService, useAppointment, useSalon, useUser } from "@/contexts"
+import { useSalonInvitation, useSalonRating, useSalonService, useAppointment, useSalon, useUser, useToast } from "@/contexts"
 import { Appointment, Salon, SalonInvitation, SalonRating, SalonService, User } from "@/types/database"
 
 type FormErrors = {
@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const router = useRouter()
 
   const { currentUser, loading: userLoading, updateProfile, logout, getUserById, uploadAvatar, removeAvatar } = useUser()
+  const { success, error: showError, dismissAll } = useToast()
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
   const { updateInvitation, getInvitationsByEmail, acceptInvitation } = useSalonInvitation();
   const { getService } = useSalonService();
@@ -46,7 +47,6 @@ export default function ProfilePage() {
   const [ratingLoading, setRatingLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null)
   const [errors, setErrors] = useState<FormErrors>({});
   const [invitations, setInvitations] = useState<SalonInvitation[]>([]);
   const [enrichedInvitations, setEnrichedInvitations] = useState<(SalonInvitation & { salon: Salon | null })[]>([]);
@@ -96,7 +96,7 @@ export default function ProfilePage() {
 
       } catch (e) {
         console.error("CRITICAL ERROR during data load:", e);
-        setErrors({ general: "Не удалось загрузить данные профиля. Пожалуйста, обновите страницу." });
+        showError("Не удалось загрузить данные профиля. Пожалуйста, обновите страницу.");
       } finally {
         setLoading(false);
       }
@@ -110,26 +110,26 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async (displayName: string) => {
     if (!currentUser) return;
-    setSaving(true); setMsg(null); setErrors({});
+    setSaving(true); setErrors({});
     try {
       if (displayName.trim() !== currentUser.displayName) {
         await updateProfile(displayName.trim());
       }
-      setMsg("Профиль успешно обновлен");
+      success("Профиль успешно обновлен");
     } catch (e: any) {
-      setErrors({ general: e?.message || "Не удалось обновить профиль." });
+      showError(e?.message || "Не удалось обновить профиль.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleAvatarUpload = async (avatarFile: File) => {
-    setIsAvatarUploading(true); setMsg(null); setErrors({});
+    setIsAvatarUploading(true); setErrors({});
     try {
       await uploadAvatar(avatarFile);
-      setMsg("Аватар успешно обновлен!");
+      success("Аватар успешно обновлен!");
     } catch (e: any) {
-      setErrors({ general: e?.message || "Не удалось загрузить аватар." });
+      showError(e?.message || "Не удалось загрузить аватар.");
     } finally {
       setIsAvatarUploading(false);
     }
@@ -137,12 +137,12 @@ export default function ProfilePage() {
 
   const handleAvatarRemove = async () => {
     if (!currentUser?.avatarUrl) return;
-      setIsAvatarUploading(true); setMsg(null); setErrors({});
+      setIsAvatarUploading(true); setErrors({});
       try {
         await removeAvatar();
-        setMsg("Аватар удален.");
+        success("Аватар удален.");
       } catch (e: any) {
-        setErrors({ general: e?.message || "Не удалось удалить аватар." });
+        showError(e?.message || "Не удалось удалить аватар.");
       } finally {
         setIsAvatarUploading(false);
       }
@@ -157,15 +157,16 @@ export default function ProfilePage() {
     try {
       if (accept) {
         await acceptInvitation({ invitationId, userId: currentUser.userId });
+        success("Приглашение принято! Страница перезагружается...");
         window.location.reload();
       } else {
         await updateInvitation(invitationId, { status: 'declined' });
         setInvitations((prev) => prev.filter(inv => inv.id !== invitationId));
         setEnrichedInvitations((prev) => prev.filter(inv => inv.id !== invitationId));
+        success("Приглашение отклонено.");
       }
-      setMsg(accept ? "Приглашение принято! Страница перезагружается..." : "Приглашение отклонено.");
     } catch (error) {
-      setErrors({ general: "Не удалось обработать приглашение." });
+      showError("Не удалось обработать приглашение.");
     }
   };
 
@@ -174,17 +175,17 @@ export default function ProfilePage() {
     setRatingLoading(true); setErrors({});
     try {
       if (await getRatingByAppointment(appointmentId)) {
-        setErrors({ general: "Вы уже оставили отзыв для этой записи" });
+        showError("Вы уже оставили отзыв для этой записи");
         setShowRatingForm(null);
         return;
       }
       const ratingId = `rating_${Date.now()}`;
       await createRating(ratingId, salonId, currentUser.userId, currentUser.displayName || "Аноним", data.rating, data.review, data.categories, appointmentId, serviceId, data.isAnonymous, data.attachments);
       setUserRatings(await getRatingsByCustomer(currentUser.userId));
-      setMsg("Отзыв успешно отправлен!");
+      success("Отзыв успешно отправлен!");
       setShowRatingForm(null);
     } catch (error: any) {
-      setErrors({ general: error.message || "Не удалось отправить отзыв." });
+      showError(error.message || "Не удалось отправить отзыв.");
     } finally {
       setRatingLoading(false);
     }
@@ -193,9 +194,10 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       await logout();
+      success("Выход выполнен успешно");
       router.push('/');
     } catch (error) {
-      setErrors({ general: "Не удалось выйти из аккаунта." });
+      showError("Не удалось выйти из аккаунта.");
     }
   };
 
@@ -246,7 +248,6 @@ export default function ProfilePage() {
           onLogout={handleLogout}
           saving={saving}
           isAvatarUploading={isAvatarUploading}
-          msg={msg}
           errors={errors}
           t={t}
         />

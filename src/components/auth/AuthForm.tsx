@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/contexts';
 import { ta } from 'date-fns/locale';
 
 interface AuthFormProps {
@@ -20,12 +21,12 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, register, loginWithGoogle } = useUser();
+  const { success, error: showError, dismissAll } = useToast();
   
   // Form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [autoLoginAttempted, setAutoLoginAttempted] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{ name?: string; email?: string; password?: string }>({});
@@ -89,24 +90,27 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setError('');
+    dismissAll();
     // client-side validation
     if (!validate()) return;
 
     setLoading(true);
+    
     try {
       if (mode === 'login') {
         await login(email.trim(), password);
+        success('Вход выполнен успешно!');
       } else {
         await register(email.trim(), password, name.trim());
+        success('Регистрация прошла успешно!');
       }
-      router.push('/profile');
+      setTimeout(() => router.push('/profile'), 1000);
     } catch (err) {
-      setError(mapServerError(err));
+      showError(mapServerError(err));
     } finally {
       setLoading(false);
     }
-  }, [email, password, name, mode, login, register, router, validate, mapServerError]);
+  }, [email, password, name, mode, login, register, router, validate, mapServerError, dismissAll, success, showError]);
 
   // Handle auto-login from URL parameters
   useEffect(() => {
@@ -135,22 +139,23 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
 
   const handleGoogleLogin = async () => {
     try {
-      setError('');
+      dismissAll();
       setLoading(true);
       const result = await loginWithGoogle();
       if (result !== null) {
-        router.push('/profile');
+        success('Вход через Google выполнен успешно!');
+        setTimeout(() => router.push('/profile'), 1000);
       } else {
-        setError(tAuth('continueWithGoogle')); // localized hint about redirect
+        showError('Пожалуйста, завершите вход через Google...');
         setTimeout(() => {
           if (loading) {
             setLoading(false);
-            setError(tAuth('errors.invalidCredentials'));
+            showError('Неверные учетные данные');
           }
         }, 15000);
       }
     } catch (err) {
-      setError(mapServerError(err));
+      showError(mapServerError(err));
       setLoading(false);
     }
   };
@@ -256,7 +261,6 @@ export const AuthForm = ({ mode }: AuthFormProps) => {
             </div>
           </div>
 
-          {error && <div className="text-red-500 text-sm text-center font-medium p-3 bg-red-50 rounded-lg border border-red-200">{error}</div>}
 
           <div className="space-y-4">
             <motion.button

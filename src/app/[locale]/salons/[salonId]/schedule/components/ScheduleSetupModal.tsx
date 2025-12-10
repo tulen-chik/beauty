@@ -7,7 +7,6 @@ import { SalonWorkDay } from "@/types/database"
 type ScheduleSetupModalProps = {
   isOpen: boolean
   weeklySchedule: SalonWorkDay[]
-  modalError: string | null
   t: any
   onClose: () => void
   onSave: () => void
@@ -30,7 +29,6 @@ const WEEKDAYS = [
 export default function ScheduleSetupModal({
   isOpen,
   weeklySchedule,
-  modalError,
   t,
   onClose,
   onSave,
@@ -51,12 +49,6 @@ export default function ScheduleSetupModal({
           </button>
         </div>
         <div className="p-6 overflow-y-auto">
-          {modalError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-lg text-sm flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>{modalError}</span>
-            </div>
-          )}
           <div className="space-y-6">
             {weeklySchedule.map((d, i) => (
               <div key={d.day} className="border rounded-lg p-4 bg-gray-50">

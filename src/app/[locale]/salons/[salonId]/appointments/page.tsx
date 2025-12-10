@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/contexts";
 
 import { SalonService } from "@/types/services";
 import { User as UserData } from "@/types/user";
@@ -25,12 +26,12 @@ export default function SalonAppointmentsPage() {
   const { listAppointments, updateAppointment } = useAppointment();
   const { getServicesBySalon } = useSalonService();
   const { getUserById } = useUser();
+  const { success, error: showError } = useToast();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<SalonService[]>([]);
   const [users, setUsers] = useState<Record<string, UserData>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,7 +47,6 @@ export default function SalonAppointmentsPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         // Load appointments
         const appts = await listAppointments(salonId);
@@ -85,10 +85,11 @@ export default function SalonAppointmentsPage() {
         }
         setUsers(userData);
       } catch (err: unknown) {
+        console.error('Error loading appointments data:', err);
         if (err instanceof Error) {
-          setError(err.message || "Ошибка загрузки данных");
+          showError(err.message || "Ошибка загрузки данных");
         } else {
-          setError("Произошла неизвестная ошибка");
+          showError("Произошла неизвестная ошибка");
         }
       } finally {
         setLoading(false);
@@ -180,28 +181,23 @@ export default function SalonAppointmentsPage() {
           apt.id === appointmentId ? { ...apt, status: newStatus } : apt
         )
       );
+      
+      // Show success message based on status
+      const statusMessages: Record<AppointmentStatus, string> = {
+        pending: 'Запись ожидает подтверждения',
+        in_progress: 'Запись в процессе',
+        completed: 'Запись завершена'
+      };
+      
+      success(statusMessages[newStatus] || 'Статус обновлен');
     } catch (err: unknown) {
       console.error("Failed to update status", err);
-      // Optional: Add toast notification here
+      showError('Не удалось обновить статус записи');
     }
   };
 
   if (loading) {
     return <AppointmentsPageSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center p-8">
-        <div className="text-rose-600 font-medium mb-4">{t("error")}</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2.5 bg-rose-600 text-white rounded-xl hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200"
-        >
-          {t("retry")}
-        </button>
-      </div>
-    );
   }
 
   return (

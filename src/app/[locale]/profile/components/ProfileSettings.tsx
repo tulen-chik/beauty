@@ -20,14 +20,13 @@ interface ProfileSettingsProps {
   onLogout: () => Promise<void>;
   saving: boolean;
   isAvatarUploading: boolean;
-  msg: string | null;
   errors: FormErrors;
   t: (key: string) => string;
 }
 
 export default function ProfileSettings({
   currentUser, onSaveProfile, onAvatarUpload, onAvatarRemove, onLogout,
-  saving, isAvatarUploading, msg, errors, t
+  saving, isAvatarUploading, errors, t
 }: ProfileSettingsProps) {
   const [displayName, setDisplayName] = useState(currentUser.displayName || "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -132,12 +131,6 @@ export default function ProfileSettings({
       
       <div className="p-6 space-y-8">
         {/* Notifications */}
-        {msg && (
-          <div className="flex items-center gap-3 text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm animate-in fade-in slide-in-from-top-2">
-            <CheckCircle className="w-5 h-5 shrink-0" />
-            <span className="font-medium">{msg}</span>
-          </div>
-        )}
         {allErrors.general && (
           <div className="flex items-center gap-3 text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm animate-in fade-in slide-in-from-top-2">
             <XCircle className="w-5 h-5 shrink-0" />

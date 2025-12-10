@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonService } from "@/contexts/SalonServiceContext";
+import { useToast } from "@/contexts";
 
 // --- НАЧАЛО: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
 
@@ -139,6 +140,7 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
     const { salonId } = params;
     const { listAppointments, loading: appointmentsLoading } = useAppointment();
     const { getServicesBySalon, loading: servicesLoading } = useSalonService();
+    const { success, error: showError } = useToast();
 
     const [tableData, setTableData] = useState<ServiceAnalyticsData[]>([]);
     const [year, setYear] = useState(new Date().getFullYear());
@@ -162,36 +164,41 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
 
     useEffect(() => {
         const fetchAndProcessData = async () => {
-            const startDate = new Date(year, 0, 1).toISOString();
-            const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
+            try {
+                const startDate = new Date(year, 0, 1).toISOString();
+                const endDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
 
-            const [services, appointments] = await Promise.all([
-                getServicesBySalon(salonId),
-                listAppointments(salonId, { startAt: startDate, endAt: endDate, status: 'completed' })
-            ]);
+                const [services, appointments] = await Promise.all([
+                    getServicesBySalon(salonId),
+                    listAppointments(salonId, { startAt: startDate, endAt: endDate, status: 'completed' })
+                ]);
 
-            const analyticsData = services.map(service => {
-                const monthlyCounts = Array(12).fill(0);
-                const serviceAppointments = appointments.filter(a => a.serviceId === service.id);
+                const analyticsData = services.map(service => {
+                    const monthlyCounts = Array(12).fill(0);
+                    const serviceAppointments = appointments.filter(a => a.serviceId === service.id);
 
-                serviceAppointments.forEach(appointment => {
-                    const month = new Date(appointment.startAt).getMonth();
-                    monthlyCounts[month]++;
+                    serviceAppointments.forEach(appointment => {
+                        const month = new Date(appointment.startAt).getMonth();
+                        monthlyCounts[month]++;
+                    });
+
+                    const totalYearlyCount = monthlyCounts.reduce((sum, count) => sum + count, 0);
+                    const totalYearlyRevenue = totalYearlyCount * (service.price || 0);
+
+                    return { id: service.id, name: service.name, price: service.price || 0, monthlyCounts, totalYearlyCount, totalYearlyRevenue };
                 });
 
-                const totalYearlyCount = monthlyCounts.reduce((sum, count) => sum + count, 0);
-                const totalYearlyRevenue = totalYearlyCount * (service.price || 0);
-
-                return { id: service.id, name: service.name, price: service.price || 0, monthlyCounts, totalYearlyCount, totalYearlyRevenue };
-            });
-
-            const grandTotal = analyticsData.reduce((sum, item) => sum + item.totalYearlyRevenue, 0);
-            setTableData(analyticsData);
-            setTotalRevenue(grandTotal);
+                const grandTotal = analyticsData.reduce((sum, item) => sum + item.totalYearlyRevenue, 0);
+                setTableData(analyticsData);
+                setTotalRevenue(grandTotal);
+            } catch (error) {
+                console.error('Error loading analytics data:', error);
+                showError('Не удалось загрузить данные аналитики. Попробуйте обновить страницу.');
+            }
         };
 
         fetchAndProcessData();
-    }, [salonId, year, getServicesBySalon, listAppointments]);
+    }, [salonId, year, getServicesBySalon, listAppointments, showError]);
 
     const topByQuantity = useMemo(() => {
         return [...tableData]
@@ -220,30 +227,39 @@ export default function SalonAnalyticsPage({ params }: { params: { salonId: stri
     };
 
     const handleExportToExcel = () => {
-        if (loading || tableData.length === 0) return;
+        try {
+            if (loading || tableData.length === 0) {
+                showError('Нет данных для экспорта');
+                return;
+            }
 
-        const headers = [
-            "№", t("table.serviceName"), t("table.servicePrice"), t("table.yearlyCount"),
-            ...shortMonthLabels, t("table.yearlyTotal")
-        ];
+            const headers = [
+                "№", t("table.serviceName"), t("table.servicePrice"), t("table.yearlyCount"),
+                ...shortMonthLabels, t("table.yearlyTotal")
+            ];
 
-        const rows = tableData.map((item, index) => [
-            index + 1, item.name, item.price, item.totalYearlyCount,
-            ...item.monthlyCounts, item.totalYearlyRevenue
-        ]);
+            const rows = tableData.map((item, index) => [
+                index + 1, item.name, item.price, item.totalYearlyCount,
+                ...item.monthlyCounts, item.totalYearlyRevenue
+            ]);
 
-        const footer = [
-            ...Array(4 + 12).fill(""),
-            t("table.grandTotal"), totalRevenue
-        ];
+            const footer = [
+                ...Array(4 + 12).fill(""),
+                t("table.grandTotal"), totalRevenue
+            ];
 
-        const dataToExport = [headers, ...rows, footer];
+            const dataToExport = [headers, ...rows, footer];
 
-        const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Analytics");
+            const worksheet = XLSX.utils.aoa_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Analytics");
 
-        XLSX.writeFile(workbook, `analytics_${salonId}_${year}.xlsx`);
+            XLSX.writeFile(workbook, `analytics_${salonId}_${year}.xlsx`);
+            success('Аналитика успешно экспортирована в Excel');
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            showError('Не удалось экспортировать данные. Попробуйте еще раз.');
+        }
     };
 
     const loading = appointmentsLoading || servicesLoading;

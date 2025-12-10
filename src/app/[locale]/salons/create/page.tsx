@@ -6,6 +6,7 @@ import { useEffect,useRef, useState } from "react";
 
 import { useSalon } from "@/contexts/SalonContext";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/contexts";
 
 // Google Maps component for address selection
 const MapSelector = ({ 
@@ -164,13 +165,13 @@ const MapSelector = ({
 };
 
 export default function CreateSalonPage() {
-  const { createSalon, loading, error } = useSalon();
+  const { createSalon, loading } = useSalon();
   const router = useRouter();
+  const { success, error: showError, dismissAll } = useToast();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [description, setDescription] = useState("");
-  const [success, setSuccess] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const { currentUser } = useUser();
@@ -208,12 +209,14 @@ export default function CreateSalonPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
-      // user must be authorized — handled elsewhere
+      showError('Пользователь не авторизован');
       return;
     }
     if (!validate()) return;
 
-    const salonId = Date.now().toString(); // Можно заменить на uuid
+    const salonId = Date.now().toString();
+    dismissAll();
+    
     try {
       await createSalon(salonId, {
         name,
@@ -239,10 +242,11 @@ export default function CreateSalonPage() {
           }
         }
       }, userId);
-      setSuccess(true);
+      success('Салон успешно создан!');
       setTimeout(() => router.push("/salons"), 1500);
     } catch (e) {
-      console.error('Failed to create salon', e)
+      console.error('Failed to create salon', e);
+      showError('Не удалось создать салон. Попробуйте еще раз.');
     }
   };
 
@@ -355,16 +359,6 @@ export default function CreateSalonPage() {
             </div>
             
             {/* Error and Success Messages */}
-            {error && (
-              <div className="text-red-500 text-sm text-center p-3 bg-red-50 rounded-lg border border-red-200">
-                {String(error)}
-              </div>
-            )}
-            {success && (
-              <div className="text-green-600 text-sm text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                {t('success')}
-              </div>
-            )}
             
             {/* Submit Button */}
             <button

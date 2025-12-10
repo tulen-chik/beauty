@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 import { useChat } from '@/contexts/ChatContext';
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/contexts';
 
 import type { ChatMessageType } from '@/types/database';
 
@@ -40,15 +41,13 @@ export default function ChatInterface({
     loading, 
     error 
   } = useChat();
+  const { error: showError, dismissAll } = useToast();
 
   const t = useTranslations('chat');
 
   const [messageText, setMessageText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -77,32 +76,30 @@ export default function ChatInterface({
           markMessagesAsRead(chatId, currentUser.userId);
         } catch (err) {
           console.error('Error marking messages as read:', err);
-          setLoadError((err as any)?.message ?? t('errorMarkRead'));
+          showError('Не удалось отметить сообщения как прочитанные');
         }
       }
     }
-  }, [chatId, currentUser, messages, markMessagesAsRead, t]);
+  }, [chatId, currentUser, messages, markMessagesAsRead, showError]);
 
   useEffect(() => {
     if (!chatId) return;
-    setLoadError(null);
     const load = async () => {
       try {
         await getMessages(chatId, 50);
-        setLoadError(null);
       } catch (err: any) {
         console.error('Error loading messages:', err);
-        setLoadError(err?.message ?? t('errorLoading'));
+        showError('Не удалось загрузить сообщения. Попробуйте обновить страницу.');
       }
     };
     load();
-  }, [chatId, getMessages, t]);
+  }, [chatId, getMessages, showError]);
 
   const handleSendMessage = async () => {
-    setSendError(null);
+    dismissAll();
     if (!messageText.trim() && attachments.length === 0) return;
     if (!currentUser) {
-      setSendError(t('errorNoUser'));
+      showError('Пользователь не авторизован');
       return;
     }
 
@@ -113,7 +110,7 @@ export default function ChatInterface({
       let content = messageText;
       if (attachments.length > 0) {
         const fileNames = attachments.map(file => file.name).join(', ');
-        content = t('filesSent', { count: attachments.length, names: fileNames });
+        content = `Отправлено файлов: ${attachments.length} (${fileNames})`;
       }
 
       await sendMessage(
@@ -133,10 +130,9 @@ export default function ChatInterface({
 
       setMessageText('');
       setAttachments([]);
-      setSendError(null);
     } catch (err: any) {
       console.error('Error sending message:', err);
-      setSendError(err?.message ?? t('sendError'));
+      showError('Не удалось отправить сообщение. Попробуйте еще раз.');
     } finally {
       setIsSending(false);
       setIsTyping(false);
@@ -160,24 +156,22 @@ export default function ChatInterface({
   ];
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileError(null);
     const files = Array.from(e.target.files || []);
     const validFiles: File[] = [];
     for (const f of files) {
       if (f.size > MAX_FILE_SIZE) {
-        setFileError(t('fileTooLarge', { name: f.name }));
+        showError(`Файл ${f.name} слишком большой (макс. 5 МБ)`);
         continue;
       }
       const ok = ALLOWED_MIMES.some(m => m.endsWith('/') ? f.type.startsWith(m) : f.type === m);
       if (!ok) {
-        setFileError(t('unsupportedFileType', { name: f.name }));
+        showError(`Неподдерживаемый тип файла: ${f.name}`);
         continue;
       }
       validFiles.push(f);
     }
     if (validFiles.length > 0) {
       setAttachments(prev => [...prev, ...validFiles]);
-      setFileError(null);
     }
   };
 
@@ -209,7 +203,7 @@ export default function ChatInterface({
     return <LoadingSpinner />;
   }
 
-  const loadErrMsg = loadError ?? (error ? String(error) : null);
+  const loadErrMsg = error ? String(error) : null;
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -219,12 +213,13 @@ export default function ChatInterface({
           <div>{loadErrMsg}</div>
           <button
             onClick={() => {
-              setLoadError(null);
-              if (chatId) getMessages(chatId, 50).catch(err => setLoadError(err?.message ?? t('errorLoading')));
+              if (chatId) getMessages(chatId, 50).catch(() => {
+                showError('Не удалось загрузить сообщения. Попробуйте еще раз.');
+              });
             }}
             className="px-3 py-1 bg-white border border-red-200 text-red-700 rounded-lg hover:bg-red-50 text-xs font-medium transition-colors"
           >
-            {t('retry')}
+            Повторить
           </button>
         </div>
       )}
@@ -418,14 +413,6 @@ export default function ChatInterface({
             <Send className="w-5 h-5 ml-0.5" /> {/* ml-0.5 для визуального центрирования иконки Send */}
           </button>
         </div>
-        
-        {/* Ошибки отправки/файлов */}
-        {(sendError || fileError) && (
-          <div className="mt-2 px-4 text-xs font-medium text-red-600 flex items-center gap-1.5 animate-in slide-in-from-bottom-2">
-            <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-            {sendError || fileError}
-          </div>
-        )}
 
         <input
           ref={fileInputRef}

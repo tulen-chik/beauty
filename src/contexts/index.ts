@@ -14,3 +14,4 @@ export { ServiceCategoryProvider,useServiceCategory } from './ServiceCategoryCon
 export { SubscriptionProvider, useSubscription } from './SubscriptionContext'
 export { UserProvider,useUser } from './UserContext';
 export { GeolocationProvider,useGeolocation } from './GeolocationContext'
+export { ToastProvider, useToast } from './ToastContext';

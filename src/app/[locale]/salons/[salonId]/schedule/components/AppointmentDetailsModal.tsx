@@ -36,7 +36,6 @@ type AppointmentDetailsModalProps = {
   appointment: Appointment | null
   services: Service[]
   users: Record<string, User>
-  modalError: string | null
   canManageAppointments: boolean
   salonId: string
   t: any
@@ -50,7 +49,6 @@ export default function AppointmentDetailsModal({
   appointment,
   services,
   users,
-  modalError,
   canManageAppointments,
   salonId,
   t,
@@ -94,12 +92,6 @@ export default function AppointmentDetailsModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {modalError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-sm flex items-center gap-3 shadow-sm">
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium">{modalError}</span>
-            </div>
-          )}
 
           {/* Appointment Details Grid */}
           <div className="grid grid-cols-1 gap-4">

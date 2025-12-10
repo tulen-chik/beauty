@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 
 import RatingInput from './RatingInput';
 import { uploadRatingFileAction } from '@/app/actions/storageActions';
+import { useToast } from '@/contexts';
 import type { SalonRatingCategories, SalonRatingAttachment } from '@/types/database';
 
 interface RatingFormProps {
@@ -24,6 +25,7 @@ export default function RatingForm({
   loading = false,
   className = '' 
 }: RatingFormProps) {
+  const { error: showError, dismissAll } = useToast();
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -69,6 +71,7 @@ export default function RatingForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setHasAttemptedSubmit(true); // Отмечаем, что была попытка отправки
+    dismissAll(); // Очищаем предыдущие уведомления
 
     if (validateForm()) {
       const hasCategories = Object.keys(categories).length > 0;
@@ -127,7 +130,7 @@ export default function RatingForm({
       setUploadedFiles(prev => [...prev, attachment]);
     } catch (error) {
       console.error("Failed to upload file:", error);
-      alert("Не удалось загрузить файл. Попробуйте еще раз.");
+      showError('Не удалось загрузить файл. Попробуйте еще раз.');
     } finally {
       setUploadingFile(false);
       if (fileInputRef.current) {

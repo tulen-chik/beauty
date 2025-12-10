@@ -6,6 +6,7 @@ import { UserPlus, ShieldCheck, Briefcase, User as UserIcon, Eye, Trash2, AlertT
 import { useSalon } from "@/contexts/SalonContext";
 import { useSalonInvitation } from "@/contexts/SalonInvitationContext";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/contexts";
 
 import type { SalonMember, SalonRole, User } from "@/types/database";
 
@@ -110,6 +111,7 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
   const { salonId } = params;
   const { fetchSalon, updateSalonMembers, loading, error: salonError } = useSalon();
   const { getInvitationsBySalon, createInvitation, deleteInvitation, loading: invitationLoading } = useSalonInvitation();
+  const { success, error: showError, dismissAll } = useToast();
   
   // --- ИЗМЕНЕНИЕ: Получаем `currentUser` для самопроверки ---
   const { currentUser, getUserById, getAvatar } = useUser();
@@ -117,53 +119,58 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
   const [members, setMembers] = useState<SalonMember[]>([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<SalonRole>("employee");
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
   const [invitations, setInvitations] = useState<any[]>([]);
   const [userDataMap, setUserDataMap] = useState<Record<string, {name: string, email: string, avatarUrl: string | null}>>({});
 
   useEffect(() => {
     const fetchData = async () => {
-      const salon = await fetchSalon(salonId);
-      if (salon?.members) {
-        setMembers(salon.members);
-        
-        const userPromises = salon.members.map(async (member) => {
-          const [user, avatar] = await Promise.all([
-            getUserById(member.userId),
-            getAvatar(member.userId)
-          ]);
-          return user ? { ...user, id: member.userId, avatarUrl: avatar?.url || null } : null;
-        });
-        
-        const users = (await Promise.all(userPromises)).filter(Boolean) as (User & { id: string, avatarUrl: string | null })[];
-        
-        const userMap = users.reduce((acc, user) => ({
-          ...acc,
-          [user.id]: {
-            name: user.displayName || user.email?.split('@')[0] || 'Пользователь',
-            email: user.email || '',
-            avatarUrl: user.avatarUrl
-          }
-        }), {} as Record<string, {name: string, email: string, avatarUrl: string | null}>);
-        
-        setUserDataMap(userMap);
-      } else {
-        setMembers([]);
+      try {
+        const salon = await fetchSalon(salonId);
+        if (salon?.members) {
+          setMembers(salon.members);
+          
+          const userPromises = salon.members.map(async (member) => {
+            const [user, avatar] = await Promise.all([
+              getUserById(member.userId),
+              getAvatar(member.userId)
+            ]);
+            return user ? { ...user, id: member.userId, avatarUrl: avatar?.url || null } : null;
+          });
+          
+          const users = (await Promise.all(userPromises)).filter(Boolean) as (User & { id: string, avatarUrl: string | null })[];
+          
+          const userMap = users.reduce((acc, user) => ({
+            ...acc,
+            [user.id]: {
+              name: user.displayName || user.email?.split('@')[0] || 'Пользователь',
+              email: user.email || '',
+              avatarUrl: user.avatarUrl
+            }
+          }), {} as Record<string, {name: string, email: string, avatarUrl: string | null}>);
+          
+          setUserDataMap(userMap);
+        } else {
+          setMembers([]);
+        }
+      } catch (error) {
+        console.error('Error loading staff data:', error);
+        showError('Не удалось загрузить данные команды. Попробуйте обновить страницу.');
       }
     };
     
     fetchData();
-    getInvitationsBySalon(salonId).then(setInvitations);
-  }, [salonId, fetchSalon, getInvitationsBySalon, getUserById, getAvatar]);
+    getInvitationsBySalon(salonId).then(setInvitations).catch(() => {
+      showError('Не удалось загрузить приглашения. Попробуйте обновить страницу.');
+    });
+  }, [salonId, fetchSalon, getInvitationsBySalon, getUserById, getAvatar, showError]);
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    dismissAll();
     if (!email) return;
     
     if (members.length >= 3) {
-      setError("Достигнут лимит сотрудников (3).");
-      setTimeout(() => setError(""), 4000);
+      showError('Достигнут лимит сотрудников (3).');
       return;
     }
     
@@ -174,18 +181,23 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       });
       setEmail("");
       setRole("employee");
-      setSuccess(`Приглашение успешно отправлено на ${email}`);
+      success(`Приглашение успешно отправлено на ${email}`);
       getInvitationsBySalon(salonId).then(setInvitations);
-      setTimeout(() => setSuccess(""), 4000);
     } catch (err: any) {
-      setError(err.message || "Ошибка при отправке приглашения");
-      setTimeout(() => setError(""), 4000);
+      console.error('Error creating invitation:', err);
+      showError(err.message || "Ошибка при отправке приглашения");
     }
   };
 
   const handleCancelInvite = async (invitationId: string) => {
-    await deleteInvitation(invitationId);
-    getInvitationsBySalon(salonId).then(setInvitations);
+    try {
+      await deleteInvitation(invitationId);
+      getInvitationsBySalon(salonId).then(setInvitations);
+      success('Приглашение отменено');
+    } catch (err: any) {
+      console.error('Error canceling invitation:', err);
+      showError('Не удалось отменить приглашение. Попробуйте еще раз.');
+    }
   };
 
   const handleRoleChange = async (idx: number, newRole: SalonRole) => {
@@ -193,9 +205,10 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       const updated = members.map((m, i) => i === idx ? { ...m, role: newRole } : m);
       await updateSalonMembers(salonId, updated);
       setMembers(updated);
+      success('Роль сотрудника успешно изменена');
     } catch (err: any) {
-      setError(err.message || "Ошибка при изменении роли");
-      setTimeout(() => setError(""), 4000);
+      console.error('Error changing role:', err);
+      showError(err.message || "Ошибка при изменении роли");
     }
   };
 
@@ -204,9 +217,10 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
       const updated = members.filter((_, i) => i !== idx);
       await updateSalonMembers(salonId, updated);
       setMembers(updated);
+      success('Сотрудник успешно удален');
     } catch (err: any) {
-      setError(err.message || "Ошибка при удалении сотрудника");
-      setTimeout(() => setError(""), 4000);
+      console.error('Error removing staff member:', err);
+      showError(err.message || "Ошибка при удалении сотрудника");
     }
   };
 
@@ -254,8 +268,6 @@ export default function SalonStaffPage({ params }: { params: { salonId: string }
               <span>{members.length >= 3 ? 'Лимит' : 'Пригласить'}</span>
             </button>
           </form>
-          {success && <div className="flex items-center gap-2 text-emerald-600 mt-4 text-sm"><CheckCircle className="w-4 h-4"/>{success}</div>}
-          {(error || salonError) && <div className="flex items-center gap-2 text-rose-600 mt-4 text-sm"><AlertTriangle className="w-4 h-4"/>{error || salonError}</div>}
         </div>
         
         <div className="space-y-10">

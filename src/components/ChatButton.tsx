@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { useChat } from '@/contexts/ChatContext';
 import { useSalonService } from '@/contexts/SalonServiceContext';
 import { useUser } from '@/contexts/UserContext';
+import { useToast } from '@/contexts';
 
 interface ChatButtonProps {
   salonId: string;
@@ -31,14 +32,17 @@ export default function  ChatButton({
   const { currentUser } = useUser();
   const { createOrGetChat, loading } = useChat();
   const { getService } = useSalonService();
+  const { error: showError, success, dismissAll } = useToast();
   const [isCreating, setIsCreating] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
   const router = useRouter(); // Инициализируем роутер
 
   const handleCreateChat = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      showError('Пользователь не авторизован');
+      return;
+    }
     
-    setLocalError(null);
+    dismissAll();
     try {
       setIsCreating(true);
 
@@ -49,13 +53,15 @@ export default function  ChatButton({
           sid = svc?.salonId ?? '';
         } catch (err) {
           console.error('Failed to fetch service to resolve salonId:', err);
+          showError('Не удалось получить информацию об услуге');
+          return;
         }
       }
 
       if (!sid) {
-        const msg = 'Missing salonId for chat creation';
+        const msg = 'Отсутствует ID салона для создания чата';
         console.error(msg);
-        setLocalError(msg);
+        showError(msg);
         return;
       }
 
@@ -68,11 +74,12 @@ export default function  ChatButton({
       }
       
       // После создания чата сразу переходим на его страницу
+      success('Чат успешно создан');
       router.push(`/chats`);
 
     } catch (err: any) {
       console.error('Error creating chat:', err);
-      setLocalError(err?.message ?? 'Error creating chat');
+      showError(err?.message ?? 'Не удалось создать чат. Попробуйте еще раз.');
     } finally {
       setIsCreating(false);
     }
@@ -86,20 +93,17 @@ export default function  ChatButton({
     : 'inline-flex items-center justify-center gap-2 px-3 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
 
   return (
-    <div>
-      <button
-        onClick={handleCreateChat}
-        disabled={isCreating || loading}
-        className={`${buttonBaseClasses} ${className}`}
-      >
-        {isCreating || loading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <MessageCircle className="w-4 h-4" />
-        )}
-        {buttonText}
-      </button>
-      {localError && <div className="text-xs text-red-500 mt-2">{localError}</div>}
-    </div>
+    <button
+      onClick={handleCreateChat}
+      disabled={isCreating || loading}
+      className={`${buttonBaseClasses} ${className}`}
+    >
+      {isCreating || loading ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <MessageCircle className="w-4 h-4" />
+      )}
+      {buttonText}
+    </button>
   );
 }

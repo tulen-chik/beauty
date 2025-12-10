@@ -28,6 +28,7 @@ const ManualBookingModal = dynamic(() => import("./ManualBookingModal"), {
 import { useAppointment } from "@/contexts/AppointmentContext";
 import { useSalonSchedule } from "@/contexts/SalonScheduleContext";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/contexts";
 
 // --- TYPE DEFINITIONS ---
 import { Salon, SalonWorkDay, WeekDay } from "@/types/database";
@@ -125,8 +126,6 @@ export default function SalonSchedulePageClient({
   
   // Loading false по умолчанию, так как данные пришли с сервера
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
 
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -142,6 +141,7 @@ export default function SalonSchedulePageClient({
   const { updateSchedule } = useSalonSchedule();
   const { listAppointmentsByDay, updateAppointment } = useAppointment();
   const { currentUser } = useUser();
+  const { success, error: showError, dismissAll } = useToast();
 
   // --- CACHING & REFS ---
   // Инициализируем кэш сразу текущей неделей, чтобы не грузить её повторно
@@ -296,7 +296,7 @@ export default function SalonSchedulePageClient({
 
   // --- HANDLERS ---
   const handleSaveSchedule = async () => {
-    setModalError(null);
+    dismissAll();
     try {
       const scheduleToSave = {
         salonId,
@@ -308,16 +308,16 @@ export default function SalonSchedulePageClient({
       };
 
       await updateSchedule(salonId, scheduleToSave);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      success('Расписание успешно сохранено');
       setTimeout(() => setIsScheduleModalOpen(false), 500);
     } catch (e: any) {
-      setModalError(e.message || "Ошибка сохранения");
+      console.error('Error saving schedule:', e);
+      showError(e.message || 'Ошибка сохранения расписания');
     }
   };
 
   const handleStatusChange = async (appointmentId: string, newStatus: Appointment["status"]) => {
-    setModalError(null);
+    dismissAll();
     try {
       await updateAppointment(salonId, appointmentId, { status: newStatus });
       const updatedAppointments = appointments.map((apt) => 
@@ -336,8 +336,18 @@ export default function SalonSchedulePageClient({
       if (selectedAppointment?.id === appointmentId) {
         setSelectedAppointment(prev => prev ? { ...prev, status: newStatus } : null);
       }
+
+      // Show success message based on status
+      const statusMessages = {
+        pending: 'Запись ожидает подтверждения',
+        in_progress: 'Запись в процессе',
+        completed: 'Запись завершена'
+      };
+      
+      success(statusMessages[newStatus] || 'Статус обновлен');
     } catch (err: any) {
-      setModalError(err.message || "Ошибка обновления статуса");
+      console.error('Error updating appointment status:', err);
+      showError(err.message || 'Ошибка обновления статуса');
     }
   };
   
@@ -391,11 +401,10 @@ export default function SalonSchedulePageClient({
       <ScheduleHeader
         salon={salon}
         filteredAppointmentsCount={filteredAppointments.length}
-        success={success}
         canManageAppointments={canManageAppointments}
         t={t}
         onCreateBooking={() => setIsManualBookingOpen(true)}
-        onSetupSchedule={() => { setIsScheduleModalOpen(true); setModalError(null); }}
+        onSetupSchedule={() => { setIsScheduleModalOpen(true); dismissAll(); }}
       />
 
       <ScheduleFilters
@@ -420,7 +429,7 @@ export default function SalonSchedulePageClient({
           appointments={appointments}
           services={services}
           t={t}
-          onAppointmentClick={(appointment) => { setSelectedAppointment(appointment); setModalError(null); }}
+          onAppointmentClick={(appointment) => { setSelectedAppointment(appointment); dismissAll(); }}
           getAppointmentsForDay={getAppointmentsForDay}
           isTodayDate={isTodayDate}
           getStatusColor={getStatusColor}
@@ -434,7 +443,7 @@ export default function SalonSchedulePageClient({
           appointments={appointments}
           services={services}
           t={t}
-          onAppointmentClick={(appointment) => { setSelectedAppointment(appointment); setModalError(null); }}
+          onAppointmentClick={(appointment) => { setSelectedAppointment(appointment); dismissAll(); }}
           getAppointmentsForDay={getAppointmentsForDay}
           isTodayDate={isTodayDate}
           getStatusColor={getStatusColor}
@@ -445,7 +454,6 @@ export default function SalonSchedulePageClient({
         appointment={selectedAppointment}
         services={services}
         users={users}
-        modalError={modalError}
         canManageAppointments={canManageAppointments}
         salonId={salonId}
         t={t}
@@ -467,7 +475,6 @@ export default function SalonSchedulePageClient({
       <ScheduleSetupModal
         isOpen={isScheduleModalOpen}
         weeklySchedule={weeklySchedule}
-        modalError={modalError}
         t={t}
         onClose={() => setIsScheduleModalOpen(false)}
         onSave={handleSaveSchedule}
