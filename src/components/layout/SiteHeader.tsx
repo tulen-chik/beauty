@@ -1,15 +1,16 @@
 "use client";
 
 import { MapPin, Menu, X } from 'lucide-react';
-import Image from 'next/image'; // Import the Image component
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { useUser } from '@/contexts/UserContext';
-import { useGeolocation } from '@/contexts/GeolocationContext'; // Import the hook
+import { useGeolocation } from '@/contexts/GeolocationContext';
 import { useToast } from '@/contexts';
+import Icicles from '@/components/christmas/Icicles';
 
 interface Props {
   locale: string;
@@ -17,7 +18,7 @@ interface Props {
 
 export default function SiteHeader({ locale }: Props) {
   const { currentUser, loading: authLoading } = useUser();
-  const { city, error: geoError, loading: geoLoading } = useGeolocation(); // Use the context
+  const { city, error: geoError, loading: geoLoading } = useGeolocation();
   const { error: showError } = useToast();
   const pathname = usePathname();
   const t = useTranslations('common');
@@ -113,9 +114,11 @@ export default function SiteHeader({ locale }: Props) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200">
+      {/* 2. ДОБАВЬТЕ `relative` К ХЕДЕРУ */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200 relative">
         <div className="max-w-7xl mx-auto px-3 sm:px-4">
           <div className="h-16 flex items-center justify-between gap-4">
+            {/* ... (весь ваш существующий JSX внутри хедера) ... */}
             <div className="flex items-center gap-3">
               <Link href={`/${locale}`} className="flex items-center">
                 <Image
@@ -163,8 +166,12 @@ export default function SiteHeader({ locale }: Props) {
             </div>
           </div>
         </div>
+        
+        {/* 3. ДОБАВЬТЕ КОМПОНЕНТ С СОСУЛЬКАМИ */}
+        <Icicles />
       </header>
 
+      {/* ... (ваш код для мобильного меню остается без изменений) ... */}
       {isMenuVisible && (
         <div
           onClick={() => setIsMenuOpen(false)}

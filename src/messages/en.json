@@ -504,7 +504,15 @@
     "followUs": "Follow us",
     "newsletter": "Newsletter",
     "subscribe": "Subscribe",
-    "emailPlaceholder": "Your email"
+    "emailPlaceholder": "Your email",
+    "copyright": "All rights reserved",
+    "location": "Belarus, Minsk",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "emailValue": "info@charming.by",
+    "phoneValue": "+375 (29) 123-45-67",
+    "description": "Connecting beauty professionals with clients worldwide. Your beauty journey starts here."
   },
   "errors": {
     "404": {

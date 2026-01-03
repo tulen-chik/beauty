@@ -443,7 +443,7 @@ export default function Home() {
             <div className="pt-8 border-t border-gray-200">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <p className="text-gray-400 text-sm text-center md:text-left">
-                  &copy; {new Date().getFullYear()} Ип Солдатенко Анастасия Дмитриевна УНП 193911137 А1.
+                  &copy; {new Date().getFullYear()} Ип Солдатенко Анастасия Дмитриевна УНП 193911137.
                 </p>
                 <div className="flex gap-6">
                   <Link 

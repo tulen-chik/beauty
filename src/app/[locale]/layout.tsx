@@ -16,6 +16,7 @@ import SiteHeader from '@/components/layout/SiteHeader';
 import { locales } from '@/i18n.config';
 import { Providers } from '@/providers/Providers';
 
+
 // 1. Используем функцию generateMetadata для большей гибкости
 export async function generateMetadata({ params: { locale } }: { params: { locale: string } }): Promise<Metadata> {
   

@@ -8,6 +8,7 @@ export default {
       fontFamily: {
         primary: ['Inter', ...defaultTheme.fontFamily.sans],
       },
+      
       colors: {
         primary: {
           // Customize it on globals.css :root
@@ -56,10 +57,16 @@ export default {
             backgroundPosition: '700px 0',
           },
         },
+        fall: {
+          '0%': { transform: 'translateY(-10vh)', opacity: '1' },
+          '100%': { transform: 'translateY(105vh)', opacity: '1' },
+        },
       },
       animation: {
         flicker: 'flicker 3s linear infinite',
         shimmer: 'shimmer 1.3s linear infinite',
+        'fall-slow': 'fall 20s linear infinite',
+        fall: 'fall linear infinite',
       },
     },
   },
