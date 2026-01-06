@@ -1,4 +1,26 @@
 {
+  "pages": {
+    "home": "Home",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "help": "Help"
+  },
+  "footer": {
+    "description": "Website connecting beauty industry professionals with clients",
+    "emailValue": "evgsoldatenko@gmail.com",
+    "phoneValue":"+375 (29) 123-45-67",
+    "location": "Belarus, Minsk",
+    "help": "Help",
+    "about":"About us",
+    "terms":"Terms of Service",
+    "privacy":"Privacy Policy",
+    "contact": "Contact",
+    "legal":"Legal Information",
+    "support": "Support",
+    "copyright":"All rights reserved"
+  },
   "common": {
     "home": "Home",
     "settings": "Settings",
@@ -427,6 +449,20 @@
     "archived": "Archived"
   },
   "home": {
+      "footer": {
+    "description": "Website connecting beauty industry professionals with clients",
+    "emailValue": "evgsoldatenko@gmail.com",
+    "phoneValue":"+375 (29) 123-45-67",
+    "location": "Belarus, Minsk",
+    "help": "Help",
+    "about":"About us",
+    "terms":"Terms of Service",
+    "privacy":"Privacy Policy",
+    "contact": "Contact",
+    "legal":"Legal",
+    "support": "Support",
+    "copyright":"All rights reserved"
+  },
     "title": "charming",
     "subtitle": "Find the best beauty salons near you",
     "heroTitle": "Beauty starts here",
@@ -488,32 +524,7 @@
     "footerText": "Connecting beauty professionals with clients worldwide. Your beauty journey starts here.",
     "faqTitle": "Frequently Asked Questions"
   },
-  "footer": {
-    "company": "Company",
-    "about": "About",
-    "careers": "Careers",
-    "press": "Press",
-    "support": "Support",
-    "help": "Help",
-    "contact": "Contact",
-    "legal": "Legal",
-    "terms": "Terms of Service",
-    "privacy": "Privacy Policy",
-    "cookies": "Cookies",
-    "social": "Social",
-    "followUs": "Follow us",
-    "newsletter": "Newsletter",
-    "subscribe": "Subscribe",
-    "emailPlaceholder": "Your email",
-    "copyright": "All rights reserved",
-    "location": "Belarus, Minsk",
-    "email": "Email",
-    "phone": "Phone",
-    "address": "Address",
-    "emailValue": "info@charming.by",
-    "phoneValue": "+375 (29) 123-45-67",
-    "description": "Connecting beauty professionals with clients worldwide. Your beauty journey starts here."
-  },
+
   "errors": {
     "404": {
       "title": "Page not found",

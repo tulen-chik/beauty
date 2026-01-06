@@ -1,6 +1,5 @@
 "use client";
 import { Building2, CheckCircle, FileText, Map, MapPin, Phone, X } from "lucide-react";
-import { useTranslations } from 'next-intl';
 import { useEffect,useRef, useState } from "react";
 
 import { useSalon } from "@/contexts/SalonContext";
@@ -26,7 +25,6 @@ const MapSelector = ({
   const [map, setMap] = useState<any>(null);
   const [marker, setMarker] = useState<any>(null);
   const [mapError, setMapError] = useState<string | null>(null);
-  const t = useTranslations('mapSelector');
 
   useEffect(() => {
     const loadGoogleMaps = () => {
@@ -78,7 +76,7 @@ const MapSelector = ({
         await loadGoogleMaps();
         
         if (!mapRef.current || !window.google?.maps) {
-          setMapError(t('error'));
+          setMapError('Ошибка загрузки карты');
           return;
         }
 
@@ -151,7 +149,7 @@ const MapSelector = ({
 
       } catch (error) {
         console.error('Map initialization error:', error);
-        setMapError(t('error'));
+        setMapError('Ошибка загрузки карты');
       }
     };
 
@@ -167,7 +165,7 @@ const MapSelector = ({
       <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
         <p className="text-red-800 text-sm">{mapError}</p>
         <p className="text-red-600 text-xs mt-1">
-          {t('errorHelp')}
+          Убедитесь, что API ключ Google Maps настроен правильно
         </p>
       </div>
     );
@@ -177,7 +175,7 @@ const MapSelector = ({
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
         <Map className="h-4 w-4" />
-        <span>{t('title')}</span>
+        <span>Выберите местоположение на карте</span>
       </div>
       <div 
         ref={mapRef} 
@@ -185,7 +183,7 @@ const MapSelector = ({
         style={{ minHeight: '192px' }}
       />
       <p className="text-xs text-gray-500">
-        {t('instructions')}
+        Нажмите на карту или перетащите маркер, чтобы выбрать местоположение салона
       </p>
     </div>
   );
@@ -207,7 +205,6 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
   const [addServices, setAddServices] = useState(false);
   const [createdSalon, setCreatedSalon] = useState<DBSalon | null>(null);
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | undefined>(undefined);
-  const t = useTranslations('salonCreation');
 
   // validation state
   const [validationErrors, setValidationErrors] = useState<{
@@ -229,15 +226,15 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
 
   const validate = () => {
     const errs: any = {};
-    if (!name.trim()) errs.name = t('requiredName');
-    if (!address.trim()) errs.address = t('requiredAddress');
+    if (!name.trim()) errs.name = 'Название салона обязательно';
+    if (!address.trim()) errs.address = 'Адрес салона обязателен';
     if (!phone.trim()) {
-      errs.phone = t('requiredPhone');
+      errs.phone = 'Телефон обязателен';
     } else if (!PHONE_REGEX.test(phone)) {
-      errs.phone = t('invalidPhone');
+      errs.phone = 'Неверный формат телефона';
     }
     if (description.length > MAX_DESCRIPTION) {
-      errs.description = t('descriptionTooLong', { max: MAX_DESCRIPTION });
+      errs.description = `Описание слишком длинное (макс. ${MAX_DESCRIPTION} символов)`;
     }
     
     setValidationErrors(errs);
@@ -321,212 +318,216 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {t('createSalonFor')} {userName}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        {success ? (
-          <div className="text-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {t('successTitle')}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {t('successMessage')}
-            </p>
-            
-            {addServices && createdSalon?.id && (
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    router.push(`/admin/salons/${createdSalon.id}/services`);
-                    onClose();
-                  }}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  {t('addServicesNow')}
-                </button>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  {t('close')}
-                </button>
-              </div>
-            )}
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+      <div className="relative min-h-screen flex items-center justify-center p-4">
+        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl transform transition-all">
+          <div className="flex justify-between items-center p-6 border-b border-gray-100">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Создать салон для {userName}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+            >
+              <X className="h-6 w-6" />
+            </button>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
 
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('nameLabel')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building2 className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setValidationErrors(prev => ({ ...prev, name: undefined }));
-                  }}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    validationErrors.name ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder={t('namePlaceholder')}
-                />
+          {success ? (
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
+                <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              {validationErrors.name && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('addressLabel')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MapPin className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="address"
-                  type="text"
-                  value={address}
-                  readOnly
-                  onClick={() => setShowMap(true)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 bg-gray-50 rounded-md shadow-sm cursor-pointer focus:ring-blue-500 focus:border-blue-500"
-                  placeholder={t('addressPlaceholder')}
-                />
-              </div>
-              {validationErrors.address && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>
-              )}
-            </div>
-
-            {showMap && (
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <MapSelector 
-                  onLocationSelect={handleLocationSelect} 
-                  initialCoordinates={coordinates}
-                />
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('phoneLabel')} <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    setValidationErrors(prev => ({ ...prev, phone: undefined }));
-                  }}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    validationErrors.phone ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder={t('phonePlaceholder')}
-                />
-              </div>
-              {validationErrors.phone && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                {t('descriptionLabel')}
-              </label>
-              <div className="relative">
-                <div className="absolute top-2 left-3">
-                  <FileText className="h-5 w-5 text-gray-400" />
-                </div>
-                <textarea
-                  id="description"
-                  rows={4}
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    setValidationErrors(prev => ({ ...prev, description: undefined }));
-                  }}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    validationErrors.description ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder={t('descriptionPlaceholder')}
-                  maxLength={MAX_DESCRIPTION}
-                />
-                <div className="flex justify-end text-xs text-gray-500 mt-1">
-                  {description.length}/{MAX_DESCRIPTION}
-                </div>
-              </div>
-              {validationErrors.description && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
-              )}
-            </div>
-
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center">
-                <input
-                  id="add-services"
-                  name="add-services"
-                  type="checkbox"
-                  checked={addServices}
-                  onChange={(e) => setAddServices(e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="add-services" className="ml-2 block text-sm text-gray-700">
-                  {t('addServicesAfter')}
-                </label>
-              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Салон успешно создан!
+              </h3>
+              <p className="text-gray-600 mb-8">
+                Салон добавлен в систему
+              </p>
               
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  {t('cancelButton')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
-                  {loading ? t('creatingButton') : t('createButton')}
-                </button>
-              </div>
+              {addServices && createdSalon?.id && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push(`/admin/salons/${createdSalon.id}/services`);
+                      onClose();
+                    }}
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors duration-200"
+                  >
+                    Добавить услуги сейчас
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors duration-200"
+                  >
+                    Закрыть
+                  </button>
+                </div>
+              )}
             </div>
-          </form>
-        )}
+          ) : (
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-red-800 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Название салона <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building2 className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setValidationErrors(prev => ({ ...prev, name: undefined }));
+                    }}
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
+                      validationErrors.name ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    placeholder="Например: Красота и Стиль"
+                  />
+                </div>
+                {validationErrors.name && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                  Адрес салона <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPin className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="address"
+                    type="text"
+                    value={address}
+                    readOnly
+                    onClick={() => setShowMap(true)}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 bg-gray-50 rounded-lg shadow-sm cursor-pointer focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200"
+                    placeholder="Нажмите для выбора адреса на карте"
+                  />
+                </div>
+                {validationErrors.address && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.address}</p>
+                )}
+              </div>
+
+              {showMap && (
+                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                  <MapSelector 
+                    onLocationSelect={handleLocationSelect} 
+                    initialCoordinates={coordinates}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Телефон <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      setValidationErrors(prev => ({ ...prev, phone: undefined }));
+                    }}
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
+                      validationErrors.phone ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    placeholder="+375 (XX) XXX-XX-XX"
+                  />
+                </div>
+                {validationErrors.phone && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.phone}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  Описание салона
+                </label>
+                <div className="relative">
+                  <div className="absolute top-3 left-3">
+                    <FileText className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <textarea
+                    id="description"
+                    rows={4}
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setValidationErrors(prev => ({ ...prev, description: undefined }));
+                    }}
+                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
+                      validationErrors.description ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                    placeholder="Расскажите о вашем салоне..."
+                    maxLength={MAX_DESCRIPTION}
+                  />
+                  <div className="flex justify-end text-xs text-gray-500 mt-2">
+                    {description.length}/{MAX_DESCRIPTION}
+                  </div>
+                </div>
+                {validationErrors.description && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.description}</p>
+                )}
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center">
+                  <input
+                    id="add-services"
+                    name="add-services"
+                    type="checkbox"
+                    checked={addServices}
+                    onChange={(e) => setAddServices(e.target.checked)}
+                    className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                  />
+                  <label htmlFor="add-services" className="ml-3 block text-sm text-gray-700">
+                    Добавить услуги после создания салона
+                  </label>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={loading}
+                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                  >
+                    {loading ? 'Создание...' : 'Создать салон'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

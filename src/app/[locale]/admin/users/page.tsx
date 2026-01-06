@@ -168,77 +168,176 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Управление пользователями</h1>
-            <p className="text-gray-600 mt-1">Просмотр и управление всеми пользователями системы</p>
+            <h1 className="text-3xl font-light text-gray-900">Пользователи</h1>
+            <p className="text-gray-500 mt-2 text-sm">Управление пользователями системы</p>
           </div>
-          <button onClick={() => setShowCreateUserModal(true)} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"><UserPlus className="h-5 w-5 mr-2" />Добавить</button>
+          <button 
+            onClick={() => setShowCreateUserModal(true)} 
+            className="inline-flex items-center px-6 py-3 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+          >
+            <UserPlus className="h-4 w-4 mr-2" />
+            Добавить пользователя
+          </button>
         </div>
 
-        <div className="bg-white rounded-lg shadow mb-6 p-6">
-          <input type="text" placeholder="Поиск пользователей..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg" />
+        <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm mb-6">
+          <div className="p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Поиск по имени или email..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200"
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Пользователь</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Роль</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Действия</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">{user.avatarUrl ? <img className="h-10 w-10 rounded-full" src={user.avatarUrl} alt="" /> : <div className="h-10 w-10 rounded-full bg-gray-300" />}</div>
-                      <div className="ml-4"><div className="text-sm font-medium text-gray-900">{user.displayName}</div><div className="text-sm text-gray-500">{user.email}</div></div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleColor(user.role)}`}>{getRoleLabel(user.role)}</span></td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button onClick={() => { setSelectedUser(user); setShowUserModal(true); }} className="text-blue-600 hover:text-blue-900 mr-3"><Eye /></button>
-                    <button onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }} className="text-red-600 hover:text-red-900"><Trash2 /></button>
-                  </td>
+        <div className="bg-white rounded-xl border border-gray-200/60 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-gray-200/60">
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пользователь</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-gray-50/50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-11 w-11">
+                          {user.avatarUrl ? (
+                            <img className="h-11 w-11 rounded-full object-cover ring-2 ring-gray-100" src={user.avatarUrl} alt="" />
+                          ) : (
+                            <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 ring-2 ring-gray-100" />
+                          )}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.displayName}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                      <button 
+                        onClick={() => { setSelectedUser(user); setShowUserModal(true); }} 
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-150 mr-2"
+                        title="Просмотр"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => { setSelectedUser(user); setShowDeleteModal(true); }} 
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-150"
+                        title="Удалить"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* User Details Modal */}
       {showUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-medium">Информация о пользователе</h3><button onClick={() => setShowUserModal(false)}><X /></button></div>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0 h-12 w-12">{selectedUser.avatarUrl ? <img className="h-12 w-12 rounded-full" src={selectedUser.avatarUrl} alt="" /> : <div className="h-12 w-12 rounded-full bg-gray-300" />}</div>
-                <div><div className="text-lg font-medium">{selectedUser.displayName}</div><div className="text-sm text-gray-500">{selectedUser.email}</div></div>
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg transform transition-all">
+              <div className="flex justify-between items-center p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Информация о пользователе</h3>
+                <button 
+                  onClick={() => setShowUserModal(false)}
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-3">Салоны пользователя</h4>
-                {loadingSalons ? <p>Загрузка салонов...</p> : userSalons.length > 0 ? (
-                  <div className="space-y-3">
-                    {userSalons.map((salon) => (
-                      <div key={salon.id} className="block p-3 border rounded-lg hover:bg-gray-50">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h5 className="font-medium">{salon.name}</h5>
-                            <p className="text-sm text-gray-500 flex items-center mt-1"><MapPin className="h-3.5 w-3.5 mr-1" />{salon.address}</p>
-                          </div>
-                          <button onClick={() => { setSalonForModal(salon); setShowSalonDetailsModal(true); }} className="p-2 text-gray-500 hover:text-blue-600"><Settings className="h-4 w-4" /></button>
-                        </div>
-                      </div>
-                    ))}
+              <div className="p-6 space-y-6">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0 h-16 w-16">
+                    {selectedUser.avatarUrl ? (
+                      <img className="h-16 w-16 rounded-full object-cover ring-4 ring-gray-100" src={selectedUser.avatarUrl} alt="" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 ring-4 ring-gray-100" />
+                    )}
                   </div>
-                ) : <p className="text-sm text-gray-500">У пользователя нет салонов.</p>}
+                  <div className="flex-1">
+                    <div className="text-xl font-semibold text-gray-900">{selectedUser.displayName}</div>
+                    <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                  </div>
+                </div>
+                <div className="pt-6 border-t border-gray-100">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm font-semibold text-gray-900">Салоны пользователя</h4>
+                    <button 
+                      onClick={() => setShowCreateSalonModal(true)}
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Добавить салон
+                    </button>
+                  </div>
+                  {loadingSalons ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
+                  ) : userSalons.length > 0 ? (
+                    <div className="space-y-3">
+                      {userSalons.map((salon) => (
+                        <div key={salon.id} className="p-4 border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all duration-200">
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-900 mb-1">{salon.name}</h5>
+                              <p className="text-sm text-gray-500 flex items-center">
+                                <MapPin className="h-4 w-4 mr-2" />
+                                {salon.address}
+                              </p>
+                            </div>
+                            <button 
+                              onClick={() => { setSalonForModal(salon); setShowSalonDetailsModal(true); }} 
+                              className="ml-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+                              title="Настройки салона"
+                            >
+                              <Settings className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <div className="h-12 w-12 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-500 mb-4">У пользователя пока нет салонов</p>
+                      <button 
+                        onClick={() => setShowCreateSalonModal(true)}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Создать первый салон
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -247,35 +346,101 @@ export default function AdminUsersPage() {
 
       {/* Salon Details Modal (Nested) */}
       {showSalonDetailsModal && salonForModal && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-75 overflow-y-auto h-full w-full z-[60]">
-          <div className="relative top-10 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4"><h3 className="text-lg font-medium">Управление салоном: {salonForModal.name}</h3><button onClick={handleCloseSalonDetailsModal}><X /></button></div>
-            <div className="p-4 border-y border-gray-200">
-              <label className="block text-sm font-medium text-gray-700 mb-3">Аватар</label>
-              <div className="flex items-center gap-5">
-                <div className="relative w-20 h-20 rounded-full bg-gray-100 flex-shrink-0">
-                  <Image src={avatarPreviewUrl || salonForModal.avatarUrl || '/placeholder.png'} alt="Аватар" layout="fill" className="rounded-full object-cover" />
-                  {isAvatarUploading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-full"><Loader2 className="animate-spin" /></div>}
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-[60]">
+          <div className="relative min-h-screen flex items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg transform transition-all">
+              <div className="flex justify-between items-center p-6 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Управление салоном: {salonForModal.name}</h3>
+                <button 
+                  onClick={handleCloseSalonDetailsModal}
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">Аватар салона</label>
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-20 h-20 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden">
+                        <Image 
+                          src={avatarPreviewUrl || salonForModal.avatarUrl || '/placeholder.png'} 
+                          alt="Аватар" 
+                          layout="fill" 
+                          className="object-cover" 
+                        />
+                        {isAvatarUploading && (
+                          <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                            <Loader2 className="animate-spin h-6 w-6 text-gray-600" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-3">
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          accept="image/png, image/jpeg, image/webp" 
+                          className="hidden" 
+                        />
+                        {!avatarFile ? (
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={() => fileInputRef.current?.click()} 
+                              disabled={isAvatarUploading} 
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors duration-200"
+                            >
+                              <UploadCloud className="w-4 h-4 mr-2" />
+                              Изменить
+                            </button>
+                            {salonForModal.avatarUrl && (
+                              <button 
+                                onClick={handleAvatarRemove} 
+                                disabled={isAvatarUploading} 
+                                className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors duration-200"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Удалить
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            <button 
+                              onClick={handleAvatarUpload} 
+                              disabled={isAvatarUploading} 
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors duration-200"
+                            >
+                              <Save className="w-4 h-4 mr-2" />
+                              Сохранить
+                            </button>
+                            <button 
+                              onClick={cancelAvatarChange} 
+                              disabled={isAvatarUploading} 
+                              className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 transition-colors duration-200"
+                            >
+                              <X className="w-4 h-4 mr-2" />
+                              Отмена
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-500">PNG, JPG, WEBP до 2МБ</p>
+                        {avatarError && <p className="text-xs text-red-500">{avatarError}</p>}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/png, image/jpeg, image/webp" className="hidden" />
-                  {!avatarFile ? (
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => fileInputRef.current?.click()} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"><UploadCloud className="w-4 h-4" /> Изменить</button>
-                      {salonForModal.avatarUrl && <button onClick={handleAvatarRemove} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 disabled:opacity-50 flex items-center gap-1"><Trash2 className="w-4 h-4" /> Удалить</button>}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <button onClick={handleAvatarUpload} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"><Save className="w-4 h-4" /> Сохранить</button>
-                      <button onClick={cancelAvatarChange} disabled={isAvatarUploading} className="px-3 py-1.5 text-sm font-medium bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 flex items-center gap-1"><X className="w-4 h-4" /> Отмена</button>
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">PNG, JPG, WEBP до 2МБ.</p>
-                  {avatarError && <p className="text-xs text-red-500 mt-1">{avatarError}</p>}
+                <div className="flex justify-end pt-4 border-t border-gray-100">
+                  <button 
+                    onClick={handleCloseSalonDetailsModal} 
+                    className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    Закрыть
+                  </button>
                 </div>
               </div>
             </div>
-            <div className="flex justify-end mt-4"><button onClick={handleCloseSalonDetailsModal} className="px-4 py-2 bg-gray-100 rounded-md">Закрыть</button></div>
           </div>
         </div>
       )}
