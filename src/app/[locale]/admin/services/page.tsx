@@ -13,14 +13,12 @@ import {
   Trash2, 
   X,
   XCircle} from "lucide-react"
-import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 
 import { useAdmin } from "@/contexts/AdminContext"
 import { useUser } from "@/contexts/UserContext"
 
 export default function AdminServicesPage() {
-  const t = useTranslations('admin')
   const { currentUser } = useUser()
   const { 
     services, 

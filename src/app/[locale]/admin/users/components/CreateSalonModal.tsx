@@ -320,14 +320,14 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl transform transition-all">
-          <div className="flex justify-between items-center p-6 border-b border-gray-100">
+        <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-2xl transform transition-all">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900">
               Создать салон для {userName}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
               <X className="h-6 w-6" />
             </button>
@@ -335,9 +335,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
 
           {success ? (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-              </div>
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Салон успешно создан!
               </h3>
@@ -353,14 +351,14 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                       router.push(`/admin/salons/${createdSalon.id}/services`);
                       onClose();
                     }}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors duration-200"
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                   >
                     Добавить услуги сейчас
                   </button>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors duration-200"
+                    className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                   >
                     Закрыть
                   </button>
@@ -370,7 +368,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
           ) : (
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-red-800 text-sm">{error}</p>
                 </div>
               )}
@@ -391,9 +389,9 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                       setName(e.target.value);
                       setValidationErrors(prev => ({ ...prev, name: undefined }));
                     }}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
-                      validationErrors.name ? 'border-red-300' : 'border-gray-200'
-                    }`}
+                    className={`block w-full pl-10 pr-3 py-2.5 border ${
+                      validationErrors.name ? 'border-red-300' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200`}
                     placeholder="Например: Красота и Стиль"
                   />
                 </div>
@@ -416,7 +414,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                     value={address}
                     readOnly
                     onClick={() => setShowMap(true)}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-200 bg-gray-50 rounded-lg shadow-sm cursor-pointer focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200"
+                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 bg-gray-50 rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                     placeholder="Нажмите для выбора адреса на карте"
                   />
                 </div>
@@ -426,7 +424,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
               </div>
 
               {showMap && (
-                <div className="p-4 border border-gray-200 rounded-xl bg-gray-50">
+                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                   <MapSelector 
                     onLocationSelect={handleLocationSelect} 
                     initialCoordinates={coordinates}
@@ -450,9 +448,9 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                       setPhone(e.target.value);
                       setValidationErrors(prev => ({ ...prev, phone: undefined }));
                     }}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
-                      validationErrors.phone ? 'border-red-300' : 'border-gray-200'
-                    }`}
+                    className={`block w-full pl-10 pr-3 py-2.5 border ${
+                      validationErrors.phone ? 'border-red-300' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200`}
                     placeholder="+375 (XX) XXX-XX-XX"
                   />
                 </div>
@@ -477,14 +475,16 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                       setDescription(e.target.value);
                       setValidationErrors(prev => ({ ...prev, description: undefined }));
                     }}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg shadow-sm focus:ring-gray-900/20 focus:border-gray-900 transition-all duration-200 ${
-                      validationErrors.description ? 'border-red-300' : 'border-gray-200'
-                    }`}
+                    className={`block w-full pl-10 pr-3 py-2.5 border ${
+                      validationErrors.description ? 'border-red-300' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200`}
                     placeholder="Расскажите о вашем салоне..."
                     maxLength={MAX_DESCRIPTION}
                   />
-                  <div className="flex justify-end text-xs text-gray-500 mt-2">
-                    {description.length}/{MAX_DESCRIPTION}
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="text-xs text-gray-500">
+                      {description.length}/{MAX_DESCRIPTION}
+                    </div>
                   </div>
                 </div>
                 {validationErrors.description && (
@@ -500,7 +500,7 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                     type="checkbox"
                     checked={addServices}
                     onChange={(e) => setAddServices(e.target.checked)}
-                    className="h-4 w-4 text-gray-900 focus:ring-gray-900 border-gray-300 rounded"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor="add-services" className="ml-3 block text-sm text-gray-700">
                     Добавить услуги после создания салона
@@ -512,16 +512,26 @@ export const CreateSalonModal = ({ isOpen, onClose, userId, userName }: CreateSa
                     type="button"
                     onClick={onClose}
                     disabled={loading}
-                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                    className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
                   >
                     Отмена
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                    className="inline-flex justify-center items-center py-2.5 px-4 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors duration-200"
                   >
-                    {loading ? 'Создание...' : 'Создать салон'}
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Создание...
+                      </>
+                    ) : (
+                      'Создать салон'
+                    )}
                   </button>
                 </div>
               </div>

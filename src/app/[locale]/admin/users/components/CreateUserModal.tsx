@@ -78,15 +78,15 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm overflow-y-auto h-full w-full z-50">
       <div className="relative min-h-screen flex items-center justify-center p-4">
-        <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-all">
-          <div className="flex justify-between items-center p-6 border-b border-gray-100">
+        <div className="relative bg-white rounded-2xl shadow-xl border border-gray-200 w-full max-w-md transform transition-all">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <UserPlus className="w-5 h-5" />
+              <UserPlus className="w-5 h-5 text-blue-600" />
               Создать пользователя
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all duration-150"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
               disabled={isSubmitting}
             >
               <X className="w-5 h-5" />
@@ -95,8 +95,8 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-800 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                <p className="text-sm">{error}</p>
               </div>
             )}
 
@@ -115,7 +115,7 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="pl-10 block w-full rounded-lg border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="user@example.com"
                 />
               </div>
@@ -137,7 +137,7 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                   onChange={handleChange}
                   required
                   minLength={6}
-                  className="pl-10 block w-full rounded-lg border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="••••••"
                 />
               </div>
@@ -158,7 +158,7 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                   value={formData.displayName}
                   onChange={handleChange}
                   required
-                  className="pl-10 block w-full rounded-lg border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="Иван Иванов"
                 />
               </div>
@@ -178,7 +178,7 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-lg border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   placeholder="+375 (XX) XXX-XX-XX"
                 />
               </div>
@@ -198,7 +198,7 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                   value={formData.role}
                   onChange={handleChange}
                   required
-                  className="pl-10 block w-full rounded-lg border-gray-200 shadow-sm focus:border-gray-900 focus:ring-gray-900/20 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 appearance-none bg-white"
                 >
                   <option value="user">Пользователь</option>
                   <option value="admin">Администратор</option>
@@ -211,14 +211,14 @@ export function CreateUserModal({ isOpen, onClose }: { isOpen: boolean; onClose:
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200 disabled:opacity-50"
               >
                 Отмена
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || loading}
-                className="inline-flex justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 transition-colors duration-200"
+                className="inline-flex justify-center items-center py-2.5 px-4 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {isSubmitting || loading ? (
                   <>

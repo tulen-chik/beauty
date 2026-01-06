@@ -42,13 +42,13 @@ interface ServiceFormData {
 }
 
 const WEEKDAYS = [
-    { key: "monday", fullLabel: "Monday" },
-    { key: "tuesday", fullLabel: "Tuesday" },
-    { key: "wednesday", fullLabel: "Wednesday" },
-    { key: "thursday", fullLabel: "Thursday" },
-    { key: "friday", fullLabel: "Friday" },
-    { key: "saturday", fullLabel: "Saturday" },
-    { key: "sunday", fullLabel: "Sunday" },
+    { key: "monday", fullLabel: "Понедельник" },
+    { key: "tuesday", fullLabel: "Вторник" },
+    { key: "wednesday", fullLabel: "Среда" },
+    { key: "thursday", fullLabel: "Четверг" },
+    { key: "friday", fullLabel: "Пятница" },
+    { key: "saturday", fullLabel: "Суббота" },
+    { key: "sunday", fullLabel: "Воскресенье" },
 ];
 
 export default function SalonServicesPage() {
@@ -169,11 +169,11 @@ export default function SalonServicesPage() {
     setFormError(null);
 
     if (!form.name.trim()) {
-      setFormError("Service name is required.");
+      setFormError("Название услуги обязательно.");
       return;
     }
     if (!form.durationMinutes || form.durationMinutes <= 0) {
-      setFormError("Duration must be a positive number.");
+      setFormError("Длительность должна быть положительным числом.");
       return;
     }
 
@@ -199,7 +199,7 @@ export default function SalonServicesPage() {
       setShowModal(false);
       setEditingService(null);
     } catch (e: any) {
-      setFormError(e?.message ?? "An error occurred while saving.");
+      setFormError(e?.message ?? "Произошла ошибка при сохранении.");
     }
   };
 
@@ -209,13 +209,13 @@ export default function SalonServicesPage() {
   };
 
   const handleDelete = async (serviceId: string) => {
-    if (window.confirm("Are you sure you want to delete this service?")) {
+    if (window.confirm("Вы уверены, что хотите удалить эту услугу?")) {
       try {
         await deleteService(serviceId);
         await loadAllData();
       } catch (error: any) {
         console.error("Failed to delete service:", error);
-        alert(error.message || "Failed to delete service.");
+        alert(error.message || "Не удалось удалить услугу.");
       }
     }
   };
@@ -253,7 +253,7 @@ export default function SalonServicesPage() {
         return { ...prev, categoryIds: prev.categoryIds.filter(id => id !== categoryId) };
       }
       if (prev.categoryIds.length >= 6) {
-        setFormError("You can select up to 6 categories.");
+        setFormError("Можно выбрать до 6 категорий.");
         return prev;
       }
       return { ...prev, categoryIds: [...prev.categoryIds, categoryId] };
@@ -366,7 +366,7 @@ export default function SalonServicesPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-500">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading...</span>
+          <span>Загрузка...</span>
         </div>
       </div>
     );
@@ -378,8 +378,8 @@ export default function SalonServicesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Salon Services</h1>
-            <p className="text-gray-600">Manage the services offered by this salon.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Услуги салона</h1>
+            <p className="text-gray-600">Управление услугами, предоставляемыми этим салоном.</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -387,14 +387,14 @@ export default function SalonServicesPage() {
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all bg-white text-gray-800 border border-gray-300 hover:bg-gray-100 h-12 px-6 shadow-sm"
             >
               <Settings className="h-5 w-5 mr-2" />
-              Manage Schedule
+              Управление расписанием
             </button>
             <button
               onClick={() => { setEditingService(null); setShowModal(true); }}
               className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 h-12 px-6 shadow-sm"
             >
               <Plus className="h-5 w-5 mr-2" />
-              Add Service
+              Добавить услугу
             </button>
           </div>
         </div>
@@ -406,14 +406,14 @@ export default function SalonServicesPage() {
           <div className="rounded-lg border bg-white text-center py-12">
             <div className="max-w-md mx-auto p-6">
               <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No services yet</h3>
-              <p className="text-gray-500 mb-6">Get started by adding your first service.</p>
+              <h3 className="text-xl font-semibold mb-2">Услуг пока нет</h3>
+              <p className="text-gray-500 mb-6">Начните с добавления первой услуги.</p>
               <button
                 onClick={() => { setEditingService(null); setShowModal(true); }}
                 className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 h-10 px-4"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add First Service
+                Добавить первую услугу
               </button>
             </div>
           </div>
@@ -434,7 +434,7 @@ export default function SalonServicesPage() {
                       ) : (
                         <div className="text-center text-gray-500">
                           <Camera className="h-12 w-12 mx-auto mb-2" />
-                          <p className="text-sm">No Photo</p>
+                          <p className="text-sm">Нет фото</p>
                         </div>
                       )}
 
@@ -450,14 +450,14 @@ export default function SalonServicesPage() {
                           <h3 className="font-semibold text-lg text-gray-900 mb-1">{service.name}</h3>
                           <div className="flex items-center gap-4 text-sm text-gray-500">
                             <div className="flex items-center gap-1"><Clock className="h-4 w-4" />{service.durationMinutes} min</div>
-                            {service.isApp && <div className="flex items-center gap-1 text-blue-600"><Smartphone className="h-4 w-4" /><span>In App</span></div>}
+                            {service.isApp && <div className="flex items-center gap-1 text-blue-600"><Smartphone className="h-4 w-4" /><span>В приложении</span></div>}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-bold text-blue-600">${service.price}</div>
                           <div className={`flex items-center gap-1 text-sm ${service.isActive ? 'text-green-600' : 'text-gray-500'}`}>
                             {service.isActive ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
-                            <span>{service.isActive ? "Active" : "Inactive"}</span>
+                            <span>{service.isActive ? "Активна" : "Неактивна"}</span>
                           </div>
                         </div>
                       </div>
@@ -468,10 +468,10 @@ export default function SalonServicesPage() {
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Photos</span>
+                          <span className="text-sm font-medium">Фотографии</span>
                           <label className="cursor-pointer">
                             <input type="file" accept="image/*" className="hidden" onChange={e => { if (e.target.files?.[0]) { handleAddImage(service.id, e.target.files[0]); } }} />
-                            <span className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 h-9 px-3 cursor-pointer"><Upload className="h-4 w-4 mr-1" />Add Photo</span>
+                            <span className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 h-9 px-3 cursor-pointer"><Upload className="h-4 w-4 mr-1" />Добавить фото</span>
                           </label>
                         </div>
                         {serviceImages.length > 0 && <div className="flex flex-wrap gap-2">{serviceImages.map((img) => <div key={img.id} className="relative group/img"><img src={img.url} alt="service" className="w-16 h-16 object-cover rounded-md border" /><button onClick={() => handleImageDelete(service.id, img.storagePath)} className="inline-flex items-center justify-center rounded-full h-6 w-6 p-0 bg-red-600 text-white hover:bg-red-700 absolute -top-2 -right-2 opacity-0 group-hover/img:opacity-100 transition-opacity"><X className="h-3 w-3" /></button></div>)}</div>}
@@ -489,54 +489,54 @@ export default function SalonServicesPage() {
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="relative w-full max-w-lg bg-white p-6 shadow-lg sm:rounded-lg max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">{editingService ? "Edit Service" : "Add New Service"}</h2>
+                <h2 className="text-lg font-semibold">{editingService ? "Редактировать услугу" : "Добавить новую услугу"}</h2>
                 <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X className="h-6 w-6" /></button>
               </div>
               <form onSubmit={handleSave} className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Service Name</label>
-                  <input id="name" type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g., Men's Haircut" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Название услуги</label>
+                  <input id="name" type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="напр., Мужская стрижка" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
                 </div>
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea id="description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the service..." rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">Описание</label>
+                  <textarea id="description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Опишите услугу..." rows={3} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price ($)</label>
+                    <label htmlFor="price" className="block text-sm font-medium text-gray-700">Цена (руб.)</label>
                     <input id="price" type="text" inputMode="decimal" value={displayPrice} onChange={handlePriceChange} placeholder="0" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
                   </div>
                   <div>
-                    <label htmlFor="duration" className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
+                    <label htmlFor="duration" className="block text-sm font-medium text-gray-700">Длительность (минуты)</label>
                     <input id="duration" type="number" min={1} value={form.durationMinutes} onChange={e => setForm(f => ({ ...f, durationMinutes: Number(e.target.value) }))} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-700">Categories</label>
-                    {!showNewCategoryInput && <button type="button" onClick={() => setShowNewCategoryInput(true)} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"><Plus className="h-4 w-4" />Add Category</button>}
+                    <label className="text-sm font-medium text-gray-700">Категории</label>
+                    {!showNewCategoryInput && <button type="button" onClick={() => setShowNewCategoryInput(true)} className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"><Plus className="h-4 w-4" />Добавить категорию</button>}
                   </div>
                   {showNewCategoryInput && (
                     <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                      <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New category name" className="flex-1 h-9 rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm" />
+                      <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Название новой категории" className="flex-1 h-9 rounded-md border-gray-300 focus:ring-blue-500 focus:border-blue-500 text-sm" />
                       <button type="button" onClick={handleCreateCategory} disabled={!newCategoryName.trim() || isCreatingCategory} className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">{isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</button>
                       <button type="button" onClick={() => setShowNewCategoryInput(false)} className="inline-flex items-center justify-center rounded-md h-9 w-9 bg-white border hover:bg-gray-100"><X className="h-4 w-4" /></button>
                     </div>
                   )}
                   <div className="border rounded-lg p-3 bg-gray-50/50 max-h-40 overflow-y-auto">
-                    {categories.length > 0 ? <div className="grid grid-cols-2 gap-2">{categories.map((cat) => <label key={cat.id} className="flex items-center space-x-2 cursor-pointer hover:bg-blue-50 p-1 rounded-md"><input type="checkbox" checked={form.categoryIds.includes(cat.id)} onChange={() => toggleCategory(cat.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><span className="text-sm">{cat.name}</span></label>)}</div> : <p className="text-sm text-gray-500 text-center py-2">No categories available.</p>}
+                    {categories.length > 0 ? <div className="grid grid-cols-2 gap-2">{categories.map((cat) => <label key={cat.id} className="flex items-center space-x-2 cursor-pointer hover:bg-blue-50 p-1 rounded-md"><input type="checkbox" checked={form.categoryIds.includes(cat.id)} onChange={() => toggleCategory(cat.id)} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><span className="text-sm">{cat.name}</span></label>)}</div> : <p className="text-sm text-gray-500 text-center py-2">Нет доступных категорий.</p>}
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                  <div className="flex items-center space-x-2"><input id="isActive" type="checkbox" checked={form.isActive} onChange={(e) => setForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><label htmlFor="isActive" className="text-sm cursor-pointer">Service is Active</label></div>
-                  <div className="flex items-center space-x-2"><input id="isApp" type="checkbox" checked={form.isApp} onChange={(e) => setForm(f => ({ ...f, isApp: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><label htmlFor="isApp" className="text-sm cursor-pointer">Available in App</label></div>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <div className="flex items-center space-x-2"><input id="isActive" type="checkbox" checked={form.isActive} onChange={(e) => setForm(f => ({ ...f, isActive: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><label htmlFor="isActive" className="text-sm cursor-pointer">Услуга активна</label></div>
+                  <div className="flex items-center space-x-2"><input id="isApp" type="checkbox" checked={form.isApp} onChange={(e) => setForm(f => ({ ...f, isApp: e.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /><label htmlFor="isApp" className="text-sm cursor-pointer">Доступно в приложении</label></div>
                 </div>
 
                 {formError && <div className="bg-red-100 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">{formError}</div>}
 
                 <div className="flex justify-end gap-3 pt-4 border-t">
-                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Cancel</button>
-                  <button type="submit" disabled={adminLoading} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50">{adminLoading ? "Saving..." : (editingService ? "Save Changes" : "Add Service")}</button>
+                  <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Отмена</button>
+                  <button type="submit" disabled={adminLoading} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50">{adminLoading ? "Сохранение..." : (editingService ? "Сохранить изменения" : "Добавить услугу")}</button>
                 </div>
               </form>
             </div>
@@ -546,7 +546,7 @@ export default function SalonServicesPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
               <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-xl font-semibold">Schedule Setup</h2>
+                <h2 className="text-xl font-semibold">Настройка расписания</h2>
                 <button onClick={() => setIsScheduleModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full">
                   <X className="h-5 w-5" />
                 </button>
@@ -570,7 +570,7 @@ export default function SalonServicesPage() {
                             checked={d.isOpen}
                             onChange={e => handleOpenToggle(i, e.target.checked)}
                           />
-                          <span className="text-sm">Open</span>
+                          <span className="text-sm">Открыто</span>
                         </label>
                       </div>
                       {d.isOpen && (
@@ -596,7 +596,7 @@ export default function SalonServicesPage() {
                             </div>
                           ))}
                           <button onClick={() => handleAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
-                            Add Interval
+                            Добавить интервал
                           </button>
                         </div>
                       )}
@@ -607,10 +607,10 @@ export default function SalonServicesPage() {
               </div>
               <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">
                 <button onClick={() => setIsScheduleModalOpen(false)} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300">
-                  Cancel
+                  Отмена
                 </button>
                 <button onClick={handleSaveSchedule} className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
-                  Save
+                  Сохранить
                 </button>
               </div>
             </div>
