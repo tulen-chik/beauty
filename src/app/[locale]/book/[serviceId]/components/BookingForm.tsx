@@ -96,7 +96,7 @@ export default function BookingForm({
               }
             }}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-rose-500 focus:border-rose-500 ${formErrors.customerPhone ? 'border-red-500' : 'border-gray-300'}`}
-            placeholder={"+375 (29) 123-45-67"}
+            placeholder={t('fields.customerPhonePlaceholder')}
             required
           />
           {formErrors.customerPhone && <p className="mt-1 text-xs text-red-600">{formErrors.customerPhone}</p>}

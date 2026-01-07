@@ -153,7 +153,7 @@ export default function SalonPublicPage() {
       try {
         setIsServicesLoading(true)
         const list = await getServicesBySalon(salonId)
-        if (!cancelled) setServices(list)
+        if (!cancelled) setServices(list.filter(svc => svc.isActive))
         const imagesMap: Record<string, string> = {}
         await Promise.all(list.map(async (svc) => {
           try {

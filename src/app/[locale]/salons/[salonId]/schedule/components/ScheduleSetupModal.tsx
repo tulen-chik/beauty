@@ -37,6 +37,8 @@ export default function ScheduleSetupModal({
   onAddInterval,
   onRemoveInterval
 }: ScheduleSetupModalProps) {
+  console.log('ScheduleSetupModal:', { isOpen, weeklySchedule });
+  
   if (!isOpen) return null;
 
   return (
@@ -50,49 +52,55 @@ export default function ScheduleSetupModal({
         </div>
         <div className="p-6 overflow-y-auto">
           <div className="space-y-6">
-            {weeklySchedule.map((d, i) => (
-              <div key={d.day} className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center gap-4 mb-3">
-                  <span className="font-semibold w-32">{WEEKDAYS.find(w => w.key === d.day)?.fullLabel}</span>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={d.isOpen}
-                      onChange={e => onOpenToggle(i, e.target.checked)}
-                    />
+            {weeklySchedule && weeklySchedule.length > 0 ? (
+              weeklySchedule.map((d, i) => (
+                <div key={d.day} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center gap-4 mb-3">
+                    <span className="font-semibold w-32">{WEEKDAYS.find(w => w.key === d.day)?.fullLabel}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={d.isOpen}
+                        onChange={e => onOpenToggle(i, e.target.checked)}
+                      />
                     <span className="text-sm">{t("open")}</span>
-                  </label>
-                </div>
-                {d.isOpen && (
-                  <div className="space-y-2 pl-4 border-l-2 border-blue-200">
-                    {(d.times || []).map((t, j) => (
-                      <div key={j} className="flex items-center gap-2">
-                        <input
-                          type="time"
-                          value={t.start}
-                          onChange={e => onTimeChange(i, j, "start", e.target.value)}
-                          className="px-2 py-1 border rounded-md text-sm w-28"
-                        />
-                        <span>—</span>
-                        <input
-                          type="time"
-                          value={t.end}
-                          onChange={e => onTimeChange(i, j, "end", e.target.value)}
-                          className="px-2 py-1 border rounded-md text-sm w-28"
-                        />
-                        <button onClick={() => onRemoveInterval(i, j)} className="text-red-500 hover:text-red-700 p-1">
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <button onClick={() => onAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
-                      {t("addInterval")}
-                    </button>
+                    </label>
                   </div>
-                )}
+                  {d.isOpen && (
+                    <div className="space-y-2 pl-4 border-l-2 border-blue-200">
+                      {(d.times || []).map((t, j) => (
+                        <div key={j} className="flex items-center gap-2">
+                          <input
+                            type="time"
+                            value={t.start}
+                            onChange={e => onTimeChange(i, j, "start", e.target.value)}
+                            className="px-2 py-1 border rounded-md text-sm w-28"
+                          />
+                          <span>—</span>
+                          <input
+                            type="time"
+                            value={t.end}
+                            onChange={e => onTimeChange(i, j, "end", e.target.value)}
+                            className="px-2 py-1 border rounded-md text-sm w-28"
+                          />
+                          <button onClick={() => onRemoveInterval(i, j)} className="text-red-500 hover:text-red-700 p-1">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => onAddInterval(i)} className="text-blue-600 text-sm font-medium mt-2">
+                      {t("addInterval")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Нет данных о расписании
               </div>
-            ))}
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-3 p-6 border-t bg-gray-50">

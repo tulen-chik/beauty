@@ -67,6 +67,10 @@ export default function ProfilePage() {
           getRatingsByCustomer(currentUser.userId),
         ]);
 
+        console.log('userAppointments', userAppointments);
+        console.log('userInvitations', userInvitations);
+        console.log('ratings', ratings);
+
         setAppointments([...userAppointments].sort((a, b) => new Date(b.startAt).getTime() - new Date(a.startAt).getTime()));
         const pendingInvitations = userInvitations.filter((inv) => inv.status === 'pending');
         setInvitations(pendingInvitations);

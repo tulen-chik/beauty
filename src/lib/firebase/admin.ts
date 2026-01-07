@@ -1,7 +1,9 @@
 import { applicationDefault,cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-// ИЗМЕНЕНО: Импортируем getDatabase вместо getFirestore
+// ИЗМЕНЕНО: Импортируем и getDatabase, и getFirestore
 import { getDatabase } from 'firebase-admin/database';
+import { getFirestore } from 'firebase-admin/firestore';
+import { Firestore } from '@google-cloud/firestore';
 
 // Инициализация Firebase Admin
 function initializeFirebaseAdmin() {
@@ -12,7 +14,9 @@ function initializeFirebaseAdmin() {
       app: apps[0],
       auth: getAuth(apps[0]),
       // ИЗМЕНЕНО: Получаем экземпляр Realtime Database
-      database: getDatabase(apps[0])
+      database: getDatabase(apps[0]),
+      // ДОБАВЛЕНО: Получаем экземпляр Firestore
+      firestore: getFirestore(apps[0])
     };
   }
 
@@ -40,6 +44,17 @@ function initializeFirebaseAdmin() {
     databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
   });
 
+  // ИЗМЕНЕНО: Инициализируем Firestore с указанием databaseId как в userActions.ts
+  const firestore = new Firestore({
+    projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+    databaseId: 'beautyfirestore',
+    credentials: {
+      client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+      private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    },
+    ignoreUndefinedProperties: true, 
+  });
+  
   // Инициализируем Realtime Database
   const database = getDatabase(app);
   const auth = getAuth(app);
@@ -48,6 +63,7 @@ function initializeFirebaseAdmin() {
     app,
     auth,
     database,
+    firestore,
   };
 }
 
@@ -62,6 +78,26 @@ export function getAdminDatabase() {
   const { database } = initializeFirebaseAdmin();
   return database;
 }
+
+// ДОБАВЛЕНО: Функция для получения экземпляра Firestore (как в userActions.ts)
+export function getAdminFirestore() {
+  if (!firestoreInstance) {
+    const firestore = new Firestore({
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      databaseId: 'beautyfirestore',
+      credentials: {
+        client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      },
+      ignoreUndefinedProperties: true, 
+    });
+    return firestore;
+  }
+  return firestoreInstance;
+}
+
+// Добавляем переменную для кеширования экземпляра Firestore
+let firestoreInstance: any = null;
 
 // Вспомогательная функция для проверки роли пользователя (без изменений)
 export async function hasUserRole(uid: string, role: string): Promise<boolean> {

@@ -1350,7 +1350,7 @@
       "customerNamePlaceholder": "Введите ваше имя",
       "customerNameErrorRequired": "Пожалуйста, укажите ваше имя.",
       "customerPhoneLabel": "Ваш телефон",
-      "customerPhonePlaceholder": "+7 (999) 999-99-99",
+      "customerPhonePlaceholder": "Введите ваш номер телефона",
       "customerPhoneErrorRequired": "Пожалуйста, укажите ваш номер телефона.",
       "customerPhoneErrorInvalid": "Неверный формат номера телефона.",
       "notesLabel": "Комментарий",

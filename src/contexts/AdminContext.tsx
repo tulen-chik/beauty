@@ -353,6 +353,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       // Если у вас есть Server Action для создания, используйте его:
       // const newUser = await createUserAction(userData.uid, userData);
       // Если логика создания сложная (с Auth), то fetch к API роуту ок:
+      console.log(userData);
       const response = await fetch('/api/admin/create-user', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(userData),
       });

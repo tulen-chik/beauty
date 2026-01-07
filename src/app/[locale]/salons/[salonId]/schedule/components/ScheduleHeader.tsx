@@ -19,6 +19,7 @@ export default function ScheduleHeader({
   onCreateBooking,
   onSetupSchedule
 }: ScheduleHeaderProps) {
+  
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
@@ -39,7 +40,7 @@ export default function ScheduleHeader({
             </button>
             <button
               onClick={onSetupSchedule}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors font-medium"
             >
               <Settings className="w-4 h-4" />
               {t("setupSchedule")}

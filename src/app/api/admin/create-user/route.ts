@@ -1,16 +1,42 @@
-// ИЗМЕНЕНО: Импортируем ServerValue для временных меток Realtime Database
-import { ServerValue } from 'firebase-admin/database';
+// ИЗМЕНЕНО: Импортируем Firestore и Settings для прямого подключения
+import { Firestore, Settings, FieldValue } from '@google-cloud/firestore';
 import { NextResponse } from 'next/server';
+import { User } from '@/types/database';
 
-// ИЗМЕНЕНО: Импортируем getAdminDatabase вместо getAdminFirestore
-import { getAdminAuth, getAdminDatabase } from '@/lib/firebase/admin';
+// Оставляем getAdminAuth для управления пользователями в Firebase Authentication
+import { getAdminAuth } from '@/lib/firebase/admin';
+
+// --- ИНИЦИАЛИЗАЦИЯ КЛИЕНТА FIRESTORE (КАК В ПРИМЕРЕ) ---
+
+let firestoreInstance: Firestore | null = null;
+
+/**
+ * Инициализирует и возвращает экземпляр Firestore, используя
+ * учетные данные из переменных окружения.
+ */
+function getDb(): Firestore {
+  if (!firestoreInstance) {
+    const firestoreSettings: Settings = {
+      projectId: process.env.FIREBASE_ADMIN_PROJECT_ID,
+      databaseId: 'beautyfirestore',
+      credentials: {
+        client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
+        private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+      },
+      ignoreUndefinedProperties: true, 
+    };
+    firestoreInstance = new Firestore(firestoreSettings);
+  }
+  return firestoreInstance;
+}
+// --- ЭНДПОИНТ ДЛЯ СОЗДАНИЯ ПОЛЬЗОВАТЕЛЯ ---
 
 export async function POST(request: Request) {
   try {
-    // Parse the request body
+    // 1. Парсинг тела запроса
     const userData = await request.json();
-    
-    // Validate required fields
+
+    // 2. Валидация обязательных полей
     if (!userData.email || !userData.password || !userData.displayName) {
       return NextResponse.json(
         { error: 'Email, password, and display name are required' },
@@ -18,12 +44,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get Firebase Admin instances
+    // 3. Получение экземпляров Firebase Admin Auth и Firestore
     const auth = getAdminAuth();
-    // ИЗМЕНЕНО: Получаем экземпляр Realtime Database
-    const db = getAdminDatabase();
+    // ИЗМЕНЕНО: Получаем экземпляр Firestore через новую функцию getDb()
+    const db = getDb();
 
-    // Check if user already exists
+    // 4. Проверка, существует ли пользователь с таким email
     try {
       await auth.getUserByEmail(userData.email);
       return NextResponse.json(
@@ -31,13 +57,13 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     } catch (error: any) {
-      // User not found is expected, continue with creation
+      // Ошибка 'auth/user-not-found' ожидаема, продолжаем создание
       if (error.code !== 'auth/user-not-found') {
         throw error;
       }
     }
 
-    // Create user in Firebase Auth
+    // 5. Создание пользователя в Firebase Authentication
     const userRecord = await auth.createUser({
       email: userData.email,
       password: userData.password,
@@ -47,96 +73,71 @@ export async function POST(request: Request) {
       disabled: false,
     });
 
-    // Set custom claims for role-based access
+    // 6. Установка кастомных прав (роли)
     await auth.setCustomUserClaims(userRecord.uid, {
       role: userData.role || 'user',
     });
 
-    // Create comprehensive user profile in Realtime Database
-    const userProfile = {
-      uid: userRecord.uid,
-      email: userData.email,
-      displayName: userData.displayName,
-      phone: userData.phone || null,
-      role: userData.role || 'user',
-      avatarUrl: '',
-      avatarStoragePath: '',
-      // ИЗМЕНЕНО: Используем ServerValue.TIMESTAMP для Realtime Database
-      createdAt: ServerValue.TIMESTAMP,
-      updatedAt: ServerValue.TIMESTAMP,
-      settings: {
-        language: 'ru',
-        notifications: true,
-        emailNotifications: true,
-        smsNotifications: true
-      },
-      preferences: {
-        theme: 'light',
-        timezone: 'Europe/Moscow'
-      },
-      status: 'active',
-      lastLogin: ServerValue.TIMESTAMP,
-      createdBy: userData.adminId || 'system',
-      metadata: {
-        isEmailVerified: true,
-        isPhoneVerified: false,
-        registrationMethod: 'admin'
-      }
-    };
+    // 7. Формирование полного профиля пользователя для Firestore
+    const userProfile: Omit<User, 'id'> = {
+          email: userData.email,
+          displayName: userData.displayName,
+          avatarUrl: '',
+          avatarStoragePath: '',
+          createdAt: new Date().toISOString(),
+          role: userData.role || 'user',
+          settings: {
+            language: 'en',
+            notifications: true,
+          },
+        };
 
-    // Save to Realtime Database with better error handling
+    // 8. Сохранение профиля в Firestore с обработкой ошибок
     try {
-      if (!db) throw new Error('Realtime Database not initialized');
-      
-      // ИЗМЕНЕНО: Создаем запись пользователя в Realtime Database
-      // Данные сохраняются по пути /users/{uid}
-      await db.ref(`users/${userRecord.uid}`).set(userProfile);
-      
-      console.log('User profile created successfully:', userRecord.uid);
+      // Создаем запись пользователя в коллекции 'users' с ID равным uid
+      await db.collection('users').doc(userRecord.uid).set(userProfile);
+      console.log('User profile created successfully in Firestore:', userRecord.uid);
     } catch (dbError) {
-      console.error('Realtime Database error:', dbError);
-      // Attempt to clean up the auth user if database fails
+      console.error('Firestore error:', dbError);
+      // Если не удалось сохранить профиль в БД, пытаемся удалить созданного пользователя из Auth
       try {
         await auth.deleteUser(userRecord.uid);
+        console.log('Cleaned up auth user due to Firestore failure:', userRecord.uid);
       } catch (deleteError) {
-        console.error('Failed to clean up auth user:', deleteError);
+        console.error('CRITICAL: Failed to clean up auth user after DB error:', deleteError);
       }
+      // Пробрасываем ошибку дальше
       throw new Error(`Failed to create user profile: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
     }
 
-    // Return the created user data (without sensitive info)
+    // 9. Возвращаем успешный ответ с данными созданного пользователя
     const { password, ...userDataWithoutPassword } = userData;
     return NextResponse.json(
-      { 
+      {
         id: userRecord.uid,
         ...userDataWithoutPassword,
-        createdAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(), // Возвращаем ISO строку для клиента
       },
       { status: 201 }
     );
 
   } catch (error: any) {
+    // 10. Обработка общих ошибок
     console.error('Error in create-user API:', error);
-    
-    if (error.code) {
-      console.error('Error code:', error.code);
-    }
-    
-    // Handle specific Firebase Auth errors
+
+    // Обработка специфичных ошибок Firebase Auth
     if (error.code === 'auth/email-already-exists') {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 400 }
       );
     }
-    
     if (error.code === 'auth/invalid-email') {
       return NextResponse.json(
         { error: 'Invalid email address' },
         { status: 400 }
       );
     }
-    
     if (error.code === 'auth/weak-password') {
       return NextResponse.json(
         { error: 'Password should be at least 6 characters' },
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Ответ по умолчанию для всех остальных ошибок
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
@@ -151,4 +153,5 @@ export async function POST(request: Request) {
   }
 }
 
+// Экспорт для динамического рендеринга
 export const dynamic = 'force-dynamic';

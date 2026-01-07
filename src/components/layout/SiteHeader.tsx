@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import { useGeolocation } from '@/contexts/GeolocationContext';
 import { useToast } from '@/contexts';
-import Icicles from '@/components/christmas/Icicles';
+// import Icicles from '@/components/christmas/Icicles';
 
 interface Props {
   locale: string;
@@ -168,7 +168,7 @@ export default function SiteHeader({ locale }: Props) {
         </div>
         
         {/* 3. ДОБАВЬТЕ КОМПОНЕНТ С СОСУЛЬКАМИ */}
-        <Icicles />
+        {/* <Icicles /> */}
       </header>
 
       {/* ... (ваш код для мобильного меню остается без изменений) ... */}

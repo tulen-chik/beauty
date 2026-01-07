@@ -398,7 +398,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
       if (employeeId) appointmentData.employeeId = employeeId;
       if (customerName) appointmentData.customerName = customerName;
       if (customerPhone) appointmentData.customerPhone = customerPhone;
-      if (currentUser?.userId) appointmentData.customerUserId = currentUser.userId;
+      // if (currentUser?.userId) appointmentData.customerUserId = currentUser.userId;
       if (notes) appointmentData.notes = notes;
       
       await createAppointment(service!.salonId, appointmentId, appointmentData)
