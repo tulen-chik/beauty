@@ -46,7 +46,7 @@ export const loadGoogleMapsApi = (): Promise<void> => {
       return;
     }
 
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
     script.async = true;
     script.defer = true;
 
@@ -57,7 +57,14 @@ export const loadGoogleMapsApi = (): Promise<void> => {
 
     script.onload = () => {
       clearTimeout(timeout);
-      resolve();
+      // Даем дополнительное время на инициализацию Google Maps API
+      setTimeout(() => {
+        if (window.google?.maps) {
+          resolve();
+        } else {
+          reject(new Error("Google Maps script loaded but API failed to initialize."));
+        }
+      }, 500);
     };
 
     script.onerror = () => {

@@ -240,7 +240,12 @@
       "title": "My Appointments",
       "empty": "You don't have any appointments yet",
       "status": "Status:",
-      "rebook": "Book Again"
+      "rebook": "Book Again",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete Appointment",
+      "deleteConfirm": "Are you sure you want to delete this appointment?",
+      "deleteSuccess": "Appointment successfully deleted",
+      "deleteError": "Failed to delete appointment"
     }
   },
   
@@ -319,11 +324,14 @@
         "changeAvatarError": "Failed to change avatar",
         "avatarHint": "Recommended avatar size: 256x256 pixels",
         "removeAvatar": "Remove avatar",
-        "removeAvatarConfirm": "Are you sure you want to remove the avatar?",
+        "removeAvatarConfirm": "Are you sure you want to remove avatar?",
         "removeAvatarConfirmTitle": "Remove avatar",
-        "removeAvatarConfirmDesc": "Are you sure you want to remove the avatar?",
+        "removeAvatarConfirmDesc": "Are you sure you want to remove avatar?",
         "removeAvatarConfirmCancel": "Cancel",
-        "removeAvatarConfirmConfirm": "Remove"
+        "removeAvatarConfirmConfirm": "Remove",
+        "selectOnMap": "Select on map",
+        "changeOnMap": "Change on map",
+        "selectedAddress": "Selected address"
       },
       "notifications": {
         "title": "Notifications",
@@ -1009,7 +1017,9 @@
       "active": "Active",
       "inactive": "Inactive",
       "photosTitle": "Photos",
-      "addPhotoButton": "Add"
+      "addPhotoButton": "Add",
+      "viewGallery": "View Gallery",
+      "imageCounter": "{current} of {total}"
     },
     "modal": {
       "titleEdit": "Edit Service",

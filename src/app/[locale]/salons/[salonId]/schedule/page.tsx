@@ -14,7 +14,8 @@ import {
   User,
   X,
   Check,
-  Filter
+  Filter,
+  Trash2
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -31,9 +32,11 @@ import { useSalonService } from "@/contexts/SalonServiceContext";
 import { useUser } from "@/contexts/UserContext";
 
 import ManualBookingModal from "./components/ManualBookingModal";
+import DeleteConfirmationModal from "@/app/[locale]/profile/components/DeleteConfirmationModal";
 
 // --- TYPE DEFINITIONS ---
 import { Salon, SalonWorkDay, WeekDay } from "@/types/database";
+import { Appointment, AppointmentStatus } from "@/types/appointment";
 
 // --- SKELETONS ---
 const MobileViewSkeleton = () => (
@@ -105,22 +108,6 @@ const SalonSchedulePageSkeleton = () => {
   );
 };
 
-// --- TYPES ---
-type Appointment = {
-  id: string;
-  salonId: string;
-  serviceId: string;
-  employeeId?: string;
-  customerName?: string;
-  customerPhone?: string;
-  customerUserId?: string;
-  startAt: string;
-  durationMinutes: number;
-  status: "pending" | "in_progress" | "completed";
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-};
 
 type Service = {
   id: string;
@@ -188,9 +175,14 @@ export default function SalonSchedulePage() {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    appointmentId: string;
+    salonId: string;
+  }>({ isOpen: false, appointmentId: '', salonId: '' });
 
   const { getSchedule, updateSchedule } = useSalonSchedule();
-  const { listAppointmentsByDay, updateAppointment } = useAppointment();
+  const { listAppointmentsByDay, updateAppointment, deleteAppointment } = useAppointment();
   const { currentUser, getUserById } = useUser();
   const { fetchSalon } = useSalon();
   const { getServicesBySalon } = useSalonService();
@@ -350,7 +342,7 @@ export default function SalonSchedulePage() {
     }
   };
 
-  const handleStatusChange = async (appointmentId: string, newStatus: Appointment["status"]) => {
+  const handleStatusChange = async (appointmentId: string, newStatus: AppointmentStatus) => {
     setModalError(null);
     try {
       await updateAppointment(salonId, appointmentId, { status: newStatus });
@@ -371,6 +363,29 @@ export default function SalonSchedulePage() {
   const handleBookingSuccess = () => {
     setIsManualBookingOpen(false);
     setCurrentWeekOffset(prev => prev); 
+  };
+
+  const handleDeleteClick = (appointmentId: string, salonId: string) => {
+    setDeleteModal({ isOpen: true, appointmentId, salonId });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteModal.appointmentId && deleteModal.salonId) {
+      try {
+        await deleteAppointment(deleteModal.salonId, deleteModal.appointmentId);
+        // Remove the appointment from the local state
+        setAppointments(prev => prev.filter(apt => apt.id !== deleteModal.appointmentId));
+        setSelectedAppointment(null);
+      } catch (error) {
+        console.error("Error deleting appointment:", error);
+        setModalError("Не удалось удалить запись");
+      }
+    }
+    setDeleteModal({ isOpen: false, appointmentId: '', salonId: '' });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false, appointmentId: '', salonId: '' });
   };
 
   const handleOpenToggle = (dayIdx: number, isOpen: boolean) => {
@@ -643,13 +658,13 @@ export default function SalonSchedulePage() {
             </div>
 
             {canManageAppointments && (
-              <div className="pt-2">
+              <div className="pt-2 space-y-3">
                   <label htmlFor="status-select" className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t("changeStatus")}</label>
                   <div className="relative">
                     <select
                         id="status-select"
                         value={selectedAppointment.status}
-                        onChange={(e) => handleStatusChange(selectedAppointment.id, e.target.value as Appointment["status"])}
+                        onChange={(e) => handleStatusChange(selectedAppointment.id, e.target.value as AppointmentStatus)}
                         className="w-full appearance-none px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all cursor-pointer"
                     >
                         <option value="pending">{t("status.pending")}</option>
@@ -660,6 +675,14 @@ export default function SalonSchedulePage() {
                       <ChevronRight className="w-4 h-4 rotate-90" />
                     </div>
                   </div>
+                  
+                  <button
+                    onClick={() => handleDeleteClick(selectedAppointment.id, selectedAppointment.salonId)}
+                    className="w-full px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Удалить запись
+                  </button>
               </div>
             )}
             
@@ -861,6 +884,16 @@ export default function SalonSchedulePage() {
         
         {/* Modals */}
         <AppointmentDetailsModal />
+
+        <DeleteConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          title="Удаление записи"
+          message="Вы уверены, что хотите удалить эту запись? Это действие нельзя будет отменить."
+          confirmText="Удалить"
+          cancelText="Отмена"
+        />
 
         <ManualBookingModal
           isOpen={isManualBookingOpen}

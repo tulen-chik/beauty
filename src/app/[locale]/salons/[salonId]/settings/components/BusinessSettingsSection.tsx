@@ -1,8 +1,9 @@
 "use client"
 
-import { Building2, Save, Loader2, Map } from "lucide-react"
+import { Building2, Save, Loader2, Map, MapPin, CheckCircle } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useTranslations } from "next-intl"
 
 type SalonSettings = {
   business: {
@@ -53,9 +54,164 @@ type BusinessSettingsProps = {
   onCancelAvatarChange: () => void
   onShowMap: () => void
   showMap: boolean
-  MapSelector?: React.ComponentType<any>
   onLocationSelect: (address: string, coordinates: { lat: number; lng: number }) => void
 }
+
+// Google Maps component for address selection
+const MapSelector = ({ 
+  onLocationSelect, 
+  initialCoordinates 
+}: { 
+  onLocationSelect: (address: string, coordinates: { lat: number; lng: number }) => void;
+  initialCoordinates?: { lat: number; lng: number };
+}) => {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [map, setMap] = useState<any>(null);
+  const [marker, setMarker] = useState<any>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const t = useTranslations('mapSelector');
+
+  useEffect(() => {
+    const loadGoogleMaps = () => {
+      if (window.google?.maps) return Promise.resolve();
+      
+      return new Promise<void>((resolve, reject) => {
+        const script = document.createElement('script');
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        
+        // Check if API key is valid
+        if (!apiKey || apiKey === 'YOUR_GOOGLE_MAPS_API_KEY' || apiKey === 'your_google_maps_api_key_here') {
+          console.error('Invalid or missing Google Maps API key');
+          return;
+        }
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Google Maps'));
+        document.head.appendChild(script);
+      });
+    };
+
+    const initializeMap = async () => {
+      try {
+        await loadGoogleMaps();
+        
+        if (!mapRef.current || !window.google?.maps) {
+          setMapError(t('error'));
+          return;
+        }
+
+        const initialLat = initialCoordinates?.lat || 53.895042;
+        const initialLng = initialCoordinates?.lng || 27.571326;
+
+        const newMap = new (window as any).google.maps.Map(mapRef.current, {
+          center: { lat: initialLat, lng: initialLng },
+          zoom: 13,
+          mapTypeId: (window as any).google.maps.MapTypeId.ROADMAP,
+          styles: [
+            {
+              featureType: 'poi.business',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ],
+          // Mobile-friendly map options
+          gestureHandling: 'greedy',
+          zoomControl: true,
+          zoomControlOptions: {
+            position: (window as any).google.maps.ControlPosition.RIGHT_TOP
+          },
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false
+        });
+
+        const newMarker = new (window as any).google.maps.Marker({
+          position: { lat: initialLat, lng: initialLng },
+          map: newMap,
+          draggable: true,
+          title: 'Местоположение салона'
+        });
+
+        setMap(newMap);
+        setMarker(newMarker);
+
+        // Handle marker drag
+        newMarker.addListener('dragend', async () => {
+          const position = newMarker.getPosition();
+          if (position) {
+            const geocoder = new (window as any).google.maps.Geocoder();
+            try {
+              const result = await geocoder.geocode({ location: position });
+              if (result.results[0]) {
+                const address = result.results[0].formatted_address;
+                onLocationSelect(address, { lat: position.lat(), lng: position.lng() });
+              }
+            } catch (error) {
+              console.error('Geocoding error:', error);
+            }
+          }
+        });
+
+        // Handle map click
+        newMap.addListener('click', async (event: any) => {
+          if (event.latLng) {
+            newMarker.setPosition(event.latLng);
+            const geocoder = new (window as any).google.maps.Geocoder();
+            try {
+              const result = await geocoder.geocode({ location: event.latLng });
+              if (result.results[0]) {
+                const address = result.results[0].formatted_address;
+                onLocationSelect(address, { lat: event.latLng.lat(), lng: event.latLng.lng() });
+              }
+            } catch (error) {
+              console.error('Geocoding error:', error);
+            }
+          }
+        });
+
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        setMapError(t('error'));
+      }
+    };
+
+    initializeMap();
+
+    return () => {
+      if (marker) marker.setMap(null);
+    };
+  }, [onLocationSelect, initialCoordinates, t]);
+
+  if (mapError) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 text-sm">{mapError}</p>
+        <p className="text-red-600 text-xs mt-1">
+          {t('errorHelp')}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+        <Map className="h-4 w-4" />
+        <span>{t('title')}</span>
+      </div>
+      <div 
+        ref={mapRef} 
+        className="w-full h-48 sm:h-64 rounded-lg border border-gray-300 touch-manipulation"
+        style={{ minHeight: '192px' }}
+      />
+      <p className="text-xs text-gray-500">
+        {t('instructions')}
+      </p>
+    </div>
+  );
+};
 
 export default function BusinessSettingsSection({
   settings,
@@ -75,7 +231,6 @@ export default function BusinessSettingsSection({
   onCancelAvatarChange,
   onShowMap,
   showMap,
-  MapSelector,
   onLocationSelect
 }: BusinessSettingsProps) {
   return (
@@ -157,30 +312,36 @@ export default function BusinessSettingsSection({
         
         {/* Address */}
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('sections.business.address')}</label>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input 
-                type="text" 
-                value={settings.business.address} 
-                onChange={(e) => onUpdateSetting('business', 'address', e.target.value)} 
-                className="flex-1 px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent text-base" 
-                placeholder="Введите адрес или выберите на карте" 
-              />
-              <button 
-                type="button" 
-                onClick={onShowMap} 
-                className="px-4 py-2.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 flex items-center justify-center gap-2 font-medium transition-colors"
-              >
-                <Map className="h-4 w-4" />
-                <span>{showMap ? 'Скрыть карту' : 'Показать карту'}</span>
-              </button>
+          <label className="block text-sm font-medium text-gray-700">
+            <MapPin className="inline h-4 w-4 mr-2" />
+            {t('sections.business.address')}
+          </label>
+          
+          <button
+            type="button"
+            onClick={onShowMap}
+            className="w-full px-6 py-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl hover:bg-rose-100 flex items-center justify-center gap-2 font-medium transition-colors"
+            aria-expanded={showMap}
+          >
+            <Map className="h-4 w-4" />
+            <span>{showMap ? t('sections.business.changeOnMap') : t('sections.business.selectOnMap')}</span>
+          </button>
+
+          {settings.business.address && (
+            <div className="text-sm text-gray-800 flex items-start gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <span className="font-semibold">{t('sections.business.selectedAddress')}:</span>
+                <p className="mt-1">{settings.business.address}</p>
+              </div>
             </div>
-          </div>
-          {showMap && MapSelector && (
-            <div className="pt-4">
-              <MapSelector onLocationSelect={onLocationSelect} initialCoordinates={settings.business.coordinates} />
-            </div>
+          )}
+
+          {showMap && (
+            <MapSelector
+              onLocationSelect={onLocationSelect}
+              initialCoordinates={settings.business.coordinates}
+            />
           )}
         </div>
         

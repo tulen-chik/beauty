@@ -24,6 +24,7 @@ import { useToast } from "@/contexts";
 
 // --- COMPONENTS ---
 import AppBookingInfoModal from "./components/AppBookingInfoModal";
+import ServiceImageGallery from "./components/ServiceImageGallery";
 
 // --- SKELETON COMPONENTS (Без изменений) ---
 const ServiceCardSkeleton = () => (
@@ -95,6 +96,14 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   const [imagesMap, setImagesMap] = useState<Record<string, any[]>>({});
   const [imagesLoading, setImagesLoading] = useState<Record<string, boolean>>({});
   
+  // Gallery state
+  const [galleryModal, setGalleryModal] = useState<{
+    isOpen: boolean;
+    images: Array<{ url: string; id: string }>;
+    serviceName: string;
+    currentIndex: number;
+  }>({ isOpen: false, images: [], serviceName: '', currentIndex: 0 });
+  
   const [form, setForm] = useState<ServiceFormData>({
     id: "",
     name: "",
@@ -105,6 +114,40 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
     isApp: false,
     categoryIds: [],
   });
+
+  // Gallery handlers
+  const handleOpenGallery = (service: any) => {
+    const serviceImages = imagesMap[service.id] || [];
+    setGalleryModal({
+      isOpen: true,
+      images: serviceImages,
+      serviceName: service.name,
+      currentIndex: 0
+    });
+  };
+
+  const handleCloseGallery = () => {
+    setGalleryModal({
+      isOpen: false,
+      images: [],
+      serviceName: '',
+      currentIndex: 0
+    });
+  };
+
+  const handlePreviousImage = () => {
+    setGalleryModal(prev => ({
+      ...prev,
+      currentIndex: Math.max(0, prev.currentIndex - 1)
+    }));
+  };
+
+  const handleNextImage = () => {
+    setGalleryModal(prev => ({
+      ...prev,
+      currentIndex: Math.min(prev.images.length - 1, prev.currentIndex + 1)
+    }));
+  };
   const [formError, setFormError] = useState<string | null>(null);
   const [displayPrice, setDisplayPrice] = useState("0");
 
@@ -419,18 +462,28 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       </div>
                     ) : serviceImages.length > 0 ? (
                       <>
-                        <img
-                          src={serviceImages[0].url}
-                          alt={service.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
-                        {serviceImages.length > 1 && (
-                          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
-                            <ImageIcon className="h-3 w-3" />
-                            <span>+{serviceImages.length - 1}</span>
+                        <button
+                          onClick={() => handleOpenGallery(service)}
+                          className="relative w-full h-full group"
+                        >
+                          <img
+                            src={serviceImages[0].url}
+                            alt={service.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-60" />
+                          {serviceImages.length > 1 && (
+                            <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
+                              <ImageIcon className="h-3 w-3" />
+                              <span>+{serviceImages.length - 1}</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-full p-3">
+                              <ImageIcon className="w-6 h-6 text-slate-700" />
+                            </div>
                           </div>
-                        )}
+                        </button>
                       </>
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-slate-400">
@@ -460,7 +513,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                       </h3>
                       <div className="flex flex-col items-end shrink-0">
                         <span className="text-lg font-bold text-rose-600 whitespace-nowrap">
-                          {service.price} ₽
+                          {service.price} BYN
                         </span>
                       </div>
                     </div>
@@ -810,6 +863,17 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
           isOpen={showAppBookingInfo}
           onClose={() => setShowAppBookingInfo(false)}
           t={t}
+        />
+
+        {/* Service Image Gallery Modal */}
+        <ServiceImageGallery
+          isOpen={galleryModal.isOpen}
+          onClose={handleCloseGallery}
+          images={galleryModal.images}
+          serviceName={galleryModal.serviceName}
+          currentIndex={galleryModal.currentIndex}
+          onPrevious={handlePreviousImage}
+          onNext={handleNextImage}
         />
       </div>
     </div>

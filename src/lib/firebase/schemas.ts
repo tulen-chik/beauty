@@ -78,6 +78,7 @@ export const salonSchema = z.object({
   updatedAt: z.string(),
   avatarUrl: z.string().optional(),
   avatarStoragePath: z.string().optional(),
+  isActive: z.boolean().optional(),
   members: z.array(salonMemberSchema),
   schedule: salonScheduleSchema.optional(),
   settings: salonSettingsSchema.optional(),

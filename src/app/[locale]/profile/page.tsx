@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const { getRatingsByCustomer, createRating, getRatingByAppointment } = useSalonRating()
   const { updateInvitation, getInvitationsByEmail, acceptInvitation } = useSalonInvitation();
   const { getService } = useSalonService();
-  const { listAppointmentsByCustomer } = useAppointment();
+  const { listAppointmentsByCustomer, deleteAppointment } = useAppointment();
   const { fetchSalon } = useSalon();
 
   const [loading, setLoading] = useState(true)
@@ -205,6 +205,16 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAppointment = async (appointmentId: string, salonId: string) => {
+    try {
+      await deleteAppointment(salonId, appointmentId);
+      setAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      success(t('appointments.deleteSuccess'));
+    } catch (error: any) {
+      showError(error?.message || t('appointments.deleteError'));
+    }
+  };
+
   // Показываем скелет только во время начальной загрузки
   if (userLoading || loading) {
     return <ProfilePageSkeleton />;
@@ -264,6 +274,7 @@ export default function ProfilePage() {
           employees={employees}
           userRatings={userRatings}
           onShowRatingForm={setShowRatingForm}
+          onDeleteAppointment={handleDeleteAppointment}
           t={t}
         />
 

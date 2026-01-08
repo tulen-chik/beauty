@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Calendar, Clock, MapPin, User as UserIcon, MessageSquare, Star } from "lucide-react";
+import { ChevronDown, Calendar, Clock, MapPin, User as UserIcon, MessageSquare, Star, Trash2 } from "lucide-react";
 import { Appointment, Salon, SalonRating, SalonService, User } from "@/types/database";
 import { AppointmentListSkeleton } from "./Skeletons";
+import DeleteConfirmationModal from "./DeleteConfirmationModal";
 
 // Вспомогательный компонент для строки
 const AppointmentRow = ({ icon: Icon, label, value, href, className = "" }: { icon?: any, label?: string, value?: string | null, href?: string, className?: string }) => {
@@ -59,7 +60,10 @@ const AppointmentCard = ({
   specialist,
   canReview,
   isCompleted,
-  onShowRatingForm
+  onShowRatingForm,
+  onDeleteAppointment,
+  onDeleteClick,
+  t
 }: {
   appointment: Appointment;
   salon: Salon | undefined;
@@ -68,6 +72,9 @@ const AppointmentCard = ({
   canReview: boolean;
   isCompleted: boolean;
   onShowRatingForm: (appointmentId: string) => void;
+  onDeleteAppointment: (appointmentId: string, salonId: string) => void;
+  onDeleteClick: (appointmentId: string, salonId: string) => void;
+  t: (key: string) => string;
 }) => {
   const start = new Date(appointment.startAt);
   const end = new Date(start.getTime() + (service?.durationMinutes || 0) * 60000);
@@ -104,6 +111,17 @@ const AppointmentCard = ({
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-3 pt-2">
+        {!isCompleted && (
+          <button
+            onClick={() => onDeleteClick(appointment.id, appointment.salonId)}
+            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-sm shadow-red-200 transition-all flex items-center justify-center gap-2"
+            title={t('appointments.delete')}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('appointments.delete')}
+          </button>
+        )}
+        
         {canReview && (
           <button
             onClick={() => onShowRatingForm(appointment.id)}
@@ -143,13 +161,19 @@ interface AppointmentListProps {
   employees: Record<string, User>;
   userRatings: SalonRating[];
   onShowRatingForm: (appointmentId: string) => void;
+  onDeleteAppointment: (appointmentId: string, salonId: string) => void;
   t: (key: string) => string;
 }
 
 export default function AppointmentList({
-  appointments, loading, salonsById, servicesById, employees, userRatings, onShowRatingForm, t
+  appointments, loading, salonsById, servicesById, employees, userRatings, onShowRatingForm, onDeleteAppointment, t
 }: AppointmentListProps) {
   const [expandedCompleted, setExpandedCompleted] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    appointmentId: string;
+    salonId: string;
+  }>({ isOpen: false, appointmentId: '', salonId: '' });
 
   const hasRatingForAppointment = (appointmentId: string) => {
     return userRatings.some(rating => rating.appointmentId === appointmentId);
@@ -157,6 +181,21 @@ export default function AppointmentList({
 
   const activeAppointments = appointments.filter(a => ['pending', 'confirmed', 'in_progress'].includes(a.status));
   const completedAppointments = appointments.filter(a => ['completed', 'cancelled'].includes(a.status));
+
+  const handleDeleteClick = (appointmentId: string, salonId: string) => {
+    setDeleteModal({ isOpen: true, appointmentId, salonId });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteModal.appointmentId && deleteModal.salonId) {
+      onDeleteAppointment(deleteModal.appointmentId, deleteModal.salonId);
+    }
+    setDeleteModal({ isOpen: false, appointmentId: '', salonId: '' });
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ isOpen: false, appointmentId: '', salonId: '' });
+  };
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -191,6 +230,9 @@ export default function AppointmentList({
                   canReview={false}
                   isCompleted={false}
                   onShowRatingForm={onShowRatingForm}
+                  onDeleteAppointment={onDeleteAppointment}
+                  onDeleteClick={handleDeleteClick}
+                  t={t}
                 />
               ))
             ) : (
@@ -233,6 +275,9 @@ export default function AppointmentList({
                         canReview={a.status === 'completed' && !hasRatingForAppointment(a.id)}
                         isCompleted={true}
                         onShowRatingForm={onShowRatingForm}
+                        onDeleteAppointment={onDeleteAppointment}
+                        onDeleteClick={handleDeleteClick}
+                        t={t}
                       />
                     ))}
                   </div>
@@ -242,6 +287,16 @@ export default function AppointmentList({
           )}
         </div>
       )}
+      
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title={t('appointments.deleteConfirmTitle') || 'Удаление записи'}
+        message={t('appointments.deleteConfirm') || 'Вы уверены, что хотите удалить эту запись?'}
+        confirmText={t('appointments.delete') || 'Удалить'}
+        cancelText={t('common.cancel') || 'Отмена'}
+      />
     </div>
   );
 }

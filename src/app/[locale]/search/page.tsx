@@ -113,12 +113,15 @@ export default function SearchPage() {
                 startAfterKey: currentSalonNextKey,
               });
 
+              // Filter out inactive salons
+              const activeSalons = response.salons.filter(salon => salon.isActive !== false && salon.isActive !== undefined);
+
               // добавляем салоны инкрементально
-              setAllSalons(prev => [...prev, ...response.salons]);
-              setSalonsById(prev => ({ ...prev, ...Object.fromEntries(response.salons.map(s => [s.id, s])) }));
+              setAllSalons(prev => [...prev, ...activeSalons]);
+              setSalonsById(prev => ({ ...prev, ...Object.fromEntries(activeSalons.map(s => [s.id, s])) }));
 
               // рейтинги для пришедшей страницы салонов с кешированием
-              const ratingPromises = response.salons.map(async (salon) => {
+              const ratingPromises = activeSalons.map(async (salon) => {
                 const cached = ratingStatsCache.get(salon.id);
                 if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
                   return { salonId: salon.id, stats: cached.stats };
@@ -199,10 +202,15 @@ export default function SearchPage() {
         promotionEndDate: undefined,
         categoryName: category?.name || '',
       };
+    }).filter((service) => {
+      // Filter out services from inactive salons or when salon is null
+      if (!service.salon) return false;
+      const salon = currentSalonsMap[service.salonId];
+      return salon && salon.isActive !== false && salon.isActive !== undefined;
     });
 
     // Запускаем загрузку изображений и промоушенов в фоне, не блокируя основной рендер
-    const serviceIds = chunk.map(s => s.id);
+    const serviceIds = baseProcessedServices.map(s => s.id);
     
     // Асинхронная загрузка изображений
     (async () => {
@@ -368,7 +376,7 @@ export default function SearchPage() {
   }, [services, debouncedQuery, selectedCategory, sortBy]);
 
   const salonsForMap = useMemo(() => {
-    return allSalons;
+    return allSalons.filter(salon => salon.isActive !== false && salon.isActive !== undefined);
   }, [allSalons]);
 
   // --- ОБРАБОТЧИКИ СОБЫТИЙ ---

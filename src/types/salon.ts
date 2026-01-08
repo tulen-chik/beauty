@@ -56,6 +56,7 @@ export interface Salon {
   avatarUrl?: string;
   avatarStoragePath?: string;
   updatedAt: string;
+  isActive?: boolean;
   members: SalonMember[];
   schedule?: SalonSchedule;
   settings?: SalonSettings;

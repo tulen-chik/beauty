@@ -8,7 +8,6 @@ import {
   CheckCircle, 
   Crown, 
   Loader2, 
-  Map, 
   Save,
   Shield,
   Trash2,
@@ -20,6 +19,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { ModalPortal } from '@/components/ui/ModalPortal';
@@ -31,6 +31,7 @@ import { useToast } from '@/contexts';
 
 import SettingsPageSkeleton from './components/SettingsPageSkeleton';
 import BusinessSettingsSection from './components/BusinessSettingsSection';
+import SalonStatusSection from './components/SalonStatusSection';
 import SubscriptionSection from './components/SubscriptionSection';
 import BusinessSettingsSkeleton from './components/BusinessSettingsSkeleton';
 import SubscriptionSkeleton from './components/SubscriptionSkeleton';
@@ -68,49 +69,6 @@ type SalonSettings = {
 
 import type { Salon, SalonMember } from '@/types/database';
 import type { SalonSubscription, SalonSubscriptionPlan } from '@/types/subscriptions';
-
-// --- ИНТЕРФЕЙСЫ И ВЛОЖЕННЫЕ КОМПОНЕНТЫ ---
-
-const MapSelector = ({ 
-  onLocationSelect, 
-  initialCoordinates 
-}: { 
-  onLocationSelect: (address: string, coordinates: { lat: number; lng: number }) => void;
-  initialCoordinates?: { lat: number; lng: number };
-}) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [mapError, setMapError] = useState<string | null>(null);
-  const t = useTranslations('salonCreation');
-
-  useEffect(() => {
-    // Логика инициализации Google Maps...
-  }, [onLocationSelect, initialCoordinates, t]);
-
-  if (mapError) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-800 text-sm">{mapError}</p>
-        <p className="text-red-600 text-xs mt-1">{t('mapErrorHelp')}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-        <Map className="h-4 w-4" />
-        <span>{t('mapInstructions')}</span>
-      </div>
-      <div 
-        ref={mapRef} 
-        className="w-full h-48 sm:h-64 rounded-lg border border-gray-300 touch-manipulation"
-        style={{ minHeight: '192px' }}
-      />
-      <p className="text-xs text-gray-500">{t('instructions')}</p>
-    </div>
-  );
-};
-
 
 // --- ОСНОВНОЙ КОМПОНЕНТ СТРАНИЦЫ ---
 
@@ -276,6 +234,7 @@ export default function SalonSettingsPage() {
 
   const handleLocationSelect = (address: string, coordinates: { lat: number; lng: number }) => {
     setSettings(prev => ({ ...prev, business: { ...prev.business, address, coordinates } }));
+    setShowMap(false); // Automatically hide map after selection
   };
 
   const handleSave = async (section: keyof SalonSettings) => {
@@ -297,6 +256,22 @@ export default function SalonSettingsPage() {
     } catch (err) {
       console.error('Error saving settings:', err);
       showError('Не удалось сохранить настройки. Попробуйте еще раз.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleStatusSave = async (isActive: boolean) => {
+    setSaving(true);
+    dismissAll();
+    try {
+      const updated = await updateSalon(salonId, { isActive });
+      setSalon(updated);
+      success(`Салон ${isActive ? 'активирован' : 'деактивирован'}`);
+    } catch (err) {
+      console.error('Error updating salon status:', err);
+      showError('Не удалось обновить статус салона. Попробуйте еще раз.');
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -400,6 +375,14 @@ export default function SalonSettingsPage() {
         </motion.div>
 
         <div className="space-y-6 sm:space-y-8">
+          {/* --- Секция Статуса Салона --- */}
+          <SalonStatusSection
+            salon={salon}
+            loading={saving}
+            t={t}
+            onSave={handleStatusSave}
+          />
+
           {/* --- Секция Подписки --- */}
           {/* {isSubscriptionsLoading ? (
             <SubscriptionSkeleton />
@@ -448,7 +431,6 @@ export default function SalonSettingsPage() {
               onCancelAvatarChange={cancelAvatarChange}
               onShowMap={() => setShowMap(!showMap)}
               showMap={showMap}
-              MapSelector={MapSelector}
               onLocationSelect={handleLocationSelect}
             />
           )}

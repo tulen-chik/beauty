@@ -921,7 +921,12 @@
       "title": "Мои записи",
       "empty": "У вас пока нет записей",
       "status": "Статус:",
-      "rebook": "Записаться снова"
+      "rebook": "Записаться снова",
+      "delete": "Удалить",
+      "deleteConfirmTitle": "Удаление записи",
+      "deleteConfirm": "Вы уверены, что хотите удалить эту запись?",
+      "deleteSuccess": "Запись успешно удалена",
+      "deleteError": "Не удалось удалить запись"
     }
   },
   
@@ -1009,8 +1014,23 @@
         "removeAvatarConfirmTitle": "Удаление аватара",
         "removeAvatarConfirmDesc": "Вы уверены, что хотите удалить аватар?",
         "removeAvatarConfirmCancel": "Отменить",
-        "removeAvatarConfirmConfirm": "Удалить"
+        "removeAvatarConfirmConfirm": "Удалить",
+        "selectOnMap": "Выбрать на карте",
+        "changeOnMap": "Изменить на карте",
+        "selectedAddress": "Выбранный адрес"
             },
+      "status": {
+        "title": "Статус салона",
+        "description": "Управляйте активностью вашего салона",
+        "salonStatus": "Статус салона",
+        "active": "Активен",
+        "inactive": "Неактивен",
+        "activeDescription": "Салон принимает записи и отображается в поиске",
+        "inactiveDescription": "Салон не принимает записи и скрыт из поиска",
+        "warningTitle": "Внимание",
+        "warningDescription": "Неактивный салон не будет отображаться в поиске и не сможет принимать новые записи",
+        "saving": "Сохранение..."
+      },
       "notifications": {
         "title": "Уведомления",
         "email": "Email уведомления",
@@ -1233,7 +1253,9 @@
         "active": "Активна",
         "inactive": "Неактивна",
         "photosTitle": "Фотографии",
-        "addPhotoButton": "Добавить"
+        "addPhotoButton": "Добавить",
+        "viewGallery": "Просмотреть галерею",
+        "imageCounter": "{current} из {total}"
       },
       "modal": {
         "titleEdit": "Редактировать услугу",
