@@ -3,7 +3,6 @@
 import { useParams } from "next/navigation"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-// --- ИМПОРТЫ КОНТЕКСТОВ И ВСПОМОГАТЕЛЬНЫХ КОМПОНЕНТОВ ---
 import { getServiceImages } from "@/lib/firebase/database"
 import { useSalonRating, useGeolocation, useSalon } from "@/contexts"
 import { usePromotion } from "@/contexts/PromotionContext"
@@ -13,10 +12,8 @@ import { MobileViewToggle } from "./components/Selectors"
 import { SearchAndFilterPanel } from "./components/Selectors"
 import { MapPanel } from "./components/Selectors"
 
-// --- ИМПОРТ ТИПОВ ДАННЫХ ---
 import type { Salon, SalonService, ServiceCategory } from "@/types/database";
 
-// --- НОВЫЙ ТИП ДЛЯ ОБРАБОТАННЫХ ДАННЫХ ---
 interface ProcessedService extends SalonService {
   salon: { id: string; name: string; address: string } | null;
   imageUrl: string;
@@ -25,13 +22,11 @@ interface ProcessedService extends SalonService {
   categoryName?: string;
 }
 
- // --- КЕШИ ДЛЯ ОПТИМИЗАЦИИ ---
 const imageCache = new Map<string, string>();
 const promotionCache = new Map<string, { isPromoted: boolean; endDate?: string; timestamp: number }>();
 const ratingStatsCache = new Map<string, { stats: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// --- КОНСТАНТЫ ---
 const DEBOUNCE_DELAY = 300;
 const PAGE_SIZE = 15;
 const SALON_PAGE_SIZE = 50;
@@ -40,16 +35,13 @@ const SALON_PAGE_SIZE = 50;
 export default function SearchPage() {
   const locale = useParams().locale as string;
 
-  // --- ИСПОЛЬЗОВАНИЕ КОНТЕКСТОВ ---
   const { getRatingStats } = useSalonRating();
   const { findActiveServicePromotion } = usePromotion();
-  // --- ИЗМЕНЕНИЕ 1: Получаем новый метод getRandomCategories из контекста ---
   const { getCategoriesBySalon, getRandomCategories } = useServiceCategory();
   const { getServicesByCity, getServicesBySalon, getServicesBySalonPaginated } = useSalonService();
   const { city: userCity, position, loading: geoLoading } = useGeolocation();
   const { fetchSalonsByCity } = useSalon();
 
-  // --- СОСТОЯНИЯ (с обновленными типами) ---
   const [loading, setLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
@@ -75,7 +67,6 @@ export default function SearchPage() {
   
   const currentCity = manualCity || userCity;
   
-  // --- ЛОГИКА ЗАГРУЗКИ ДАННЫХ ---
   const observer = useRef<IntersectionObserver>();
   const loaderRef = useCallback((node: HTMLDivElement | null) => {
     if (loading || isLoadingMore) return;
@@ -99,7 +90,6 @@ export default function SearchPage() {
       setNextKey(undefined);
       setHasMore(true);
       try {
-        // Запускаем фоновую подгрузку салонов и рейтингов, добавляя по мере получения
         (async () => {
           try {
             let currentSalonNextKey: string | undefined = undefined;
@@ -113,14 +103,11 @@ export default function SearchPage() {
                 startAfterKey: currentSalonNextKey,
               });
 
-              // Filter out inactive salons
               const activeSalons = response.salons.filter(salon => salon.isActive !== false && salon.isActive !== undefined);
 
-              // добавляем салоны инкрементально
               setAllSalons(prev => [...prev, ...activeSalons]);
               setSalonsById(prev => ({ ...prev, ...Object.fromEntries(activeSalons.map(s => [s.id, s])) }));
 
-              // рейтинги для пришедшей страницы салонов с кешированием
               const ratingPromises = activeSalons.map(async (salon) => {
                 const cached = ratingStatsCache.get(salon.id);
                 if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -153,7 +140,6 @@ export default function SearchPage() {
           }
         })();
 
-        // Немедленно загружаем первую страницу услуг, не дожидаясь всех салонов
         await fetchServices(false);
       } catch (error) {
         console.error("Error loading data for city:", error);
@@ -165,16 +151,13 @@ export default function SearchPage() {
     loadDataForCity();
   }, [currentCity]);
 
-  // --- ИЗМЕНЕНИЕ 2: Обновляем логику загрузки категорий ---
   useEffect(() => {
     const loadCategories = async () => {
         let categoriesData: ServiceCategory[] = [];
         
         if (selectedSalonId) {
-            // Если салон выбран, загружаем его категории
             categoriesData = await getCategoriesBySalon(selectedSalonId);
         } else {
-            // Если салон не выбран, загружаем 20 случайных категорий для общего фильтра
             categoriesData = await getRandomCategories(20);
         }
         
@@ -183,12 +166,10 @@ export default function SearchPage() {
     };
     
     loadCategories();
-  // --- ИЗМЕНЕНИЕ 3: Добавляем getRandomCategories в массив зависимостей ---
   }, [selectedSalonId, getCategoriesBySalon, getRandomCategories]);
 
 
   const processServicesChunk = useCallback(async (chunk: SalonService[], currentSalonsMap: Record<string, Salon>): Promise<ProcessedService[]> => {
-    // Сначала обрабатываем базовые данные без изображений и промоушенов
     const baseProcessedServices = chunk.map((service) => {
       const salon = currentSalonsMap[service.salonId];
       const firstCategoryId = service.categoryIds?.[0];
@@ -202,17 +183,10 @@ export default function SearchPage() {
         promotionEndDate: undefined,
         categoryName: category?.name || '',
       };
-    }).filter((service) => {
-      // Filter out services from inactive salons or when salon is null
-      if (!service.salon) return false;
-      const salon = currentSalonsMap[service.salonId];
-      return salon && salon.isActive !== false && salon.isActive !== undefined;
     });
 
-    // Запускаем загрузку изображений и промоушенов в фоне, не блокируя основной рендер
     const serviceIds = baseProcessedServices.map(s => s.id);
     
-    // Асинхронная загрузка изображений
     (async () => {
       const imagePromises = serviceIds.map(async (serviceId) => {
         if (imageCache.has(serviceId)) {
@@ -232,7 +206,6 @@ export default function SearchPage() {
       const imageResults = await Promise.all(imagePromises);
       const imageMap = Object.fromEntries(imageResults.map(r => [r.serviceId, r.imageUrl]));
       
-      // Обновляем услуги с загруженными изображениями
       setServices(prev => prev.map(service => {
         if (serviceIds.includes(service.id)) {
           return { ...service, imageUrl: imageMap[service.id] || '' };
@@ -241,7 +214,6 @@ export default function SearchPage() {
       }));
     })();
     
-    // Асинхронная загрузка промоушенов
     (async () => {
       const promotionPromises = serviceIds.map(async (serviceId) => {
         const cached = promotionCache.get(serviceId);
@@ -263,7 +235,6 @@ export default function SearchPage() {
       const promotionResults = await Promise.all(promotionPromises);
       const promotionMap = Object.fromEntries(promotionResults.map(r => [r.serviceId, { isPromoted: r.isPromoted, endDate: r.endDate }]));
       
-      // Обновляем услуги с загруженными промоушенами
       setServices(prev => prev.map(service => {
         if (serviceIds.includes(service.id)) {
           return { 
@@ -276,7 +247,6 @@ export default function SearchPage() {
       }));
     })();
     
-    // Возвращаем базовые данные сразу, не дожидаясь загрузки изображений и промоушенов
     return baseProcessedServices;
   }, [categoriesById, findActiveServicePromotion]);
 
@@ -326,7 +296,6 @@ export default function SearchPage() {
     fetchServices(false);
   }, [selectedSalonId, debouncedQuery, selectedCategory, sortBy, currentCity]);
 
-  // По мере загрузки справочника салонов дополняем уже полученные услуги данными салона
   useEffect(() => {
     if (!services.length) return;
     setServices(prev => prev.map(s => {
@@ -348,9 +317,12 @@ export default function SearchPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // --- ЛОГИКА ФИЛЬТРАЦИИ И СОРТИРОВКИ ---
   const filteredAndSortedServices = useMemo(() => {
-    let filtered = services;
+    let filtered = services.filter(s => {
+        const salon = salonsById[s.salonId];
+        return salon && salon.isActive !== false && salon.isActive !== undefined;
+    });
+
     const qLower = debouncedQuery.trim().toLowerCase();
     
     if (qLower) {
@@ -373,17 +345,15 @@ export default function SearchPage() {
     });
     
     return filtered;
-  }, [services, debouncedQuery, selectedCategory, sortBy]);
+  }, [services, debouncedQuery, selectedCategory, sortBy, salonsById]);
 
   const salonsForMap = useMemo(() => {
     return allSalons.filter(salon => salon.isActive !== false && salon.isActive !== undefined);
   }, [allSalons]);
 
-  // --- ОБРАБОТЧИКИ СОБЫТИЙ ---
   const handleCityChange = useCallback((city: string) => { setManualCity(city); setSelectedSalonId(null); }, []);
   const handleSalonClick = useCallback((salonId: string) => { setSelectedSalonId(salonId); setMobileView('list'); }, []);
 
-  // --- РЕНДЕРИНГ ---
   return (
   <div
     className="flex flex-col md:flex-row bg-gray-50 overflow-hidden"
