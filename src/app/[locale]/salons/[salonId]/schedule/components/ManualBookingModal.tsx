@@ -61,7 +61,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
   // --- CONTEXTS ---
   const { fetchSalon } = useSalon()
   const { isTimeSlotAvailable, createAppointment } = useAppointment()
-  const { getSchedule } = useSalonSchedule()
+  const { getSchedule, getEffectiveSchedule } = useSalonSchedule()
   const { getServicesBySalon } = useSalonService()
   const { getUserById } = useUser()
 
@@ -262,9 +262,10 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
     setLoadingTimeSlots(true)
     try {
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-      const dayName = dayNames[selectedDate.getDay()]
-      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
+      const dateStr = selectedDate.toISOString().split('T')[0]
+      
+      // Get effective schedule that considers both weekly schedule and exceptions
+      const daySchedule = await getEffectiveSchedule(salonId, dateStr)
       
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
         setAvailableTimeSlots([])
@@ -302,7 +303,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
   useEffect(() => {
     generateTimeSlots()
-  }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable])
+  }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable, getEffectiveSchedule])
 
   // --- EMPLOYEE & FORM LOGIC ---
   const employees = useMemo(() => {

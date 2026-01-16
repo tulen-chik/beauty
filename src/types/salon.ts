@@ -13,9 +13,16 @@ export interface SalonWorkDay {
   times: SalonWorkTime[];
 }
 
+export interface SalonExceptionDay {
+  date: string; // YYYY-MM-DD format
+  isOpen: boolean;
+  times?: SalonWorkTime[]; // Optional - if closed, no times needed
+}
+
 export interface SalonSchedule {
   salonId: string;
-  weeklySchedule: SalonWorkDay[]; // Single week pattern that repeats
+  weeklySchedule: SalonWorkDay[]; // Default weekly pattern that repeats
+  exceptions?: SalonExceptionDay[]; // Specific date exceptions
   updatedAt: string;
 }
 

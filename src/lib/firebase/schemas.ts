@@ -30,10 +30,16 @@ export const salonWorkDaySchema = z.object({
   times: z.array(salonWorkTimeSchema),
 });
 
+export const salonExceptionDaySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD format
+  isOpen: z.boolean(),
+  times: z.array(salonWorkTimeSchema).optional()
+});
+
 // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
 export const salonScheduleSchema = z.object({
   salonId: z.string(),
-  weeklySchedule: z.array(salonWorkDaySchema), 
+  weeklySchedule: z.array(salonWorkDaySchema),
   updatedAt: z.string(),
 });
 

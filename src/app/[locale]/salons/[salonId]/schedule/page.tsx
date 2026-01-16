@@ -15,7 +15,9 @@ import {
   X,
   Check,
   Filter,
-  Trash2
+  Trash2,
+  CalendarX,
+  AlertTriangle
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -35,7 +37,7 @@ import ManualBookingModal from "./components/ManualBookingModal";
 import DeleteConfirmationModal from "@/app/[locale]/profile/components/DeleteConfirmationModal";
 
 // --- TYPE DEFINITIONS ---
-import { Salon, SalonWorkDay, WeekDay } from "@/types/database";
+import { Salon, SalonWorkDay, WeekDay, SalonExceptionDay } from "@/types/database";
 import { Appointment, AppointmentStatus } from "@/types/appointment";
 
 // --- SKELETONS ---
@@ -169,6 +171,14 @@ export default function SalonSchedulePage() {
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
+  const [isExceptionModalOpen, setIsExceptionModalOpen] = useState(false);
+  const [exceptions, setExceptions] = useState<SalonExceptionDay[]>([]);
+  const [selectedDateForException, setSelectedDateForException] = useState<string>('');
+  const [newException, setNewException] = useState<Partial<SalonExceptionDay>>({
+    date: '',
+    isOpen: false,
+    times: [],
+  });
   const [isMobileView, setIsMobileView] = useState(false);
   const maxWeeks = 3;
 
@@ -181,7 +191,7 @@ export default function SalonSchedulePage() {
     salonId: string;
   }>({ isOpen: false, appointmentId: '', salonId: '' });
 
-  const { getSchedule, updateSchedule } = useSalonSchedule();
+  const { getSchedule, updateSchedule, addException, removeException, getExceptionsInRange } = useSalonSchedule();
   const { listAppointmentsByDay, updateAppointment, deleteAppointment } = useAppointment();
   const { currentUser, getUserById } = useUser();
   const { fetchSalon } = useSalon();
@@ -254,6 +264,24 @@ export default function SalonSchedulePage() {
 
     loadScheduleData();
   }, [salonId, currentWeekOffset, getSchedule, getServicesBySalon, listAppointmentsByDay, getUserById]);
+
+  // Load exceptions for current month
+  useEffect(() => {
+    const loadExceptions = async () => {
+      try {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        
+        const exceptionsData = await getExceptionsInRange(salonId, startDate, endDate);
+        setExceptions(exceptionsData);
+      } catch (error) {
+        console.error('Error loading exceptions:', error);
+      }
+    };
+
+    loadExceptions();
+  }, [salonId, getExceptionsInRange]);
 
   const isSalonOwner = useMemo(() => 
     salon?.members?.some(
@@ -419,6 +447,83 @@ export default function SalonSchedulePage() {
     ));
   };
 
+  // Exception handlers
+  const handleOpenExceptionModal = (date: string) => {
+    const existingException = exceptions.find(ex => ex.date === date);
+    setSelectedDateForException(date);
+    
+    if (existingException) {
+      setNewException(existingException);
+    } else {
+      setNewException({
+        date,
+        isOpen: true,
+        times: [{ start: '09:00', end: '18:00' }],
+      });
+    }
+    setIsExceptionModalOpen(true);
+  };
+
+  const handleSaveException = async () => {
+    if (!newException.date) return;
+    
+    try {
+      const exceptionData: SalonExceptionDay = {
+        date: newException.date!,
+        isOpen: newException.isOpen ?? false,
+        times: newException.times || [],
+      };
+      
+      await addException(salonId, exceptionData);
+      
+      // Update local exceptions state
+      setExceptions(prev => {
+        const filtered = prev.filter(ex => ex.date !== exceptionData.date);
+        return [...filtered, exceptionData].sort((a, b) => a.date.localeCompare(b.date));
+      });
+      
+      setIsExceptionModalOpen(false);
+      setNewException({ date: '', isOpen: false, times: [] });
+      setSelectedDateForException('');
+    } catch (error) {
+      console.error('Error saving exception:', error);
+      setModalError('Не удалось сохранить исключение');
+    }
+  };
+
+  const handleDeleteException = async (date: string) => {
+    try {
+      await removeException(salonId, date);
+      setExceptions(prev => prev.filter(ex => ex.date !== date));
+    } catch (error) {
+      console.error('Error deleting exception:', error);
+      setModalError('Не удалось удалить исключение');
+    }
+  };
+
+  const handleExceptionTimeChange = (timeIdx: number, field: "start" | "end", value: string) => {
+    setNewException(prev => ({
+      ...prev,
+      times: (prev.times || []).map((t, i) => 
+        i === timeIdx ? { ...t, [field]: value } : t
+      )
+    }));
+  };
+
+  const handleAddExceptionInterval = () => {
+    setNewException(prev => ({
+      ...prev,
+      times: [...(prev.times || []), { start: '09:00', end: '18:00' }]
+    }));
+  };
+
+  const handleRemoveExceptionInterval = (timeIdx: number) => {
+    setNewException(prev => ({
+      ...prev,
+      times: (prev.times || []).filter((_, i) => i !== timeIdx)
+    }));
+  };
+
   if (loading) {
     return <SalonSchedulePageSkeleton />;
   }
@@ -530,15 +635,29 @@ export default function SalonSchedulePage() {
   const MobileDayView = ({ date, dayIndex }: { date: Date, dayIndex: number }) => {
     const dayAppointments = getAppointmentsForDay(date);
     const isToday = isTodayDate(date);
+    const dateStr = date.toISOString().split('T')[0];
+    const hasException = exceptions.some(ex => ex.date === dateStr);
+    const exception = exceptions.find(ex => ex.date === dateStr);
 
     return (
         <div className="border-b border-slate-100 last:border-0 py-6">
             <div className="flex items-center gap-4 mb-5 px-2">
-                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-sm border ${isToday ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200'}`}>
-                    <span className="text-xs font-medium uppercase tracking-wide opacity-80">{WEEKDAYS[dayIndex].shortLabel}</span>
-                    <span className="text-xl font-bold leading-none mt-0.5">{date.getDate()}</span>
+                <div className="relative">
+                    <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-sm border ${isToday ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-200'}`}>
+                        <span className="text-xs font-medium uppercase tracking-wide opacity-80">{WEEKDAYS[dayIndex].shortLabel}</span>
+                        <span className="text-xl font-bold leading-none mt-0.5">{date.getDate()}</span>
+                        {/* Exception Indicator */}
+                        {hasException && (
+                            <div 
+                                className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                                    exception?.isOpen ? 'bg-green-500' : 'bg-red-500'
+                                }`}
+                                title={exception?.isOpen ? 'Особый график' : 'Выходной'}
+                            />
+                        )}
+                    </div>
                 </div>
-                <div>
+                <div className="flex-1">
                     <div className={`font-bold text-lg ${isToday ? 'text-rose-600' : 'text-slate-900'}`}>
                       {WEEKDAYS[dayIndex].fullLabel}
                     </div>
@@ -546,6 +665,16 @@ export default function SalonSchedulePage() {
                       {date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
                     </div>
                 </div>
+                {/* Exception Management Button */}
+                {canManageAppointments && (
+                    <button
+                        onClick={() => handleOpenExceptionModal(dateStr)}
+                        className="p-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                        title="Настроить исключение"
+                    >
+                        <CalendarX className="w-4 h-4 text-blue-600" />
+                    </button>
+                )}
             </div>
             {dayAppointments.length > 0 ? (
                 <div className="space-y-3 pl-2">
@@ -843,9 +972,37 @@ export default function SalonSchedulePage() {
                                 <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${isToday ? "text-rose-600" : "text-slate-500"}`}>
                                   {WEEKDAYS[dayIndex].label}
                                 </div>
-                                <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-lg font-bold ${isToday ? "bg-rose-600 text-white shadow-md shadow-rose-200" : "text-slate-900"}`}>
+                                <div className={`relative inline-flex items-center justify-center w-8 h-8 rounded-full text-lg font-bold ${isToday ? "bg-rose-600 text-white shadow-md shadow-rose-200" : "text-slate-900"}`}>
                                     {date.getDate()}
+                                    {/* Exception Indicator */}
+                                    {(() => {
+                                        const dateStr = date.toISOString().split('T')[0];
+                                        const hasException = exceptions.some(ex => ex.date === dateStr);
+                                        const exception = exceptions.find(ex => ex.date === dateStr);
+                                        if (hasException) {
+                                            return (
+                                                <div 
+                                                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
+                                                        exception?.isOpen ? 'bg-green-500' : 'bg-red-500'
+                                                    }`}
+                                                    title={exception?.isOpen ? 'Особый график' : 'Выходной'}
+                                                />
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
+                                
+                                {/* Exception Management Button */}
+                                {canManageAppointments && (
+                                    <button
+                                        onClick={() => handleOpenExceptionModal(date.toISOString().split('T')[0])}
+                                        className="absolute top-1 right-1 p-1.5 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Настроить исключение"
+                                    >
+                                        <CalendarX className="w-3 h-3 text-slate-600" />
+                                    </button>
+                                )}
                             </div>
 
                             {/* Grid & Appointments */}
@@ -1011,6 +1168,91 @@ export default function SalonSchedulePage() {
             </div>
           )}
       </div>
+      
+      {/* Exception Management Modal */}
+      {isExceptionModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <h3 className="text-lg font-semibold text-slate-900">
+                Исключение для {selectedDateForException}
+              </h3>
+              <button
+                onClick={() => setIsExceptionModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newException.isOpen}
+                    onChange={(e) => setNewException(prev => ({ ...prev, isOpen: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="font-medium text-slate-700">Открыто</span>
+                </label>
+              </div>
+              
+              {newException.isOpen && (
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-slate-700">Время работы:</div>
+                  {(newException.times || []).map((time, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={time.start}
+                        onChange={(e) => handleExceptionTimeChange(idx, 'start', e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <span className="text-slate-400">—</span>
+                      <input
+                        type="time"
+                        value={time.end}
+                        onChange={(e) => handleExceptionTimeChange(idx, 'end', e.target.value)}
+                        className="px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      <button
+                        onClick={() => handleRemoveExceptionInterval(idx)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={handleAddExceptionInterval}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors inline-flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Добавить интервал
+                  </button>
+                </div>
+              )}
+              
+            </div>
+            
+            <div className="flex justify-end gap-3 p-6 border-t border-slate-100">
+              <button
+                onClick={() => setIsExceptionModalOpen(false)}
+                className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleSaveException}
+                className="px-4 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
+              >
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

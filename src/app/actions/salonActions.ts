@@ -11,6 +11,7 @@ import {
   salonInvitationSchema,
   salonServiceSchema,
   salonScheduleSchema,
+  salonExceptionDaySchema,
 } from '@/lib/firebase/schemas';
 
 import type {
@@ -20,6 +21,9 @@ import type {
   SalonSchedule,
   SalonService,
   UserSalons,
+  SalonExceptionDay,
+  SalonWorkDay,
+  WeekDay,
 } from '@/types/database';
 
 // УБИРАЕМ импорт клиентской функции
@@ -425,6 +429,177 @@ export const updateSalonScheduleAction = async (salonId: string, data: Partial<S
 export const deleteSalonScheduleAction = async (salonId: string): Promise<void> => {
   await getDb().collection('salonSchedules').doc(salonId).delete();
   revalidatePath(`/salons/${salonId}`);
+};
+
+// ==========================================
+// --- Действия для Исключений в Расписании ---
+// ==========================================
+
+export const addScheduleExceptionAction = async (
+  salonId: string, 
+  exception: SalonExceptionDay
+): Promise<SalonSchedule> => {
+  const validatedException = salonExceptionDaySchema.parse(exception);
+  
+  const current = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!current) {
+    throw new Error('Schedule not found for salon');
+  }
+
+  const exceptions = current.exceptions || [];
+  const existingIndex = exceptions.findIndex(ex => ex.date === validatedException.date);
+  
+  if (existingIndex >= 0) {
+    // Обновляем существующее исключение
+    exceptions[existingIndex] = validatedException;
+  } else {
+    // Добавляем новое исключение
+    exceptions.push(validatedException);
+  }
+
+  const updatedSchedule = {
+    ...current,
+    exceptions,
+    updatedAt: new Date().toISOString()
+  };
+
+  await getDb().collection('salonSchedules').doc(salonId).set(updatedSchedule, { merge: true });
+  revalidatePath(`/salons/${salonId}`);
+  revalidatePath(`/salons/${salonId}/schedule`);
+  
+  return updatedSchedule;
+};
+
+export const removeScheduleExceptionAction = async (
+  salonId: string, 
+  date: string
+): Promise<SalonSchedule> => {
+  const current = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!current || !current.exceptions) {
+    throw new Error('Schedule or exceptions not found');
+  }
+
+  const filteredExceptions = current.exceptions.filter(ex => ex.date !== date);
+  
+  const updatedSchedule = {
+    ...current,
+    exceptions: filteredExceptions,
+    updatedAt: new Date().toISOString()
+  };
+
+  await getDb().collection('salonSchedules').doc(salonId).set(updatedSchedule, { merge: true });
+  revalidatePath(`/salons/${salonId}`);
+  revalidatePath(`/salons/${salonId}/schedule`);
+  
+  return updatedSchedule;
+};
+
+export const getEffectiveScheduleAction = async (
+  salonId: string, 
+  date: string
+): Promise<SalonWorkDay | null> => {
+  const schedule = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!schedule) {
+    return null;
+  }
+
+  // Сначала проверяем исключения
+  const exception = schedule.exceptions?.find(ex => ex.date === date);
+  if (exception) {
+    const dayOfWeek = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as WeekDay;
+    return {
+      day: dayOfWeek,
+      isOpen: exception.isOpen,
+      times: exception.times || []
+    };
+  }
+
+  // Если нет исключения, используем еженедельное расписание
+  const dayOfWeek = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as WeekDay;
+  const weeklyDay = schedule.weeklySchedule.find(day => day.day === dayOfWeek);
+  
+  return weeklyDay || null;
+};
+
+export const getExceptionsInRangeAction = async (
+  salonId: string, 
+  startDate: string, 
+  endDate: string
+): Promise<SalonExceptionDay[]> => {
+  const schedule = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!schedule || !schedule.exceptions) {
+    return [];
+  }
+
+  return schedule.exceptions.filter(exception => 
+    exception.date >= startDate && exception.date <= endDate
+  );
+};
+
+export const getScheduleForDateRangeAction = async (
+  salonId: string, 
+  startDate: string, 
+  endDate: string
+): Promise<Array<{ date: string; schedule: SalonWorkDay | null }>> => {
+  const schedule = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!schedule) {
+    return [];
+  }
+
+  const result: Array<{ date: string; schedule: SalonWorkDay | null }> = [];
+  let currentDate = new Date(startDate + 'T00:00:00');
+  const end = new Date(endDate + 'T00:00:00');
+
+  while (currentDate <= end) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const daySchedule = await getEffectiveScheduleAction(salonId, dateStr);
+    result.push({ date: dateStr, schedule: daySchedule });
+    
+    // Переходим к следующему дню
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return result;
+};
+
+export const addMultipleExceptionsAction = async (
+  salonId: string, 
+  exceptions: SalonExceptionDay[]
+): Promise<SalonSchedule> => {
+  const validatedExceptions = exceptions.map(ex => salonExceptionDaySchema.parse(ex));
+  
+  const current = await readDoc<SalonSchedule>('salonSchedules', salonId);
+  if (!current) {
+    throw new Error('Schedule not found for salon');
+  }
+
+  const existingExceptions = current.exceptions || [];
+  const mergedExceptions = [...existingExceptions];
+
+  // Добавляем или обновляем исключения
+  validatedExceptions.forEach(newException => {
+    const existingIndex = mergedExceptions.findIndex(ex => ex.date === newException.date);
+    if (existingIndex >= 0) {
+      mergedExceptions[existingIndex] = newException;
+    } else {
+      mergedExceptions.push(newException);
+    }
+  });
+
+  // Сортируем по дате
+  mergedExceptions.sort((a, b) => a.date.localeCompare(b.date));
+
+  const updatedSchedule = {
+    ...current,
+    exceptions: mergedExceptions,
+    updatedAt: new Date().toISOString()
+  };
+
+  await getDb().collection('salonSchedules').doc(salonId).set(updatedSchedule, { merge: true });
+  revalidatePath(`/salons/${salonId}`);
+  revalidatePath(`/salons/${salonId}/schedule`);
+  
+  return updatedSchedule;
 };
 
 // ==========================================

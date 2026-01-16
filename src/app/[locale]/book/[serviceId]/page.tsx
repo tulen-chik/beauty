@@ -132,7 +132,7 @@ export default function BookServicePage() {
   
   const { fetchSalon } = useSalon()
   const { isTimeSlotAvailable, createAppointment } = useAppointment()
-  const { getSchedule } = useSalonSchedule()
+  const { getSchedule, getEffectiveSchedule } = useSalonSchedule()
   const { getService } = useSalonService()
   const { getUserById } = useUser()
 
@@ -333,10 +333,10 @@ export default function BookServicePage() {
 
     setLoadingTimeSlots(true)
     try {
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-      const dayName = dayNames[selectedDate.getDay()]
+      const dateStr = selectedDate.toISOString().split('T')[0]
       
-      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
+      // Get effective schedule that considers both weekly schedule and exceptions
+      const daySchedule = await getEffectiveSchedule(service.salonId, dateStr)
       
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
         setAvailableTimeSlots([])
@@ -399,7 +399,7 @@ export default function BookServicePage() {
 
   useEffect(() => {
     generateTimeSlots()
-  }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable])
+  }, [selectedDate, service, salonSchedule, employeeId, isTimeSlotAvailable, getEffectiveSchedule])
 
   const employees = useMemo(() => {
     if (!salon) return []
