@@ -22,8 +22,20 @@ import TimeSelector from "./components/TimeSelector"
 import BookingForm from "./components/BookingForm"
 import BookingActions from "./components/BookingActions"
 
-// --- НАЧАЛО: НОВЫЙ КОМПОНЕНТ SKELETON ---
+// --- HELPER FUNCTION TO FIX TIMEZONE ISSUE ---
+/**
+ * Converts a Date object to a 'YYYY-MM-DD' string in the local timezone.
+ * This avoids the UTC conversion issue from toISOString().
+ */
+const toLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
+
+// --- SKELETON COMPONENT ---
 const BookServicePageSkeleton = () => {
   return (
     <div className="min-h-screen bg-gray-50 animate-pulse">
@@ -95,8 +107,7 @@ const BookServicePageSkeleton = () => {
   );
 };
 
-// --- КОНЕЦ: НОВЫЕ КОМПОНЕНТЫ SKELETON ---
-
+// --- TYPE DEFINITIONS ---
 type Service = {
   id: string
   salonId: string
@@ -234,56 +245,56 @@ export default function BookServicePage() {
     return days
   }, [currentMonth])
 
-  const isDateWorkingDay = (date: Date) => {
+  const isDateWorkingDay = async (date: Date): Promise<boolean> => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
     if (date < today) return false
     
-    if (!salonSchedule?.weeklySchedule) return true
+    if (!service) return false;
     
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    const dayName = dayNames[date.getDay()]
-    
-    const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
-    
+    const dateStr = toLocalDateString(date);
+    const daySchedule = await getEffectiveSchedule(service.salonId, dateStr)
     return daySchedule?.isOpen || false
   }
 
   useEffect(() => {
     if (!salonSchedule || !service || !isTimeSlotAvailable) {
+      setDayAvailability({});
       return;
     }
 
     let isCancelled = false;
 
     const checkDayHasSlots = async (date: Date): Promise<boolean> => {
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const dayName = dayNames[date.getDay()];
-      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName);
+      const dateStr = toLocalDateString(date);
+      const daySchedule = await getEffectiveSchedule(service.salonId, dateStr);
 
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
         return false;
       }
 
       for (const timeRange of daySchedule.times) {
-        const [startHour] = timeRange.start.split(':').map(Number);
-        const [endHour] = timeRange.end.split(':').map(Number);
-        let currentHour = startHour;
+        const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+        const [endHour, endMinute] = timeRange.end.split(':').map(Number);
+        
+        const rangeStart = new Date(date);
+        rangeStart.setHours(startHour, startMinute, 0, 0);
+        
+        const rangeEnd = new Date(date);
+        rangeEnd.setHours(endHour, endMinute, 0, 0);
 
-        while (currentHour < endHour) {
-          const slotDate = new Date(date);
-          slotDate.setHours(currentHour, 0, 0, 0);
+        let currentTime = new Date(rangeStart);
 
-          if (slotDate > new Date()) {
+        while (currentTime.getTime() + service.durationMinutes * 60000 <= rangeEnd.getTime()) {
+          if (currentTime > new Date()) {
             const isAvailable = await isTimeSlotAvailable(
               service.salonId,
-              slotDate.toISOString(),
+              currentTime.toISOString(),
               service.durationMinutes
             );
             if (isAvailable) return true;
           }
-          currentHour++;
+          currentTime.setMinutes(currentTime.getMinutes() + 15);
         }
       }
       return false;
@@ -294,8 +305,9 @@ export default function BookServicePage() {
       const promises: Promise<void>[] = [];
 
       for (const date of calendarDays) {
-        const dateKey = date.toISOString().split('T')[0];
-        if (isDateWorkingDay(date)) {
+        const dateKey = toLocalDateString(date);
+        const isWorking = await isDateWorkingDay(date);
+        if (isWorking) {
           initialAvailability[dateKey] = 'loading';
           const promise = checkDayHasSlots(date).then(hasSlots => {
             if (!isCancelled) {
@@ -323,7 +335,7 @@ export default function BookServicePage() {
     return () => {
       isCancelled = true;
     };
-  }, [calendarDays, salonSchedule, service, isTimeSlotAvailable]);
+  }, [calendarDays, salonSchedule, service, isTimeSlotAvailable, getEffectiveSchedule]);
 
   const generateTimeSlots = async () => {
     if (!selectedDate || !service || !salonSchedule || !isTimeSlotAvailable) {
@@ -333,9 +345,7 @@ export default function BookServicePage() {
 
     setLoadingTimeSlots(true)
     try {
-      const dateStr = selectedDate.toISOString().split('T')[0]
-      
-      // Get effective schedule that considers both weekly schedule and exceptions
+      const dateStr = toLocalDateString(selectedDate);
       const daySchedule = await getEffectiveSchedule(service.salonId, dateStr)
       
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
@@ -343,52 +353,58 @@ export default function BookServicePage() {
         return
       }
 
-      const slots: TimeSlot[] = []
+      const slotPromises: Promise<TimeSlot>[] = [];
       const serviceDuration = service.durationMinutes;
+      const now = new Date();
       
       for (const timeRange of daySchedule.times) {
-        const [startHour] = timeRange.start.split(':').map(Number)
-        const [endHour] = timeRange.end.split(':').map(Number)
-        
-        let currentHour = startHour
-        
-        while (currentHour < endHour) {
-          const slotDate = new Date(selectedDate)
-          slotDate.setHours(currentHour, 0, 0, 0)
+        const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+        const [endHour, endMinute] = timeRange.end.split(':').map(Number);
 
-          const endDate = new Date(slotDate.getTime() + serviceDuration * 60000);
+        const rangeStart = new Date(selectedDate);
+        rangeStart.setHours(startHour, startMinute, 0, 0);
+
+        const rangeEnd = new Date(selectedDate);
+        rangeEnd.setHours(endHour, endMinute, 0, 0);
+        
+        let currentTime = new Date(rangeStart);
+        
+        while (currentTime.getTime() + serviceDuration * 60000 <= rangeEnd.getTime()) {
+          const slotTime = new Date(currentTime);
           
-          const startTimeString = formatTime(slotDate);
-          const endTimeString = formatTime(endDate);
-          const displayTimeString = `${startTimeString} - ${endTimeString}`;
-          
-          if (slotDate <= new Date()) {
-            slots.push({ 
-              displayTime: displayTimeString, 
-              startTime: startTimeString, 
-              available: false, 
-              reason: 'Время прошло' 
-            })
-          } else {
-            const isAvailable = await isTimeSlotAvailable(
+          if (slotTime > now) {
+            const promise = isTimeSlotAvailable(
               service.salonId,
-              slotDate.toISOString(),
+              slotTime.toISOString(),
               serviceDuration,
               employeeId || undefined
-            )
-            
-            slots.push({
-              displayTime: displayTimeString,
-              startTime: startTimeString,
-              available: isAvailable,
-              reason: isAvailable ? undefined : "Занято"
-            })
+            ).then(isAvailable => {
+              const endTime = new Date(slotTime.getTime() + serviceDuration * 60000);
+              const startTimeString = formatTime(slotTime);
+              const endTimeString = formatTime(endTime);
+              const displayTimeString = `${startTimeString} - ${endTimeString}`;
+
+              return {
+                displayTime: displayTimeString,
+                startTime: startTimeString,
+                available: isAvailable,
+                reason: isAvailable ? undefined : "Занято"
+              };
+            });
+            slotPromises.push(promise);
           }
-          currentHour++
+          
+          currentTime.setMinutes(currentTime.getMinutes() + 15);
         }
       }
       
-      setAvailableTimeSlots(slots)
+      const resolvedSlots = await Promise.all(slotPromises);
+      const uniqueSlots = resolvedSlots.filter((slot, index, self) =>
+          index === self.findIndex((s) => s.startTime === slot.startTime)
+      ).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+      setAvailableTimeSlots(uniqueSlots);
+
     } catch (error) {
       console.error('❌ Error generating time slots:', error)
       setAvailableTimeSlots([])
@@ -520,7 +536,6 @@ export default function BookServicePage() {
   }
 
   
-  // --- ИЗМЕНЕНИЕ: ЗАМЕНА СПИННЕРА НА SKELETON ---
   if (loading) {
     return <BookServicePageSkeleton />;
   }

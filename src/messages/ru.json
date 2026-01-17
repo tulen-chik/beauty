@@ -1191,6 +1191,7 @@
     "setupSchedule": "Настроить расписание",
     "currentWeek": "Текущая неделя",
     "week": "Неделя {weekNum}",
+    "weekAgo": "{count, plural, one {неделю назад} few {недели назад} many {недель назад} other {неделю назад}}",
     "showingAppointments": "Показано {count} записей",
     "filters": {
       "allStatuses": "Все статусы",

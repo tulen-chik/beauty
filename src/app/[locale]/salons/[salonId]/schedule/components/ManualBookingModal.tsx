@@ -53,6 +53,19 @@ type ManualBookingModalProps = {
   onBookingSuccess: () => void;
 };
 
+// --- HELPER FUNCTION TO FIX TIMEZONE ISSUE ---
+/**
+ * Converts a Date object to a 'YYYY-MM-DD' string in the local timezone.
+ * This avoids the UTC conversion issue from toISOString().
+ */
+const toLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+
 export default function ManualBookingModal({ isOpen, onClose, salonId, onBookingSuccess }: ManualBookingModalProps) {
   const params = useParams() as { locale: string };
   const { currentUser } = useUser()
@@ -183,14 +196,14 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
     return days
   }, [currentMonth])
 
-  const isDateWorkingDay = (date: Date) => {
+  const isDateWorkingDay = async (date: Date): Promise<boolean> => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     if (date < today) return false
-    if (!salonSchedule?.weeklySchedule) return true
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    const dayName = dayNames[date.getDay()]
-    const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName)
+    
+    // FIX: Use timezone-safe date string
+    const dateStr = toLocalDateString(date);
+    const daySchedule = await getEffectiveSchedule(salonId, dateStr)
     return daySchedule?.isOpen || false
   }
 
@@ -202,26 +215,30 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
     let isCancelled = false;
     const checkDayHasSlots = async (date: Date): Promise<boolean> => {
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const dayName = dayNames[date.getDay()];
-      const daySchedule = salonSchedule.weeklySchedule.find((d: { day: string }) => d.day === dayName);
+      // FIX: Use timezone-safe date string
+      const dateStr = toLocalDateString(date);
+      const daySchedule = await getEffectiveSchedule(salonId, dateStr);
 
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) return false;
 
       for (const timeRange of daySchedule.times) {
-        const [startHour] = timeRange.start.split(':').map(Number);
-        const [endHour] = timeRange.end.split(':').map(Number);
-        let currentHour = startHour;
+        const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+        const [endHour, endMinute] = timeRange.end.split(':').map(Number);
+        
+        const rangeStart = new Date(date);
+        rangeStart.setHours(startHour, startMinute, 0, 0);
+        
+        const rangeEnd = new Date(date);
+        rangeEnd.setHours(endHour, endMinute, 0, 0);
 
-        while (currentHour < endHour) {
-          const slotDate = new Date(date);
-          slotDate.setHours(currentHour, 0, 0, 0);
+        let currentTime = new Date(rangeStart);
 
-          if (slotDate > new Date()) {
-            const isAvailable = await isTimeSlotAvailable(service.salonId, slotDate.toISOString(), service.durationMinutes);
-            if (isAvailable) return true;
+        while (currentTime.getTime() + service.durationMinutes * 60000 <= rangeEnd.getTime()) {
+          if (currentTime > new Date()) {
+            const isAvailable = await isTimeSlotAvailable(service.salonId, currentTime.toISOString(), service.durationMinutes);
+            if (isAvailable) return true; // Нашли хотя бы один свободный слот, день доступен
           }
-          currentHour++;
+          currentTime.setMinutes(currentTime.getMinutes() + 15); // Проверяем со стандартным шагом
         }
       }
       return false;
@@ -232,8 +249,10 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
       const promises: Promise<void>[] = [];
 
       for (const date of calendarDays) {
-        const dateKey = date.toISOString().split('T')[0];
-        if (isDateWorkingDay(date)) {
+        // FIX: Use timezone-safe date string for the key
+        const dateKey = toLocalDateString(date);
+        const isWorkingDay = await isDateWorkingDay(date);
+        if (isWorkingDay) {
           initialAvailability[dateKey] = 'loading';
           const promise = checkDayHasSlots(date).then(hasSlots => {
             if (!isCancelled) {
@@ -252,54 +271,78 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
     checkMonthAvailability();
     return () => { isCancelled = true; };
-  }, [calendarDays, salonSchedule, service, isTimeSlotAvailable]);
+  }, [calendarDays, salonSchedule, service, isTimeSlotAvailable, getEffectiveSchedule, salonId]);
 
   const generateTimeSlots = async () => {
     if (!selectedDate || !service || !salonSchedule || !isTimeSlotAvailable) {
-      setAvailableTimeSlots([])
-      return
+      setAvailableTimeSlots([]);
+      return;
     }
 
-    setLoadingTimeSlots(true)
+    setLoadingTimeSlots(true);
     try {
-      const dateStr = selectedDate.toISOString().split('T')[0]
-      
-      // Get effective schedule that considers both weekly schedule and exceptions
-      const daySchedule = await getEffectiveSchedule(salonId, dateStr)
-      
+      // FIX: Use timezone-safe date string
+      const dateStr = toLocalDateString(selectedDate);
+      const daySchedule = await getEffectiveSchedule(salonId, dateStr);
+
       if (!daySchedule?.isOpen || !Array.isArray(daySchedule.times)) {
-        setAvailableTimeSlots([])
-        return
+        setAvailableTimeSlots([]);
+        return;
       }
 
-      const slots: TimeSlot[] = []
+      const slotPromises: Promise<TimeSlot>[] = [];
+      const serviceDuration = service.durationMinutes;
+      const now = new Date();
+
       for (const timeRange of daySchedule.times) {
-        const [startHour] = timeRange.start.split(':').map(Number)
-        const [endHour] = timeRange.end.split(':').map(Number)
-        let currentHour = startHour
-        
-        while (currentHour < endHour) {
-          const timeString = `${currentHour.toString().padStart(2, '0')}:00`
-          const slotDate = new Date(selectedDate)
-          slotDate.setHours(currentHour, 0, 0, 0)
-          
-          if (slotDate <= new Date()) {
-            slots.push({ time: timeString, available: false, reason: 'Время прошло' })
-          } else {
-            const isAvailable = await isTimeSlotAvailable(service.salonId, slotDate.toISOString(), service.durationMinutes, employeeId || undefined)
-            slots.push({ time: timeString, available: isAvailable, reason: isAvailable ? undefined : "Занято" })
+        const [startHour, startMinute] = timeRange.start.split(':').map(Number);
+        const [endHour, endMinute] = timeRange.end.split(':').map(Number);
+
+        const rangeStart = new Date(selectedDate);
+        rangeStart.setHours(startHour, startMinute, 0, 0);
+
+        const rangeEnd = new Date(selectedDate);
+        rangeEnd.setHours(endHour, endMinute, 0, 0);
+
+        let currentTime = new Date(rangeStart);
+
+        while (currentTime.getTime() + serviceDuration * 60000 <= rangeEnd.getTime()) {
+          const slotTime = new Date(currentTime);
+          const timeString = slotTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+          if (slotTime > now) {
+            const promise = isTimeSlotAvailable(
+              service.salonId,
+              slotTime.toISOString(),
+              serviceDuration,
+              employeeId || undefined
+            ).then(isAvailable => ({
+              time: timeString,
+              available: isAvailable,
+              reason: isAvailable ? undefined : "Занято"
+            }));
+            slotPromises.push(promise);
           }
-          currentHour++
+          
+          currentTime.setMinutes(currentTime.getMinutes() + 15);
         }
       }
-      setAvailableTimeSlots(slots)
+
+      const resolvedSlots = await Promise.all(slotPromises);
+      
+      const uniqueSlots = resolvedSlots.filter((slot, index, self) =>
+          index === self.findIndex((s) => s.time === slot.time)
+      ).sort((a, b) => a.time.localeCompare(b.time));
+
+      setAvailableTimeSlots(uniqueSlots);
+
     } catch (error) {
-      console.error('❌ Error generating time slots:', error)
-      setAvailableTimeSlots([])
+      console.error('❌ Error generating time slots:', error);
+      setAvailableTimeSlots([]);
     } finally {
-      setLoadingTimeSlots(false)
+      setLoadingTimeSlots(false);
     }
-  }
+  };
 
   useEffect(() => {
     generateTimeSlots()
@@ -399,7 +442,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
       if (employeeId) appointmentData.employeeId = employeeId;
       if (customerName) appointmentData.customerName = customerName;
       if (customerPhone) appointmentData.customerPhone = customerPhone;
-      // if (currentUser?.userId) appointmentData.customerUserId = currentUser.userId;
       if (notes) appointmentData.notes = notes;
       
       await createAppointment(service!.salonId, appointmentId, appointmentData)
@@ -423,7 +465,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
   const isToday = (date: Date) => date.toDateString() === new Date().toDateString()
   const isSelected = (date: Date) => selectedDate.toDateString() === date.toDateString()
 
-  // Safe access to days of week
   const daysOfWeek = (t.raw('calendar.daysOfWeek') as string[]) || ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
@@ -527,7 +568,8 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                       </div>
                       <div className="grid grid-cols-7 gap-1">
                         {calendarDays.map((date) => {
-                          const dateKey = date.toISOString().split('T')[0];
+                          // FIX: Use timezone-safe date string for the key
+                          const dateKey = toLocalDateString(date);
                           const status = dayAvailability[dateKey];
                           const isAvailable = status === 'available';
                           const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
@@ -585,7 +627,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                                   ? 'bg-rose-600 text-white border-rose-600 shadow-md' 
                                   : slot.available 
                                     ? 'bg-white border-slate-200 text-slate-700 hover:border-rose-300 hover:text-rose-600' 
-                                    : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed decoration-slate-300'}
+                                    : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed line-through'}
                               `}
                             >
                               {slot.time}
@@ -628,7 +670,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                        {t('fields.customerNameLabel')} <span className="text-rose-500">*</span>
+                        Имя <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -645,7 +687,7 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                        {t('fields.customerPhoneLabel')} <span className="text-rose-500">*</span>
+                        Телефон <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />

@@ -955,6 +955,7 @@
       "setupSchedule": "Set up schedule",
       "currentWeek": "Current week",
       "week": "Week {weekNum}",
+      "weekAgo": "{count, plural, one {week ago} other {weeks ago}}",
       "showingAppointments": "Showing {count} appointments",
       "filters": {
         "allStatuses": "All statuses",

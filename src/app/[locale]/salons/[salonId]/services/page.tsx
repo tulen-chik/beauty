@@ -150,6 +150,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   };
   const [formError, setFormError] = useState<string | null>(null);
   const [displayPrice, setDisplayPrice] = useState("0");
+  const [displayDuration, setDisplayDuration] = useState("30");
 
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -192,17 +193,19 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
   useEffect(() => {
     if (editingService) {
       const price = editingService.price ?? 0;
+      const duration = editingService.durationMinutes ?? 30;
       setForm({
         id: editingService.id,
         name: editingService.name ?? "",
         description: editingService.description ?? "",
         price: price,
-        durationMinutes: editingService.durationMinutes ?? 30,
+        durationMinutes: duration,
         isActive: !!editingService.isActive,
         isApp: !!editingService.isApp,
         categoryIds: editingService.categoryIds ?? []
       });
       setDisplayPrice(String(price));
+      setDisplayDuration(String(duration));
     } else {
       setForm({
         id: "",
@@ -215,6 +218,7 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
         categoryIds: []
       });
       setDisplayPrice("0");
+      setDisplayDuration("30");
     }
     setFormError(null);
     setShowNewCategoryInput(false);
@@ -353,6 +357,34 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
       setForm(f => ({ ...f, price: 0 }));
     } else {
       setDisplayPrice(String(parseFloat(displayPrice)));
+    }
+  };
+
+  const handleDurationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setDisplayDuration(value);
+      const numericValue = parseInt(value, 10);
+      setForm(f => ({
+        ...f,
+        durationMinutes: isNaN(numericValue) ? 0 : numericValue
+      }));
+    }
+  };
+
+  const handleDurationFocus = () => {
+    if (displayDuration === '30') {
+      setDisplayDuration('');
+    }
+  };
+
+  const handleDurationBlur = () => {
+    if (displayDuration.trim() === '') {
+      setDisplayDuration('30');
+      setForm(f => ({ ...f, durationMinutes: 30 }));
+    } else {
+      const numericValue = parseInt(displayDuration, 10);
+      setDisplayDuration(String(isNaN(numericValue) ? 30 : numericValue));
     }
   };
 
@@ -698,10 +730,12 @@ export default function SalonServicesPage({ params }: { params: { salonId: strin
                         <div className="relative">
                           <input
                             id="duration"
-                            type="number"
-                            min={1}
-                            value={form.durationMinutes}
-                            onChange={e => setForm(f => ({ ...f, durationMinutes: Number(e.target.value) }))}
+                            type="text"
+                            inputMode="numeric"
+                            value={displayDuration}
+                            onChange={handleDurationChange}
+                            onFocus={handleDurationFocus}
+                            onBlur={handleDurationBlur}
                             className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 pl-4 pr-12 text-sm font-medium text-slate-900 focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 transition-all outline-none"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-medium">мин</span>

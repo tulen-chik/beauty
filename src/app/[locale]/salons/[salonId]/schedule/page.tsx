@@ -40,6 +40,19 @@ import DeleteConfirmationModal from "@/app/[locale]/profile/components/DeleteCon
 import { Salon, SalonWorkDay, WeekDay, SalonExceptionDay } from "@/types/database";
 import { Appointment, AppointmentStatus } from "@/types/appointment";
 
+// --- HELPER FUNCTION TO FIX TIMEZONE ISSUE ---
+/**
+ * Converts a Date object to a 'YYYY-MM-DD' string in the local timezone.
+ * This avoids the UTC conversion issue from toISOString().
+ */
+const toLocalDateString = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+
 // --- SKELETONS ---
 const MobileViewSkeleton = () => (
   <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-6">
@@ -180,7 +193,8 @@ export default function SalonSchedulePage() {
     times: [],
   });
   const [isMobileView, setIsMobileView] = useState(false);
-  const maxWeeks = 3;
+  const [maxPastWeeks, setMaxPastWeeks] = useState(52); // Allow viewing up to 52 weeks in the past
+  const [maxFutureWeeks, setMaxFutureWeeks] = useState(12); // Allow viewing up to 12 weeks in the future
 
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -270,8 +284,9 @@ export default function SalonSchedulePage() {
     const loadExceptions = async () => {
       try {
         const today = new Date();
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        // FIX: Use timezone-safe date string
+        const startDate = toLocalDateString(new Date(today.getFullYear(), today.getMonth(), 1));
+        const endDate = toLocalDateString(new Date(today.getFullYear(), today.getMonth() + 1, 0));
         
         const exceptionsData = await getExceptionsInRange(salonId, startDate, endDate);
         setExceptions(exceptionsData);
@@ -635,7 +650,8 @@ export default function SalonSchedulePage() {
   const MobileDayView = ({ date, dayIndex }: { date: Date, dayIndex: number }) => {
     const dayAppointments = getAppointmentsForDay(date);
     const isToday = isTodayDate(date);
-    const dateStr = date.toISOString().split('T')[0];
+    // FIX: Use timezone-safe date string
+    const dateStr = toLocalDateString(date);
     const hasException = exceptions.some(ex => ex.date === dateStr);
     const exception = exceptions.find(ex => ex.date === dateStr);
 
@@ -881,15 +897,17 @@ export default function SalonSchedulePage() {
           {/* Week Navigation */}
           <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
             <button
-              onClick={() => setCurrentWeekOffset((w) => Math.max(0, w - 1))}
-              disabled={currentWeekOffset === 0}
+              onClick={() => setCurrentWeekOffset((w) => Math.max(-maxPastWeeks, w - 1))}
+              disabled={currentWeekOffset === -maxPastWeeks}
               className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all text-slate-600"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="px-4 text-center min-w-[180px]">
               <div className="font-bold text-slate-800 text-sm">
-                {currentWeekOffset === 0 ? t("currentWeek") : t("week", { weekNum: currentWeekOffset + 1 })}
+                {currentWeekOffset === 0 ? t("currentWeek") : 
+                 currentWeekOffset < 0 ? `${Math.abs(currentWeekOffset)} ${t("weekAgo", { count: Math.abs(currentWeekOffset) })}` :
+                 t("week", { weekNum: currentWeekOffset + 1 })}
               </div>
               <div className="text-xs text-slate-500 font-medium mt-0.5">
                 {weekDates[0]?.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} -{" "}
@@ -897,8 +915,8 @@ export default function SalonSchedulePage() {
               </div>
             </div>
             <button
-              onClick={() => setCurrentWeekOffset((w) => Math.min(maxWeeks, w + 1))}
-              disabled={currentWeekOffset === maxWeeks}
+              onClick={() => setCurrentWeekOffset((w) => Math.min(maxFutureWeeks, w + 1))}
+              disabled={currentWeekOffset === maxFutureWeeks}
               className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none transition-all text-slate-600"
             >
               <ChevronRight className="w-5 h-5" />
@@ -976,7 +994,8 @@ export default function SalonSchedulePage() {
                                     {date.getDate()}
                                     {/* Exception Indicator */}
                                     {(() => {
-                                        const dateStr = date.toISOString().split('T')[0];
+                                        // FIX: Use timezone-safe date string
+                                        const dateStr = toLocalDateString(date);
                                         const hasException = exceptions.some(ex => ex.date === dateStr);
                                         const exception = exceptions.find(ex => ex.date === dateStr);
                                         if (hasException) {
@@ -996,8 +1015,9 @@ export default function SalonSchedulePage() {
                                 {/* Exception Management Button */}
                                 {canManageAppointments && (
                                     <button
-                                        onClick={() => handleOpenExceptionModal(date.toISOString().split('T')[0])}
-                                        className="absolute top-1 right-1 p-1.5 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                        // FIX: Use timezone-safe date string
+                                        onClick={() => handleOpenExceptionModal(toLocalDateString(date))}
+                                        className="absolute top-1 right-1 p-1.5 bg-white/90 hover:bg-white border border-slate-200 rounded-lg shadow-sm transition-colors"
                                         title="Настроить исключение"
                                     >
                                         <CalendarX className="w-3 h-3 text-slate-600" />
