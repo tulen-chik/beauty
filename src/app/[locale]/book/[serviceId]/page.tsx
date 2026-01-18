@@ -23,10 +23,6 @@ import BookingForm from "./components/BookingForm"
 import BookingActions from "./components/BookingActions"
 
 // --- HELPER FUNCTION TO FIX TIMEZONE ISSUE ---
-/**
- * Converts a Date object to a 'YYYY-MM-DD' string in the local timezone.
- * This avoids the UTC conversion issue from toISOString().
- */
 const toLocalDateString = (date: Date): string => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -257,6 +253,7 @@ export default function BookServicePage() {
     return daySchedule?.isOpen || false
   }
 
+  // --- ИЗМЕНЕНИЕ: Оптимизированный useEffect для проверки доступности дней ---
   useEffect(() => {
     if (!salonSchedule || !service || !isTimeSlotAvailable) {
       setDayAvailability({});
@@ -300,34 +297,38 @@ export default function BookServicePage() {
       return false;
     };
 
-    const checkMonthAvailability = async () => {
-      const initialAvailability: Record<string, DayAvailabilityStatus> = {};
-      const promises: Promise<void>[] = [];
+    const checkMonthAvailability = () => {
+      const initialStates: Record<string, DayAvailabilityStatus> = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      for (const date of calendarDays) {
+      calendarDays.forEach(date => {
         const dateKey = toLocalDateString(date);
-        const isWorking = await isDateWorkingDay(date);
-        if (isWorking) {
-          initialAvailability[dateKey] = 'loading';
-          const promise = checkDayHasSlots(date).then(hasSlots => {
-            if (!isCancelled) {
-              setDayAvailability(prev => ({
-                ...prev,
-                [dateKey]: hasSlots ? 'available' : 'unavailable'
-              }));
-            }
-          });
-          promises.push(promise);
+        if (date < today) {
+          initialStates[dateKey] = 'unavailable';
         } else {
-          initialAvailability[dateKey] = 'unavailable';
+          initialStates[dateKey] = 'loading';
         }
-      }
-      
+      });
       if (!isCancelled) {
-        setDayAvailability(prev => ({ ...prev, ...initialAvailability }));
+        setDayAvailability(initialStates);
       }
 
-      await Promise.all(promises);
+      calendarDays.forEach(async (date) => {
+        const dateKey = toLocalDateString(date);
+        if (date < today) return;
+
+        const isWorking = await isDateWorkingDay(date);
+        if (isCancelled) return;
+
+        if (isWorking) {
+          const hasSlots = await checkDayHasSlots(date);
+          if (isCancelled) return;
+          setDayAvailability(prev => ({ ...prev, [dateKey]: hasSlots ? 'available' : 'unavailable' }));
+        } else {
+          setDayAvailability(prev => ({ ...prev, [dateKey]: 'unavailable' }));
+        }
+      });
     };
 
     checkMonthAvailability();

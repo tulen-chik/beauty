@@ -46,12 +46,12 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const getSchedule = useCallback(async (salonId: string) => {
+const getSchedule = useCallback(async (salonId: string) => {
+    // Эта функция обычно вызывается один раз, поэтому можно оставить setLoading
     setLoading(true);
     setError(null);
     try {
-      const schedule = await getSalonScheduleAction(salonId);
-      return schedule;
+      return await getSalonScheduleAction(salonId);
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -130,45 +130,37 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
     }
   }, []);
 
-  const getEffectiveSchedule = useCallback(async (salonId: string, date: string) => {
-    setLoading(true);
-    setError(null);
+const getEffectiveSchedule = useCallback(async (salonId: string, date: string) => {
+    // НЕ устанавливаем глобальный loading, так как эта функция вызывается в цикле
     try {
       const schedule = await getEffectiveScheduleAction(salonId, date);
       return schedule;
     } catch (e: any) {
-      setError(e.message);
+      // Можно установить локальную ошибку, если нужно, но не глобальную
+      console.error(`Failed to get effective schedule for ${date}:`, e.message);
       return null;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const getExceptionsInRange = useCallback(async (salonId: string, startDate: string, endDate: string) => {
-    setLoading(true);
-    setError(null);
+    // НЕ устанавливаем глобальный loading
     try {
       const exceptions = await getExceptionsInRangeAction(salonId, startDate, endDate);
       return exceptions;
     } catch (e: any) {
-      setError(e.message);
+      console.error(`Failed to get exceptions in range:`, e.message);
       return [];
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const getScheduleForDateRange = useCallback(async (salonId: string, startDate: string, endDate: string) => {
-    setLoading(true);
-    setError(null);
+    // НЕ устанавливаем глобальный loading
     try {
       const schedule = await getScheduleForDateRangeAction(salonId, startDate, endDate);
       return schedule;
     } catch (e: any) {
-      setError(e.message);
+      console.error(`Failed to get schedule for date range:`, e.message);
       return [];
-    } finally {
-      setLoading(false);
     }
   }, []);
 

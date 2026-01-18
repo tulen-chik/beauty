@@ -54,10 +54,6 @@ type ManualBookingModalProps = {
 };
 
 // --- HELPER FUNCTION TO FIX TIMEZONE ISSUE ---
-/**
- * Converts a Date object to a 'YYYY-MM-DD' string in the local timezone.
- * This avoids the UTC conversion issue from toISOString().
- */
 const toLocalDateString = (date: Date): string => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -90,7 +86,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
   const [selectedServiceId, setSelectedServiceId] = useState<string>("")
   const [service, setService] = useState<Service | null>(null)
   const [salon, setSalon] = useState<any>(null)
-  const [previewUrl, setPreviewUrl] = useState<string>("")
   const [salonSchedule, setSalonSchedule] = useState<any>(null)
 
   // Form state
@@ -118,6 +113,11 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
       setSuccess(null);
       setService(null);
       setSelectedServiceId("");
+      // Сбрасываем состояние при каждом открытии
+      setDayAvailability({});
+      setSelectedDate(new Date());
+      setCurrentMonth(new Date());
+
 
       try {
         const [salonData, scheduleData, serviceList] = await Promise.all([
@@ -160,16 +160,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
       if (isCancelled) return;
       setService(selected);
-      setPreviewUrl("");
-
-      try {
-        const imgs = await getServiceImages(selectedServiceId);
-        if (!isCancelled && imgs && imgs.length > 0) {
-          setPreviewUrl(imgs[0].url);
-        }
-      } catch (e) {
-        console.warn('Failed to load service images', e);
-      }
     };
 
     loadServiceDetails();
@@ -201,12 +191,12 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
     today.setHours(0, 0, 0, 0)
     if (date < today) return false
     
-    // FIX: Use timezone-safe date string
     const dateStr = toLocalDateString(date);
     const daySchedule = await getEffectiveSchedule(salonId, dateStr)
     return daySchedule?.isOpen || false
   }
 
+  // OPTIMIZED: This effect now runs checks in parallel and provides immediate feedback.
   useEffect(() => {
     if (!salonSchedule || !service || !isTimeSlotAvailable) {
       setDayAvailability({});
@@ -214,8 +204,8 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
     }
 
     let isCancelled = false;
+
     const checkDayHasSlots = async (date: Date): Promise<boolean> => {
-      // FIX: Use timezone-safe date string
       const dateStr = toLocalDateString(date);
       const daySchedule = await getEffectiveSchedule(salonId, dateStr);
 
@@ -236,37 +226,48 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
         while (currentTime.getTime() + service.durationMinutes * 60000 <= rangeEnd.getTime()) {
           if (currentTime > new Date()) {
             const isAvailable = await isTimeSlotAvailable(service.salonId, currentTime.toISOString(), service.durationMinutes);
-            if (isAvailable) return true; // Нашли хотя бы один свободный слот, день доступен
+            if (isAvailable) return true;
           }
-          currentTime.setMinutes(currentTime.getMinutes() + 15); // Проверяем со стандартным шагом
+          currentTime.setMinutes(currentTime.getMinutes() + 15);
         }
       }
       return false;
     };
 
-    const checkMonthAvailability = async () => {
-      const initialAvailability: Record<string, DayAvailabilityStatus> = {};
-      const promises: Promise<void>[] = [];
+    const checkMonthAvailability = () => {
+      // Set initial states for all visible days first for immediate UI feedback
+      const initialStates: Record<string, DayAvailabilityStatus> = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
-      for (const date of calendarDays) {
-        // FIX: Use timezone-safe date string for the key
+      calendarDays.forEach(date => {
         const dateKey = toLocalDateString(date);
-        const isWorkingDay = await isDateWorkingDay(date);
-        if (isWorkingDay) {
-          initialAvailability[dateKey] = 'loading';
-          const promise = checkDayHasSlots(date).then(hasSlots => {
-            if (!isCancelled) {
-              setDayAvailability(prev => ({ ...prev, [dateKey]: hasSlots ? 'available' : 'unavailable' }));
-            }
-          });
-          promises.push(promise);
+        if (date < today) {
+          initialStates[dateKey] = 'unavailable';
         } else {
-          initialAvailability[dateKey] = 'unavailable';
+          initialStates[dateKey] = 'loading'; // Assume loading, will be verified
         }
+      });
+      if (!isCancelled) {
+        setDayAvailability(initialStates);
       }
-      
-      if (!isCancelled) setDayAvailability(prev => ({ ...prev, ...initialAvailability }));
-      await Promise.all(promises);
+
+      // Now, run all async checks in parallel
+      calendarDays.forEach(async (date) => {
+        const dateKey = toLocalDateString(date);
+        if (date < today) return; // Skip past dates
+
+        const isWorking = await isDateWorkingDay(date);
+        if (isCancelled) return;
+
+        if (isWorking) {
+          const hasSlots = await checkDayHasSlots(date);
+          if (isCancelled) return;
+          setDayAvailability(prev => ({ ...prev, [dateKey]: hasSlots ? 'available' : 'unavailable' }));
+        } else {
+          setDayAvailability(prev => ({ ...prev, [dateKey]: 'unavailable' }));
+        }
+      });
     };
 
     checkMonthAvailability();
@@ -281,7 +282,6 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
 
     setLoadingTimeSlots(true);
     try {
-      // FIX: Use timezone-safe date string
       const dateStr = toLocalDateString(selectedDate);
       const daySchedule = await getEffectiveSchedule(salonId, dateStr);
 
@@ -568,10 +568,10 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                       </div>
                       <div className="grid grid-cols-7 gap-1">
                         {calendarDays.map((date) => {
-                          // FIX: Use timezone-safe date string for the key
                           const dateKey = toLocalDateString(date);
                           const status = dayAvailability[dateKey];
                           const isAvailable = status === 'available';
+                          const isLoading = status === 'loading';
                           const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
                           const isSelectedDay = isSelected(date);
 
@@ -588,9 +588,15 @@ export default function ManualBookingModal({ isOpen, onClose, salonId, onBooking
                                 ${!isSelectedDay && isAvailable ? 'hover:bg-rose-50 text-slate-700 hover:text-rose-700' : ''}
                                 ${!isSelectedDay && !isAvailable ? 'text-slate-300 cursor-not-allowed' : ''}
                                 ${isToday(date) && !isSelectedDay ? 'ring-1 ring-rose-300 text-rose-600 font-bold' : ''}
+                                ${isLoading ? 'animate-pulse bg-slate-100 cursor-wait' : ''}
                               `}
                             >
-                              {date.getDate()}
+                              {isLoading ? (
+                                <div className="w-2 h-2 bg-slate-300 rounded-full"></div>
+                              ) : (
+                                date.getDate()
+                              )}
+                              
                               {isAvailable && !isSelectedDay && (
                                 <span className="absolute bottom-1.5 w-1 h-1 bg-emerald-400 rounded-full"></span>
                               )}
