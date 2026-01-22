@@ -3,13 +3,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 // 1. Импорт серверных действий
-import * as salonActions from '@/app/actions/salonActions';
-
-// 2. Импорт клиентских функций для Storage
-import { 
-  deleteSalonAvatarAction as deleteSalonAvatar, 
-  uploadSalonAvatarAction as uploadSalonAvatar 
-} from '@/app/actions/storageActions';
 
 import { useGeolocation } from './index';
 
@@ -71,7 +64,12 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchSalon = useCallback((salonId: string) => {
     return handleRequest(async () => {
-      const salon = await salonActions.getSalonByIdAction(salonId);
+      const response = await fetch(`/api/salons/${salonId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch salon');
+      }
+      const salon = await response.json();
       if (salon) {
         setSalons(prev => {
           const exists = prev.some(s => s.id === salonId);
@@ -85,7 +83,15 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserSalons = useCallback((userId: string) => {
     return handleRequest(async () => {
-      const data = await salonActions.getUserSalonsAction(userId);
+      const response = await fetch(`/api/users/${userId}/salons`);
+      if (!response.ok) {
+        if (response.status === 404) {
+            setUserSalons(null);
+            return null;
+        }
+        throw new Error('Failed to fetch user salons');
+      }
+      const data = await response.json();
       
       if (!data || !data.salons || data.salons.length === 0) {
         setUserSalons(null);
@@ -107,25 +113,48 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Не удалось определить город по указанным координатам.');
       }
 
-      const currentUserSalons = await salonActions.getUserSalonsAction(userId);
+      const userSalonsResponse = await fetch(`/api/users/${userId}/salons`);
+      let currentUserSalons = null;
+      if (userSalonsResponse.ok) {
+        currentUserSalons = await userSalonsResponse.json();
+      } else if (userSalonsResponse.status !== 404) {
+        throw new Error('Failed to get user salons');
+      }
+
       if (currentUserSalons && currentUserSalons.salons.length >= 3) {
         throw new Error('Вы не можете иметь более 3 салонов');
       }
-      
+
       const finalSalonData = { ...data, city: salonCity };
-      
-      const salon = await salonActions.createSalonAction(salonId, finalSalonData);
-      
+
+      const createSalonResponse = await fetch('/api/salons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salonId, ...finalSalonData }),
+      });
+      if (!createSalonResponse.ok) throw new Error('Failed to create salon');
+      const salon = await createSalonResponse.json();
+
       const newSalonEntry = { salonId, role: 'owner' as SalonRole, joinedAt: new Date().toISOString() };
-      
+
       if (currentUserSalons) {
-        await salonActions.updateUserSalonsAction(userId, { salons: [...currentUserSalons.salons, newSalonEntry] });
+        await fetch(`/api/users/${userId}/salons`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salons: [...currentUserSalons.salons, newSalonEntry] }),
+        });
       } else {
-        await salonActions.createUserSalonsAction(userId, { userId, salons: [newSalonEntry] });
+        await fetch(`/api/users/${userId}/salons`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, salons: [newSalonEntry] }),
+        });
       }
-      
+
       setSalons((prev) => [...prev, salon]);
-      const updatedUserSalons = await salonActions.getUserSalonsAction(userId);
+      const updatedUserSalonsResponse = await fetch(`/api/users/${userId}/salons`);
+      if (!updatedUserSalonsResponse.ok) throw new Error('Failed to fetch updated user salons');
+      const updatedUserSalons = await updatedUserSalonsResponse.json();
       setUserSalons(updatedUserSalons);
 
       return salon;
@@ -156,7 +185,13 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
         dataToUpdate.settings.business = cleanBusinessSettings;
       }
 
-      const updated = await salonActions.updateSalonAction(salonId, dataToUpdate);
+      const response = await fetch(`/api/salons/${salonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToUpdate),
+      });
+      if (!response.ok) throw new Error('Failed to update salon');
+      const updated = await response.json();
       
       setSalons((prev) => prev.map((s) => (s.id === salonId ? updated : s)));
       return updated;
@@ -166,12 +201,16 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
   const deleteSalon = useCallback(async (salonId: string) => {
     return handleRequest(async () => {
       if (userSalons) {
-        const updatedUserSalons = { ...userSalons, salons: userSalons.salons.filter(s => s.salonId !== salonId) };
-        await salonActions.updateUserSalonsAction(userSalons.userId, updatedUserSalons);
-        setUserSalons(updatedUserSalons);
+        const updatedUserSalonsList = userSalons.salons.filter(s => s.salonId !== salonId);
+        await fetch(`/api/users/${userSalons.userId}/salons`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salons: updatedUserSalonsList }),
+        });
+        setUserSalons({ ...userSalons, salons: updatedUserSalonsList });
       }
 
-      await salonActions.deleteSalonAction(salonId);
+      await fetch(`/api/salons/${salonId}`, { method: 'DELETE' });
       setSalons(prev => prev.filter(s => s.id !== salonId));
     });
   }, [handleRequest, userSalons]);
@@ -192,12 +231,13 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
       }
       const { url, storagePath } = await resp.json();
 
-      await salonActions.updateSalonAvatarDbAction(salonId, url, storagePath);
-      
-      const updatedSalon = await salonActions.getSalonByIdAction(salonId);
-      if (!updatedSalon) {
-        throw new Error("Не удалось получить обновленные данные салона после загрузки аватара.");
-      }
+      const updateResponse = await fetch(`/api/salons/${salonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: url, avatarStoragePath: storagePath }),
+      });
+      if (!updateResponse.ok) throw new Error('Failed to update salon with new avatar');
+      const updatedSalon = await updateResponse.json();
 
       setSalons((prev) => prev.map((s) => (s.id === salonId ? updatedSalon : s)));
       return updatedSalon;
@@ -206,13 +246,31 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
 
   const removeAvatar = useCallback(async (salonId: string): Promise<void> => {
     return handleRequest(async () => {
-      const currentSalon = salons.find(s => s.id === salonId) || await salonActions.getSalonByIdAction(salonId);
+      let currentSalon = salons.find(s => s.id === salonId);
+      if (!currentSalon) {
+        const response = await fetch(`/api/salons/${salonId}`);
+        if (response.ok) {
+          currentSalon = await response.json();
+        }
+      }
       
       if (currentSalon?.avatarStoragePath) {
-        await deleteSalonAvatar(currentSalon.avatarStoragePath);
+        const response = await fetch('/api/upload/salon-avatar/delete', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ storagePath: currentSalon.avatarStoragePath }),
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.error || 'Не удалось удалить аватар салона');
+        }
       }
 
-      await salonActions.removeSalonAvatarDbAction(salonId);
+      await fetch(`/api/salons/${salonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: '', avatarStoragePath: '' }),
+      });
 
       const updatedSalonData = { avatarUrl: '', avatarStoragePath: '' };
       setSalons((prev) => prev.map((s) => (s.id === salonId ? { ...s, ...updatedSalonData } : s)));
@@ -222,48 +280,92 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
   // --- Новый метод: Получение аватара ---
   const getSalonAvatar = useCallback((salonId: string) => {
     // Передаем false вторым аргументом, чтобы не включать глобальный лоадер при загрузке картинки
-    return handleRequest(() => salonActions.getSalonAvatarAction(salonId), false);
+    return handleRequest(async () => {
+      const response = await fetch(`/api/salons/${salonId}/avatar`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch salon avatar');
+      }
+      return await response.json();
+    }, false);
   }, [handleRequest]);
 
   const fetchSalonsByCity = useCallback((options: { city: string; limit: number; startAfterKey?: string }) => {
-    return handleRequest(() => salonActions.getSalonsByCityPaginatedAction(options));
+    return handleRequest(async () => {
+      const { city, limit, startAfterKey } = options;
+      const params = new URLSearchParams({
+        city,
+        limit: String(limit),
+      });
+      if (startAfterKey) {
+        params.append('startAfterKey', startAfterKey);
+      }
+      const response = await fetch(`/api/salons?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch salons by city');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const updateSalonMembers = useCallback(async (salonId: string, updatedMembers: SalonMember[]) => {
     return handleRequest(async () => {
-      const originalSalon = salons.find(s => s.id === salonId) || await salonActions.getSalonByIdAction(salonId);
+      let originalSalon = salons.find(s => s.id === salonId);
+      if (!originalSalon) {
+        const response = await fetch(`/api/salons/${salonId}`);
+        if (!response.ok) throw new Error(`Салон с ID ${salonId} не найден.`);
+        originalSalon = await response.json();
+      }
       if (!originalSalon) throw new Error(`Салон с ID ${salonId} не найден.`);
-      
+
       const originalMembers = originalSalon.members || [];
       const originalUserIds = originalMembers.map(m => m.userId);
       const newUserIds = updatedMembers.map(m => m.userId);
       const allAffectedUserIds = Array.from(new Set([...originalUserIds, ...newUserIds]));
 
-      await salonActions.updateSalonAction(salonId, { members: updatedMembers });
+      await fetch(`/api/salons/${salonId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ members: updatedMembers }),
+      });
 
       await Promise.all(allAffectedUserIds.map(async (userId) => {
         try {
-          const userSalonsData = await salonActions.getUserSalonsAction(userId);
+          const userSalonsResponse = await fetch(`/api/users/${userId}/salons`);
+          let userSalonsData = null;
+          if (userSalonsResponse.ok) {
+            userSalonsData = await userSalonsResponse.json();
+          } else if (userSalonsResponse.status !== 404) {
+            throw new Error('Failed to get user salons');
+          }
+
           const newMemberInfo = updatedMembers.find(m => m.userId === userId);
           let updatedUserSalonsList = userSalonsData?.salons || [];
 
           if (newMemberInfo) {
-            const existingEntryIndex = updatedUserSalonsList.findIndex(s => s.salonId === salonId);
+            const existingEntryIndex = updatedUserSalonsList.findIndex((s: { salonId: string }) => s.salonId === salonId);
             if (existingEntryIndex > -1) {
               updatedUserSalonsList[existingEntryIndex].role = newMemberInfo.role;
             } else {
               updatedUserSalonsList.push({ salonId, role: newMemberInfo.role, joinedAt: newMemberInfo.joinedAt });
             }
           } else {
-            updatedUserSalonsList = updatedUserSalonsList.filter(s => s.salonId !== salonId);
-          }
-          
-          if (userSalonsData) {
-            await salonActions.updateUserSalonsAction(userId, { salons: updatedUserSalonsList });
-          } else if (newMemberInfo) {
-             await salonActions.createUserSalonsAction(userId, { userId, salons: updatedUserSalonsList });
+            updatedUserSalonsList = updatedUserSalonsList.filter((s: { salonId: string }) => s.salonId !== salonId);
           }
 
+          if (userSalonsData) {
+            await fetch(`/api/users/${userId}/salons`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ salons: updatedUserSalonsList }),
+            });
+          } else if (newMemberInfo) {
+            await fetch(`/api/users/${userId}/salons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, salons: updatedUserSalonsList }),
+            });
+          }
         } catch (e) {
           console.error(`Error updating user ${userId}:`, e);
         }

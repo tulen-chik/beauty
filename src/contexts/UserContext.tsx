@@ -2,19 +2,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { authService } from '@/lib/firebase/auth';
-import { 
-  readUserAction,
-  createUserAction,
-  updateUserAction,
-  getUserByEmailAction,
-  getUserByIdAction,
-} from '@/app/actions/userActions';
-// --- ДОБАВЛЕНО: Импорт функций для работы с аватарами ---
-import {
-  uploadUserAvatarAction,
-  deleteUserAvatarAction,
-  getUserAvatarAction,
-} from '@/app/actions/storageActions';
 
 import type { User } from '@/types/database';
 
@@ -118,7 +105,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       setError(null);
       
-      const userData = await readUserAction(uid);
+      const response = await fetch(`/api/users/${uid}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+      const userData = await response.json();
       if (userData) {
         const userWithId = { userId: uid, ...userData };
         setCurrentUser(userWithId);
@@ -166,20 +157,27 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           const { user, name } = redirectResult;
           setFirebaseUser(user);
           
-          const userData = await readUserAction(user.uid);
-          if (!userData) {
+          const response = await fetch(`/api/users/${user.uid}`);
+          if (response.status === 404) {
             console.log('Creating new user from Google auth...');
-            await createUserAction(user.uid, {
-              email: user.email || '',
-              displayName: name,
-              avatarUrl: '',
-              avatarStoragePath: '',
+            await fetch('/api/users', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: user.uid,
+                email: user.email || '',
+                displayName: name,
+                avatarUrl: '',
+                avatarStoragePath: '',
                 createdAt: new Date().toISOString(),
-              role: 'user',
-              settings: {
-                language: 'en',
-                notifications: true
-              }
+                role: 'user',
+                settings: {
+                  language: 'en',
+                  notifications: true,
+                },
+              }),
             });
           } else {
             console.log('User already exists, updating...');
@@ -230,19 +228,27 @@ const register = async (email: string, password: string, displayName: string) =>
       setLoading(true);
       const firebaseUser = await authService.register(email, password, displayName);
       setFirebaseUser(firebaseUser);
-      const existing = await readUserAction(firebaseUser.uid);
-      if (!existing) {
-        await createUserAction(firebaseUser.uid, {
-          email: firebaseUser.email || email,
-          displayName,
-          avatarUrl: '',
-          avatarStoragePath: '',
-          createdAt: new Date().toISOString(),
-          role: 'user',
-          settings: {
-            language: 'en',
-            notifications: true,
+      
+      const response = await fetch(`/api/users/${firebaseUser.uid}`);
+      if (response.status === 404) {
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            userId: firebaseUser.uid,
+            email: firebaseUser.email || email,
+            displayName,
+            avatarUrl: '',
+            avatarStoragePath: '',
+            createdAt: new Date().toISOString(),
+            role: 'user',
+            settings: {
+              language: 'en',
+              notifications: true,
+            },
+          }),
         });
       }
       await refreshUser(firebaseUser.uid);
@@ -338,20 +344,27 @@ const register = async (email: string, password: string, displayName: string) =>
       const { user, name } = result;
       setFirebaseUser(user);
       
-      const userData = await readUserAction(user.uid);
-      if (!userData) {
+      const response = await fetch(`/api/users/${user.uid}`);
+      if (response.status === 404) {
         console.log('Creating new user from Google popup auth...');
-        await createUserAction(user.uid, {
-          email: user.email || '',
-          displayName: name,
-          avatarUrl: '',
-          avatarStoragePath: '',
-          createdAt: new Date().toISOString(),
-          role: 'user',
-          settings: {
-            language: 'en',
-            notifications: true
-          }
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.uid,
+            email: user.email || '',
+            displayName: name,
+            avatarUrl: '',
+            avatarStoragePath: '',
+            createdAt: new Date().toISOString(),
+            role: 'user',
+            settings: {
+              language: 'en',
+              notifications: true,
+            },
+          }),
         });
       } else {
         console.log('User already exists from Google popup auth...');
@@ -368,12 +381,19 @@ const register = async (email: string, password: string, displayName: string) =>
   };
 
   const getUserByEmail = async (email: string) => {
-    const res = await getUserByEmailAction(email);
-    return res as unknown as User | null;
+    const response = await fetch(`/api/users/email/${email}`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
   };
 
   const getUserById = async (userId: string) => {
-    return await getUserByIdAction(userId);
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
   };
 
   // --- ДОБАВЛЕНО: Реализация методов для работы с аватарами ---
@@ -388,7 +408,17 @@ const register = async (email: string, password: string, displayName: string) =>
 
       // Если был старый аватар — удаляем файл и запись о нем
       if (currentUser.avatarStoragePath) {
-        await deleteUserAvatarAction(currentUser.avatarStoragePath);
+        const response = await fetch('/api/upload/user-avatar/delete', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ storagePath: currentUser.avatarStoragePath }),
+        });
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err?.error || 'Не удалось удалить старый аватар');
+        }
       }
 
       // Отправляем файл через API роут (Server Actions не принимают File напрямую)
@@ -406,7 +436,13 @@ const register = async (email: string, password: string, displayName: string) =>
       }
       const { url, storagePath } = await resp.json();
 
-      await updateUserAction(currentUser.userId, { avatarUrl: url, avatarStoragePath: storagePath });
+      await fetch(`/api/users/${currentUser.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatarUrl: url, avatarStoragePath: storagePath }),
+      });
 
       // Принудительно обновляем пользователя
       await refreshUser(currentUser.userId, { force: true });
@@ -430,11 +466,24 @@ const register = async (email: string, password: string, displayName: string) =>
       setLoading(true);
       setError(null);
 
-      await deleteUserAvatarAction(currentUser.avatarStoragePath);
+      const response = await fetch('/api/upload/user-avatar/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ storagePath: currentUser.avatarStoragePath }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.error || 'Не удалось удалить аватар');
+      }
 
-      await updateUserAction(currentUser.userId, {
-        avatarUrl: '',
-        avatarStoragePath: '',
+      await fetch(`/api/users/${currentUser.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ avatarUrl: '', avatarStoragePath: '' }),
       });
 
       // Здесь также вызываем с флагом принудительного обновления
@@ -451,7 +500,11 @@ const register = async (email: string, password: string, displayName: string) =>
 
   const getAvatar = async (userId: string) => {
     try {
-      const avatarData = await getUserAvatarAction(userId);
+      const response = await fetch(`/api/users/${userId}/avatar`);
+      if (!response.ok) {
+        return null;
+      }
+      const avatarData = await response.json();
       if (avatarData) {
         return { url: avatarData.url, storagePath: avatarData.storagePath };
       }

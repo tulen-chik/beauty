@@ -1,11 +1,9 @@
 'use server';
 
 import { Firestore, Settings } from '@google-cloud/firestore';
-import { Storage } from '@google-cloud/storage'; // 1. Добавляем импорт
+import { Storage } from '@google-cloud/storage';
 import { userSchema } from '@/lib/firebase/schemas';
 import type { User } from '@/types/database';
-
-// --- ИНИЦИАЛИЗАЦИЯ КЛИЕНТОВ ---
 
 let firestoreInstance: Firestore | null = null;
 let storageInstance: Storage | null = null;
@@ -19,14 +17,13 @@ function getDb(): Firestore {
         client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
         private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
       },
-      ignoreUndefinedProperties: true, 
+      ignoreUndefinedProperties: true,
     };
     firestoreInstance = new Firestore(firestoreSettings);
   }
   return firestoreInstance;
 }
 
-// 2. Добавляем функцию для инициализации Storage
 function getStorage(): Storage {
   if (!storageInstance) {
     storageInstance = new Storage({
@@ -40,8 +37,6 @@ function getStorage(): Storage {
   return storageInstance;
 }
 
-// --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
-
 const readOperation = async <T>(collection: string, id: string): Promise<T | null> => {
   try {
     const docRef = getDb().collection(collection).doc(id);
@@ -54,10 +49,6 @@ const readOperation = async <T>(collection: string, id: string): Promise<T | nul
     throw err;
   }
 };
-
-// ==========================================
-// --- ДЕЙСТВИЯ ДЛЯ ПОЛЬЗОВАТЕЛЕЙ (USER) ---
-// ==========================================
 
 export async function createUserAction(userId: string, data: Omit<User, 'id'>) {
   const validated = userSchema.parse(data);
@@ -118,20 +109,6 @@ export async function getUserByEmailAction(email: string) {
   return { userId: d.id, ...(d.data() as User) };
 }
 
-export async function getUserByIdAction(userId: string) {
-  const d = await getDb().collection('users').doc(userId).get();
-  return d.exists ? (d.data() as User) : null;
-}
-
-
-// ==========================================
-// --- ПОЛУЧЕНИЕ АВАТАРА ПОЛЬЗОВАТЕЛЯ ---
-// ==========================================
-
-/**
- * 3. Новый метод для получения аватара пользователя.
- * Генерирует свежую Signed URL для безопасного отображения на клиенте.
- */
 export const getUserAvatarAction = async (userId: string) => {
   try {
     const storage = getStorage();
@@ -139,18 +116,16 @@ export const getUserAvatarAction = async (userId: string) => {
     const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || `${process.env.FIREBASE_ADMIN_PROJECT_ID}.appspot.com`;
     const bucket = storage.bucket(bucketName);
     
-    // Путь к аватарам пользователей
     const prefix = `userAvatars/${userId}/`;
 
     const [files] = await bucket.getFiles({ prefix });
 
     if (files.length === 0) {
-      return null; // У пользователя нет аватара
+      return null;
     }
 
-    const file = files[0]; // Берем первый файл
+    const file = files[0];
 
-    // Генерируем ссылку, действительную 2 часа
     const [url] = await file.getSignedUrl({
       action: 'read',
       expires: Date.now() + 1000 * 60 * 60 * 2, // 2 hours

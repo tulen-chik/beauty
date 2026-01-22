@@ -2,37 +2,6 @@
 
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
-// Импортируем отдельные функции
-import { 
-  // Ratings
-  createSalonRatingAction,
-  readSalonRatingAction,
-  updateSalonRatingAction,
-  deleteSalonRatingAction,
-  getSalonRatingsBySalonAction,
-  getSalonRatingsByCustomerAction,
-  getSalonRatingByAppointmentAction,
-  getSalonRatingStatsAction,
-  approveSalonRatingAction,
-  rejectSalonRatingAction,
-  markSalonRatingAsVerifiedAction,
-  
-  // Responses
-  createSalonRatingResponseAction,
-  readSalonRatingResponseAction,
-  updateSalonRatingResponseAction,
-  deleteSalonRatingResponseAction,
-  getSalonRatingResponsesByRatingAction,
-  
-  // Helpful
-  addSalonRatingHelpfulVoteAction,
-  removeSalonRatingHelpfulVoteAction,
-  updateSalonRatingHelpfulVoteAction,
-  getSalonRatingHelpfulVotesByRatingAction,
-  getSalonRatingHelpfulStatsAction,
-  hasUserVotedOnSalonRatingAction,
-  toggleSalonRatingHelpfulVoteAction
-} from '@/app/actions/ratingActions';
 
 import type { 
   SalonRating, 
@@ -83,9 +52,6 @@ interface SalonRatingContextType {
   getResponsesByRating: (ratingId: string) => Promise<SalonRatingResponse[]>;
 
   // Helpful operations
-  addHelpfulVote: (ratingId: string, userId: string, isHelpful: boolean) => Promise<void>;
-  removeHelpfulVote: (ratingId: string, userId: string) => Promise<void>;
-  updateHelpfulVote: (ratingId: string, userId: string, isHelpful: boolean) => Promise<void>;
   getHelpfulVotesByRating: (ratingId: string) => Promise<SalonRatingHelpful[]>;
   getHelpfulStats: (ratingId: string) => Promise<{ helpful: number; notHelpful: number }>;
   hasUserVoted: (ratingId: string, userId: string) => Promise<SalonRatingHelpful | null>;
@@ -151,7 +117,15 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: new Date().toISOString()
       };
 
-      const newRating = await createSalonRatingAction(ratingId, data);
+      const response = await fetch('/api/ratings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ratingId, ...data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create rating');
+      }
+      const newRating = await response.json();
       
       // Update local state
       setRatings(prev => ({
@@ -171,7 +145,12 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await readSalonRatingAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get rating');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -181,7 +160,15 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const updateRating = useCallback(async (ratingId: string, data: Partial<SalonRating>) => {
     setError(null);
     try {
-      const updated = await updateSalonRatingAction(ratingId, data);
+      const response = await fetch(`/api/ratings/${ratingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update rating');
+      }
+      const updated = await response.json();
       
       // Update local state
       setRatings(prev => {
@@ -204,7 +191,10 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const deleteRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await deleteSalonRatingAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete rating');
+      }
       
       // Update local state
       setRatings(prev => {
@@ -224,7 +214,11 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const salonRatings = await getSalonRatingsBySalonAction(salonId);
+      const response = await fetch(`/api/ratings?salonId=${salonId}`);
+      if (!response.ok) {
+        throw new Error('Failed to get ratings for salon');
+      }
+      const salonRatings = await response.json();
       setRatings(prev => ({ ...prev, [salonId]: salonRatings }));
       setLoading(false);
       return salonRatings;
@@ -239,7 +233,11 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const customerRatings = await getSalonRatingsByCustomerAction(customerUserId);
+      const response = await fetch(`/api/ratings?customerUserId=${customerUserId}`);
+      if (!response.ok) {
+        throw new Error('Failed to get ratings for customer');
+      }
+      const customerRatings = await response.json();
       setLoading(false);
       return customerRatings;
     } catch (e: any) {
@@ -252,7 +250,12 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRatingByAppointment = useCallback(async (appointmentId: string) => {
     setError(null);
     try {
-      return await getSalonRatingByAppointmentAction(appointmentId);
+      const response = await fetch(`/api/ratings?appointmentId=${appointmentId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get rating by appointment');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -262,7 +265,11 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getRatingStats = useCallback(async (salonId: string) => {
     setError(null);
     try {
-      const stats = await getSalonRatingStatsAction(salonId);
+      const response = await fetch(`/api/salons/${salonId}/rating-stats`);
+      if (!response.ok) {
+        throw new Error('Failed to get rating stats');
+      }
+      const stats = await response.json();
       setRatingStats(prev => ({ ...prev, [salonId]: stats }));
       return stats;
     } catch (e: any) {
@@ -278,7 +285,10 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const approveRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await approveSalonRatingAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}/approve`, { method: 'PUT' });
+      if (!response.ok) {
+        throw new Error('Failed to approve rating');
+      }
       
       // Update local state
       setRatings(prev => {
@@ -301,7 +311,14 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const rejectRating = useCallback(async (ratingId: string, reason: string) => {
     setError(null);
     try {
-      await rejectSalonRatingAction(ratingId, reason);
+      const response = await fetch(`/api/ratings/${ratingId}/reject`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to reject rating');
+      }
       
       // Update local state
       setRatings(prev => {
@@ -324,7 +341,10 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const markRatingAsVerified = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      await markSalonRatingAsVerifiedAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}/verify`, { method: 'PUT' });
+      if (!response.ok) {
+        throw new Error('Failed to mark rating as verified');
+      }
       
       // Update local state
       setRatings(prev => {
@@ -364,7 +384,15 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: new Date().toISOString()
       };
 
-      return await createSalonRatingResponseAction(responseId, data);
+      const response = await fetch(`/api/ratings/${ratingId}/responses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responseId, ...data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create response');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -374,7 +402,12 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getResponse = useCallback(async (responseId: string) => {
     setError(null);
     try {
-      return await readSalonRatingResponseAction(responseId);
+      const response = await fetch(`/api/responses/${responseId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get response');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -384,7 +417,15 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const updateResponse = useCallback(async (responseId: string, data: Partial<SalonRatingResponse>) => {
     setError(null);
     try {
-      return await updateSalonRatingResponseAction(responseId, data);
+      const response = await fetch(`/api/responses/${responseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update response');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -394,7 +435,10 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const deleteResponse = useCallback(async (responseId: string) => {
     setError(null);
     try {
-      await deleteSalonRatingResponseAction(responseId);
+      const response = await fetch(`/api/responses/${responseId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete response');
+      }
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -404,7 +448,11 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getResponsesByRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await getSalonRatingResponsesByRatingAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}/responses`);
+      if (!response.ok) {
+        throw new Error('Failed to get responses');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -412,66 +460,15 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   // Helpful operations
-  const addHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
-    setError(null);
-    try {
-      await addSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
-      
-      // Update local state
-      setHelpfulVotes(prev => ({
-        ...prev,
-        [ratingId]: [...(prev[ratingId] || []), {
-          id: `${ratingId}_${userId}`,
-          ratingId,
-          userId,
-          isHelpful,
-          createdAt: new Date().toISOString()
-        }]
-      }));
-    } catch (e: any) {
-      setError(e.message);
-      throw e;
-    }
-  }, []);
-
-  const removeHelpfulVote = useCallback(async (ratingId: string, userId: string) => {
-    setError(null);
-    try {
-      await removeSalonRatingHelpfulVoteAction(ratingId, userId);
-      
-      // Update local state
-      setHelpfulVotes(prev => ({
-        ...prev,
-        [ratingId]: (prev[ratingId] || []).filter(vote => vote.userId !== userId)
-      }));
-    } catch (e: any) {
-      setError(e.message);
-      throw e;
-    }
-  }, []);
-
-  const updateHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
-    setError(null);
-    try {
-      await updateSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
-      
-      // Update local state
-      setHelpfulVotes(prev => ({
-        ...prev,
-        [ratingId]: (prev[ratingId] || []).map(vote => 
-          vote.userId === userId ? { ...vote, isHelpful } : vote
-        )
-      }));
-    } catch (e: any) {
-      setError(e.message);
-      throw e;
-    }
-  }, []);
 
   const getHelpfulVotesByRating = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      const votes = await getSalonRatingHelpfulVotesByRatingAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}/helpful`);
+      if (!response.ok) {
+        throw new Error('Failed to get helpful votes');
+      }
+      const votes = await response.json();
       setHelpfulVotes(prev => ({ ...prev, [ratingId]: votes }));
       return votes;
     } catch (e: any) {
@@ -483,7 +480,11 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const getHelpfulStats = useCallback(async (ratingId: string) => {
     setError(null);
     try {
-      return await getSalonRatingHelpfulStatsAction(ratingId);
+      const response = await fetch(`/api/ratings/${ratingId}/helpful/stats`);
+      if (!response.ok) {
+        throw new Error('Failed to get helpful stats');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return { helpful: 0, notHelpful: 0 };
@@ -493,7 +494,12 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const hasUserVoted = useCallback(async (ratingId: string, userId: string) => {
     setError(null);
     try {
-      return await hasUserVotedOnSalonRatingAction(ratingId, userId);
+      const response = await fetch(`/api/ratings/${ratingId}/helpful/vote?userId=${userId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to check user vote');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -503,7 +509,14 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
   const toggleHelpfulVote = useCallback(async (ratingId: string, userId: string, isHelpful: boolean) => {
     setError(null);
     try {
-      await toggleSalonRatingHelpfulVoteAction(ratingId, userId, isHelpful);
+      const response = await fetch(`/api/ratings/${ratingId}/helpful`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, isHelpful }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to toggle helpful vote');
+      }
       
       // Refresh helpful votes for this rating
       await getHelpfulVotesByRating(ratingId);
@@ -535,9 +548,6 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     getResponsesByRating,
 
     // Helpful operations
-    addHelpfulVote,
-    removeHelpfulVote,
-    updateHelpfulVote,
     getHelpfulVotesByRating,
     getHelpfulStats,
     hasUserVoted,
@@ -569,9 +579,6 @@ export const SalonRatingProvider = ({ children }: { children: ReactNode }) => {
     updateResponse,
     deleteResponse,
     getResponsesByRating,
-    addHelpfulVote,
-    removeHelpfulVote,
-    updateHelpfulVote,
     getHelpfulVotesByRating,
     getHelpfulStats,
     hasUserVoted,

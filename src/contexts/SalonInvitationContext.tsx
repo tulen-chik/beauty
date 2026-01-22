@@ -1,6 +1,5 @@
 import React, { createContext, ReactNode, useCallback,useContext, useMemo, useState } from 'react';
 
-import { getInvitationByIdAction, updateInvitationAction, deleteInvitationAction, createInvitationAction, acceptInvitationAction, getInvitationsByEmailAction, getInvitationsBySalonIdAction } from '@/app/actions/salonActions';
 
 import type { SalonInvitation } from '@/types/database';
 
@@ -32,7 +31,15 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const invitation = await createInvitationAction(invitationId, data);
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invitationId, ...data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create invitation');
+      }
+      const invitation = await response.json();
       setLoading(false);
       return invitation;
     } catch (e: any) {
@@ -46,7 +53,15 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const invitation = await getInvitationByIdAction(invitationId);
+      const response = await fetch(`/api/invitations/${invitationId}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          setLoading(false);
+          return null;
+        }
+        throw new Error('Failed to get invitation');
+      }
+      const invitation = await response.json();
       setLoading(false);
       return invitation;
     } catch (e: any) {
@@ -60,7 +75,15 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      await acceptInvitationAction(options.invitationId, options.userId);
+      const response = await fetch(`/api/invitations/${options.invitationId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: options.userId }),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Failed to accept invitation' }));
+        throw new Error(err.error);
+      }
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -73,7 +96,15 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const updated = await updateInvitationAction(invitationId, data);
+      const response = await fetch(`/api/invitations/${invitationId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update invitation');
+      }
+      const updated = await response.json();
       setLoading(false);
       return updated;
     } catch (e: any) {
@@ -87,7 +118,10 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      await deleteInvitationAction(invitationId);
+      const response = await fetch(`/api/invitations/${invitationId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete invitation');
+      }
       setLoading(false);
     } catch (e: any) {
       setError(e.message);
@@ -101,7 +135,11 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await getInvitationsByEmailAction(email);
+      const response = await fetch(`/api/invitations?email=${email}`);
+      if (!response.ok) {
+        throw new Error('Failed to get invitations by email');
+      }
+      const all = await response.json();
       setLoading(false);
       return all;
     } catch (e: any) {
@@ -116,7 +154,11 @@ export const SalonInvitationProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const all = await getInvitationsBySalonIdAction(salonId);
+      const response = await fetch(`/api/invitations?salonId=${salonId}`);
+      if (!response.ok) {
+        throw new Error('Failed to get invitations by salon');
+      }
+      const all = await response.json();
       setLoading(false);
       return all;
     } catch (e: any) {

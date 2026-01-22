@@ -1,14 +1,5 @@
 import React, { createContext, useCallback,useContext, useMemo, useState } from 'react';
 
-import {
-  blogAuthorActions as blogAuthorOperations,
-  blogCategoryActions as blogCategoryOperations,
-  blogPostActions as blogPostOperations,
-} from '@/app/actions/blogActions';
-import {
-  deleteBlogImage,
-  uploadBlogImage,
-} from '@/lib/firebase/storage';
 
 import type { BlogAuthor, BlogCategory, BlogPost } from '@/types/database';
 
@@ -68,10 +59,20 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
     setLoading(true);
     setError(null);
     try {
+      const [authorsResponse, categoriesResponse, postsResponse] = await Promise.all([
+        fetch('/api/blog/authors'),
+        fetch('/api/blog/categories'),
+        fetch('/api/blog/posts'),
+      ]);
+
+      if (!authorsResponse.ok || !categoriesResponse.ok || !postsResponse.ok) {
+        throw new Error('Failed to load blog data');
+      }
+
       const [a, c, p] = await Promise.all([
-        blogAuthorOperations.list(),
-        blogCategoryOperations.list(),
-        blogPostOperations.list(),
+        authorsResponse.json(),
+        categoriesResponse.json(),
+        postsResponse.json(),
       ]);
       setAuthors(a);
       setCategories(c);
@@ -85,84 +86,136 @@ export const BlogAdminProvider = ({ children }: { children: React.ReactNode }) =
 
   // Authors
   const createAuthor = useCallback(async (authorId: string, data: Omit<BlogAuthor, 'id'>) => {
-    const created = await blogAuthorOperations.create(authorId, data);
-    const newAuthor = { ...created, id: authorId } as BlogAuthor;
+    const response = await fetch('/api/blog/authors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authorId, ...data }),
+    });
+    if (!response.ok) throw new Error('Failed to create author');
+    const newAuthor = await response.json();
     setAuthors(prev => [newAuthor, ...prev]);
     return newAuthor;
   }, []);
 
   const updateAuthor = useCallback(async (authorId: string, data: Partial<BlogAuthor>) => {
-    const updated = await blogAuthorOperations.update(authorId, data);
-    setAuthors(prev => prev.map(a => (a.id === authorId ? { ...a, ...data } : a)));
-    return { ...updated, id: authorId } as BlogAuthor;
+    const response = await fetch(`/api/blog/authors/${authorId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update author');
+    const updated = await response.json();
+    setAuthors(prev => prev.map(a => (a.id === authorId ? updated : a)));
+    return updated;
   }, []);
 
   const deleteAuthor = useCallback(async (authorId: string) => {
-    await blogAuthorOperations.delete(authorId);
+    const response = await fetch(`/api/blog/authors/${authorId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete author');
     setAuthors(prev => prev.filter(a => a.id !== authorId));
   }, []);
 
   // Categories
   const createCategory = useCallback(async (categoryId: string, data: Omit<BlogCategory, 'id'>) => {
-    const created = await blogCategoryOperations.create(categoryId, data);
-    const newCategory = { ...created, id: categoryId } as BlogCategory;
+    const response = await fetch('/api/blog/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ categoryId, ...data }),
+    });
+    if (!response.ok) throw new Error('Failed to create category');
+    const newCategory = await response.json();
     setCategories(prev => [newCategory, ...prev]);
     return newCategory;
   }, []);
 
   const updateCategory = useCallback(async (categoryId: string, data: Partial<BlogCategory>) => {
-    const updated = await blogCategoryOperations.update(categoryId, data);
-    setCategories(prev => prev.map(c => (c.id === categoryId ? { ...c, ...data } : c)));
-    return { ...updated, id: categoryId } as BlogCategory;
+    const response = await fetch(`/api/blog/categories/${categoryId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update category');
+    const updated = await response.json();
+    setCategories(prev => prev.map(c => (c.id === categoryId ? updated : c)));
+    return updated;
   }, []);
 
   const deleteCategory = useCallback(async (categoryId: string) => {
-    await blogCategoryOperations.delete(categoryId);
+    const response = await fetch(`/api/blog/categories/${categoryId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete category');
     setCategories(prev => prev.filter(c => c.id !== categoryId));
   }, []);
 
   // Posts
   const createPost = useCallback(async (postId: string, data: Omit<BlogPost, 'id'>) => {
-    const created = await blogPostOperations.create(postId, data);
-    const newPost = { ...created, id: postId } as BlogPost;
+    const response = await fetch('/api/blog/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId, ...data }),
+    });
+    if (!response.ok) throw new Error('Failed to create post');
+    const newPost = await response.json();
     setPosts(prev => [newPost, ...prev]);
     return newPost;
   }, []);
 
   const updatePost = useCallback(async (postId: string, data: Partial<BlogPost>) => {
-    const updated = await blogPostOperations.update(postId, data);
-    setPosts(prev => prev.map(p => (p.id === postId ? { ...p, ...data } : p)));
-    return { ...updated, id: postId } as BlogPost;
+    const response = await fetch(`/api/blog/posts/${postId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update post');
+    const updated = await response.json();
+    setPosts(prev => prev.map(p => (p.id === postId ? updated : p)));
+    return updated;
   }, []);
 
   const deletePost = useCallback(async (postId: string) => {
-    await blogPostOperations.delete(postId);
+    const response = await fetch(`/api/blog/posts/${postId}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error('Failed to delete post');
     setPosts(prev => prev.filter(p => p.id !== postId));
   }, []);
 
   // Blog Images
   const uploadImage = useCallback(async (postId: string, file: File) => {
     setLoading(true);
+    setError(null);
     try {
-      const imageData = await uploadBlogImage(postId, file);
-      setLoading(false);
-      return imageData;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('postId', postId);
+
+      const response = await fetch('/api/blog/images', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   const deleteImage = useCallback(async (storagePath: string) => {
     setLoading(true);
+    setError(null);
     try {
-      await deleteBlogImage(storagePath);
-      setLoading(false);
+      const response = await fetch(`/api/blog/images/${storagePath}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete image');
+      }
     } catch (e: any) {
       setError(e.message);
-      setLoading(false);
       throw e;
+    } finally {
+      setLoading(false);
     }
   }, []);
 

@@ -2,7 +2,6 @@ let promise: Promise<void> | null = null;
 
 export const loadGoogleMapsApi = (): Promise<void> => {
   if (typeof window === 'undefined') {
-    // Return a promise that never resolves on the server
     return new Promise(() => {});
   }
 
@@ -16,26 +15,19 @@ export const loadGoogleMapsApi = (): Promise<void> => {
 
   promise = new Promise<void>((resolve, reject) => {
     const scriptId = "google-maps-script";
-    
-    // The script may have been loaded by other means, so we still check for its existence.
+    const callbackName = "googleMapsApiLoaded";
+
     if (document.getElementById(scriptId)) {
-        // Give it a moment to load, then check for the google.maps object.
-        const checkInterval = setInterval(() => {
-            if (window.google?.maps) {
-                clearInterval(checkInterval);
-                resolve();
-            }
-        }, 100);
-        
-        // Add a timeout to prevent an infinite loop
-        setTimeout(() => {
-            clearInterval(checkInterval);
-            if (!window.google?.maps) {
-                reject(new Error("Google Maps script exists but failed to initialize."));
-            }
-        }, 5000);
+      if (window.google?.maps) {
+        resolve();
         return;
+      }
     }
+
+    (window as any)[callbackName] = () => {
+      resolve();
+      delete (window as any)[callbackName];
+    };
 
     const script = document.createElement("script");
     script.id = scriptId;
@@ -43,34 +35,18 @@ export const loadGoogleMapsApi = (): Promise<void> => {
 
     if (!apiKey || apiKey.includes("YOUR_GOOGLE_MAPS_API_KEY")) {
       reject(new Error("Invalid or missing Google Maps API key."));
+      delete (window as any)[callbackName];
       return;
     }
 
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
 
-    const timeout = setTimeout(() => {
-      script.remove();
-      reject(new Error("Google Maps loading timeout."));
-    }, 15000);
-
-    script.onload = () => {
-      clearTimeout(timeout);
-      // Даем дополнительное время на инициализацию Google Maps API
-      setTimeout(() => {
-        if (window.google?.maps) {
-          resolve();
-        } else {
-          reject(new Error("Google Maps script loaded but API failed to initialize."));
-        }
-      }, 500);
-    };
-
     script.onerror = () => {
-      clearTimeout(timeout);
       script.remove();
       reject(new Error("Failed to load Google Maps script."));
+      delete (window as any)[callbackName];
     };
 
     document.head.appendChild(script);

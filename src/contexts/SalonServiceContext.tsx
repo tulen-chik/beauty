@@ -9,15 +9,6 @@ import React, {
   useState
 } from 'react';
 
-// 1. Импорт серверных действий (предполагаемый путь)
-import * as salonActions from '@/app/actions/salonActions';
-
-// 2. Импорт серверных функций для Storage
-import { 
-  deleteServiceImage, 
-  getServiceImages, 
-  uploadServiceImage 
-} from '@/lib/firebase/storage';
 
 import type { 
   SalonService, 
@@ -85,7 +76,14 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
   // --- CRUD операции ---
 
   const getService = useCallback((serviceId: string) => {
-    return handleRequest(() => salonActions.getSalonServiceByIdAction(serviceId));
+    return handleRequest(async () => {
+      const response = await fetch(`/api/services/${serviceId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get service');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const createService = useCallback(async (serviceId: string, data: Omit<SalonService, 'id' | 'city' | 'createdAt' | 'updatedAt'>) => {
@@ -116,53 +114,106 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: new Date().toISOString(),
       };
 
-      // Вызываем серверное действие
-      return await salonActions.createSalonServiceAction(serviceId, serviceDataWithCity);
+      // Вызываем API endpoint
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serviceId, ...serviceDataWithCity }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create service');
+      }
+      return await response.json();
     });
   }, [handleRequest, fetchSalon, getCityFromCoordinates, userCity]);
 
   const updateService = useCallback((serviceId: string, data: Partial<SalonService>) => {
-    return handleRequest(() => salonActions.updateSalonServiceAction(serviceId, data));
+    return handleRequest(async () => {
+      const response = await fetch(`/api/services/${serviceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update service');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const deleteService = useCallback((serviceId: string) => {
-    return handleRequest(() => salonActions.deleteSalonServiceAction(serviceId));
+    return handleRequest(async () => {
+      const response = await fetch(`/api/services/${serviceId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete service');
+      }
+    });
   }, [handleRequest]);
 
   // --- Списки услуг ---
 
   const getServicesBySalon = useCallback((salonId: string, options: { search?: string; limit?: number } = {}) => {
     return handleRequest(async () => {
-      // Получаем все услуги салона через серверное действие
-      let services = await salonActions.getServicesBySalonAction(salonId);
-
-      // Фильтрация по поиску происходит на клиенте (или можно добавить параметр search в Server Action)
+      const params = new URLSearchParams();
       if (options.search) {
-        const searchLower = options.search.toLowerCase();
-        services = services.filter(s => 
-          s.name.toLowerCase().includes(searchLower) ||
-          (s.description?.toLowerCase().includes(searchLower) ?? false)
-        );
+        params.append('search', options.search);
       }
-      
       if (options.limit) {
-        services = services.slice(0, options.limit);
+        params.append('limit', String(options.limit));
       }
-      
-      return services;
+      const response = await fetch(`/api/salons/${salonId}/services?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get services for salon');
+      }
+      return await response.json();
     });
   }, [handleRequest]);
 
   const getServicesBySalonPaginated = useCallback((options: { salonId: string; limit: number; startAfterKey?: string }) => {
-    return handleRequest(() => salonActions.getSalonServicesBySalonPaginatedAction(options));
+    return handleRequest(async () => {
+      const { salonId, limit, startAfterKey } = options;
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (startAfterKey) {
+        params.append('startAfterKey', startAfterKey);
+      }
+      const response = await fetch(`/api/salons/${salonId}/services?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get paginated services for salon');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const getAllServices = useCallback((options: { limit: number; startAfterKey?: string }) => {
-    return handleRequest(() => salonActions.getSalonServicesPaginatedAction(options));
+    return handleRequest(async () => {
+      const { limit, startAfterKey } = options;
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (startAfterKey) {
+        params.append('startAfterKey', startAfterKey);
+      }
+      const response = await fetch(`/api/services?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get all services');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const getServicesByCity = useCallback((options: { city: string; limit: number; startAfterKey?: string }) => {
-    return handleRequest(() => salonActions.getSalonServicesByCityPaginatedAction(options));
+    return handleRequest(async () => {
+      const { city, limit, startAfterKey } = options;
+      const params = new URLSearchParams({ city, limit: String(limit) });
+      if (startAfterKey) {
+        params.append('startAfterKey', startAfterKey);
+      }
+      const response = await fetch(`/api/services?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get services by city');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   // --- Работа с изображениями ---
@@ -171,19 +222,42 @@ export const SalonServiceProvider = ({ children }: { children: ReactNode }) => {
   // Мы используем существующие клиентские функции, но оборачиваем их в handleRequest для обработки ошибок.
 
   const uploadImage = useCallback((serviceId: string, file: File) => {
-    return handleRequest(() => uploadServiceImage(serviceId, file));
+    return handleRequest(async () => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/services/${serviceId}/images`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image');
+      }
+      return await response.json();
+    });
   }, [handleRequest]);
 
   const deleteImage = useCallback((storagePath: string, serviceId?: string) => {
     return handleRequest(async () => {
-      await deleteServiceImage(storagePath);
-      // Если нужно обновить UI или кэш, это произойдет автоматически при следующем запросе данных,
-      // так как мы не храним локальный кэш в этом контексте.
+      const encodedPath = encodeURIComponent(storagePath);
+      const response = await fetch(`/api/services/images/${encodedPath}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete image');
+      }
     });
   }, [handleRequest]);
 
   const getImages = useCallback((serviceId: string) => {
-    return handleRequest(() => getServiceImages(serviceId), false); // false = не показывать глобальный лоадер для картинок
+    return handleRequest(async () => {
+      const response = await fetch(`/api/services/${serviceId}/images`);
+      if (!response.ok) {
+        throw new Error('Failed to get images');
+      }
+      return await response.json();
+    }, false);
   }, [handleRequest]);
 
   // --- Сборка значения контекста ---

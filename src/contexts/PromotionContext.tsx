@@ -6,11 +6,6 @@ import React, {
   useMemo,
   useState} from 'react';
 
-import {
-  promotionAnalyticsActions as promotionAnalyticsOperations,
-  servicePromotionActions as servicePromotionOperations,
-  servicePromotionPlanActions as servicePromotionPlanOperations,
-} from '@/app/actions/promotionActions';
 
 import type {
   PromotionAnalytics,
@@ -70,7 +65,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await servicePromotionPlanOperations.read(planId);
+      const response = await fetch(`/api/promotions/plans/${planId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get service promotion plan');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -83,7 +83,9 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await servicePromotionPlanOperations.readAll();
+      const response = await fetch('/api/promotions/plans');
+      if (!response.ok) throw new Error('Failed to get all service promotion plans');
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -97,10 +99,15 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await servicePromotionPlanOperations.create(planId, data);
+      const response = await fetch('/api/promotions/plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId, ...data }),
+      });
+      if (!response.ok) throw new Error('Failed to create service promotion plan');
     } catch (e: any) {
       setError(e.message);
-      throw e; // Пробрасываем ошибку выше, чтобы компонент мог ее обработать
+      throw e;
     } finally {
       setLoading(false);
     }
@@ -111,7 +118,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await servicePromotionPlanOperations.update(planId, data);
+      const response = await fetch(`/api/promotions/plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update service promotion plan');
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -125,7 +137,8 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await servicePromotionPlanOperations.delete(planId);
+      const response = await fetch(`/api/promotions/plans/${planId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete service promotion plan');
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -141,7 +154,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await servicePromotionOperations.read(promotionId);
+      const response = await fetch(`/api/promotions/services/${promotionId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get service promotion');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -154,7 +172,9 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await servicePromotionOperations.findBySalonId(salonId);
+      const response = await fetch(`/api/salons/${salonId}/promotions`);
+      if (!response.ok) throw new Error('Failed to find service promotions by salon');
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -167,7 +187,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await servicePromotionOperations.findActiveByServiceId(serviceId);
+      const response = await fetch(`/api/services/${serviceId}/promotions/active`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to find active service promotion');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -180,7 +205,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await servicePromotionOperations.create(promotionId, data);
+      const response = await fetch('/api/promotions/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promotionId, ...data }),
+      });
+      if (!response.ok) throw new Error('Failed to create service promotion');
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -193,7 +223,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await servicePromotionOperations.update(promotionId, data);
+      const response = await fetch(`/api/promotions/services/${promotionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update service promotion');
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -208,7 +243,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await promotionAnalyticsOperations.read(analyticsId);
+      const response = await fetch(`/api/promotions/analytics/${analyticsId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get promotion analytics');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -221,7 +261,9 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      return await promotionAnalyticsOperations.findByServicePromotionId(servicePromotionId);
+      const response = await fetch(`/api/promotions/services/${servicePromotionId}/analytics`);
+      if (!response.ok) throw new Error('Failed to find promotion analytics');
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -234,7 +276,12 @@ export const PromotionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      await promotionAnalyticsOperations.create(analyticsId, data);
+      const response = await fetch('/api/promotions/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analyticsId, ...data }),
+      });
+      if (!response.ok) throw new Error('Failed to create promotion analytics');
     } catch (e: any) {
       setError(e.message);
       throw e;

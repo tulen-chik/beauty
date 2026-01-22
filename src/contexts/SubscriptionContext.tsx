@@ -11,30 +11,6 @@ import React, {
   useState,
 } from 'react';
 
-// Импортируем отдельные функции
-import {
-  // Plans
-  createSubscriptionPlanAction,
-  getSubscriptionPlanAction,
-  updateSubscriptionPlanAction,
-  deleteSubscriptionPlanAction,
-  getAllSubscriptionPlansAction,
-  getActiveSubscriptionPlansAction,
-  // Subscriptions
-  createSubscriptionAction,
-  getSubscriptionAction,
-  updateSubscriptionAction,
-  getSubscriptionBySalonIdAction,
-  getAllSubscriptionsBySalonIdAction,
-  getExpiringSubscriptionsAction,
-  cancelSubscriptionAction,
-  renewSubscriptionAction,
-  // Billing
-  createBillingAction,
-  getBillingAction,
-  updateBillingAction,
-  getBillingBySubscriptionIdAction
-} from '@/app/actions/subscriptionActions';
 
 import type {
   SalonSubscription,
@@ -155,39 +131,71 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   // --- Plans ---
   const getSubscriptionPlan = useCallback(
     (planId: string) => 
-      executeOperation(() => getSubscriptionPlanAction(planId), { defaultValue: null }),
+      executeOperation(async () => {
+      const response = await fetch(`/api/subscription-plans/${planId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get subscription plan');
+      }
+      return await response.json();
+    }, { defaultValue: null }),
     [executeOperation]
   );
 
   const getAllSubscriptionPlans = useCallback(
     () => 
-      executeOperation(() => getAllSubscriptionPlansAction(), { defaultValue: [] }),
+      executeOperation(async () => {
+      const response = await fetch('/api/subscription-plans');
+      if (!response.ok) throw new Error('Failed to get all subscription plans');
+      return await response.json();
+    }, { defaultValue: [] }),
     [executeOperation]
   );
 
   const getActiveSubscriptionPlans = useCallback(
     () => 
-      executeOperation(() => getActiveSubscriptionPlansAction(), { defaultValue: [] }),
+      executeOperation(async () => {
+      const response = await fetch('/api/subscription-plans?activeOnly=true');
+      if (!response.ok) throw new Error('Failed to get active subscription plans');
+      return await response.json();
+    }, { defaultValue: [] }),
     [executeOperation]
   );
 
   const createSubscriptionPlan = useCallback(
     async (planId: string, data: Omit<SalonSubscriptionPlan, 'id'>) => {
-      await executeOperation(() => createSubscriptionPlanAction(planId, data), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch('/api/subscription-plans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId, ...data }),
+        });
+        if (!response.ok) throw new Error('Failed to create subscription plan');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const updateSubscriptionPlan = useCallback(
     async (planId: string, data: Partial<SalonSubscriptionPlan>) => {
-      await executeOperation(() => updateSubscriptionPlanAction(planId, data), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/subscription-plans/${planId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to update subscription plan');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const deleteSubscriptionPlan = useCallback(
     async (planId: string) => {
-      await executeOperation(() => deleteSubscriptionPlanAction(planId), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/subscription-plans/${planId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Failed to delete subscription plan');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
@@ -195,90 +203,173 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   // --- Subscriptions ---
   const getSubscription = useCallback(
     (subscriptionId: string) => 
-      executeOperation(() => getSubscriptionAction(subscriptionId), { defaultValue: null }),
+      executeOperation(async () => {
+      const response = await fetch(`/api/subscriptions/${subscriptionId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get subscription');
+      }
+      return await response.json();
+    }, { defaultValue: null }),
     [executeOperation]
   );
 
   const getSalonSubscription = useCallback(
     (salonId: string) => 
-      executeOperation(() => getSubscriptionBySalonIdAction(salonId), { defaultValue: null }),
+      executeOperation(async () => {
+      const response = await fetch(`/api/salons/${salonId}/subscriptions`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get salon subscription');
+      }
+      return await response.json();
+    }, { defaultValue: null }),
     [executeOperation]
   );
 
   const getSalonSubscriptions = useCallback(
     (salonId: string) => 
-      executeOperation(() => getAllSubscriptionsBySalonIdAction(salonId), { defaultValue: [] }),
+      executeOperation(async () => {
+      const response = await fetch(`/api/salons/${salonId}/subscriptions?all=true`);
+      if (!response.ok) {
+        throw new Error('Failed to get all salon subscriptions');
+      }
+      return await response.json();
+    }, { defaultValue: [] }),
     [executeOperation]
   );
 
   const createSubscription = useCallback(
     async (subscriptionId: string, data: Omit<SalonSubscription, 'id'>) => {
-      await executeOperation(() => createSubscriptionAction(subscriptionId, data), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch('/api/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscriptionId, ...data }),
+        });
+        if (!response.ok) throw new Error('Failed to create subscription');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const updateSubscription = useCallback(
     async (subscriptionId: string, data: Partial<SalonSubscription>) => {
-      await executeOperation(() => updateSubscriptionAction(subscriptionId, data), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/subscriptions/${subscriptionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to update subscription');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const cancelSubscription = useCallback(
     async (subscriptionId: string, reason?: string) => {
-      await executeOperation(() => cancelSubscriptionAction(subscriptionId, reason), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/subscriptions/${subscriptionId}/cancel`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason }),
+        });
+        if (!response.ok) throw new Error('Failed to cancel subscription');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const renewSubscription = useCallback(
     async (subscriptionId: string, newEndDate: string) => {
-      await executeOperation(() => renewSubscriptionAction(subscriptionId, newEndDate), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/subscriptions/${subscriptionId}/renew`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newEndDate }),
+        });
+        if (!response.ok) throw new Error('Failed to renew subscription');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const getExpiringSoonSubscriptions = useCallback(
     (daysAhead = 7) => 
-      executeOperation(() => getExpiringSubscriptionsAction(daysAhead), { defaultValue: [] }),
+      executeOperation(async () => {
+      const response = await fetch(`/api/subscriptions?expiring=true&daysAhead=${daysAhead}`);
+      if (!response.ok) {
+        throw new Error('Failed to get expiring subscriptions');
+      }
+      return await response.json();
+    }, { defaultValue: [] }),
     [executeOperation]
   );
 
   // --- Billing ---
   const createBilling = useCallback(
     (data: Omit<SubscriptionBilling, 'id'>): Promise<string | null> => {
-      return executeOperation(() => createBillingAction(data), { defaultValue: null });
+      return executeOperation(async () => {
+        const response = await fetch('/api/billing', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to create billing record');
+        const result = await response.json();
+        return result.id;
+      }, { defaultValue: null });
     },
     [executeOperation]
   );
 
   const getBilling = useCallback(
     (billingId: string) => 
-      executeOperation(() => getBillingAction(billingId), { defaultValue: null }),
+      executeOperation(async () => {
+        const response = await fetch(`/api/billing/${billingId}`);
+        if (!response.ok) {
+          if (response.status === 404) return null;
+          throw new Error('Failed to get billing record');
+        }
+        return await response.json();
+      }, { defaultValue: null }),
     [executeOperation]
   );
 
   const updateBilling = useCallback(
     async (billingId: string, data: Partial<SubscriptionBilling>) => {
-      await executeOperation(() => updateBillingAction(billingId, data), { defaultValue: undefined });
+      await executeOperation(async () => {
+        const response = await fetch(`/api/billing/${billingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+        if (!response.ok) throw new Error('Failed to update billing record');
+      }, { defaultValue: undefined });
     },
     [executeOperation]
   );
 
   const getSubscriptionBilling = useCallback(
     (subscriptionId: string) => 
-      executeOperation(() => getBillingBySubscriptionIdAction(subscriptionId), { defaultValue: [] }),
+      executeOperation(async () => {
+        const response = await fetch(`/api/subscriptions/${subscriptionId}/billing`);
+        if (!response.ok) {
+          throw new Error('Failed to get billing records for subscription');
+        }
+        return await response.json();
+      }, { defaultValue: [] }),
     [executeOperation]
   );
 
   // --- Helpers ---
   const getSubscriptionFeatures = useCallback(async (salonId: string): Promise<string[]> => {
     return executeOperation(async () => {
-      const subscription = await getSubscriptionBySalonIdAction(salonId);
+      const subscription = await getSalonSubscription(salonId);
       if (!subscription) return [];
-      
-      const plan = await getSubscriptionPlanAction(subscription.planId);
+
+      const plan = await getSubscriptionPlan(subscription.planId);
       return plan?.features || [];
     }, { defaultValue: [] });
   }, [executeOperation]);

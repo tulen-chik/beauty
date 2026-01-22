@@ -2,19 +2,6 @@
 
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
-// Импортируем новые Server Actions
-import {
-  getSalonScheduleAction,
-  createSalonScheduleAction,
-  updateSalonScheduleAction,
-  deleteSalonScheduleAction,
-  addScheduleExceptionAction,
-  removeScheduleExceptionAction,
-  getEffectiveScheduleAction,
-  getExceptionsInRangeAction,
-  getScheduleForDateRangeAction,
-  addMultipleExceptionsAction
-} from '@/app/actions/salonActions';
 
 import type { SalonSchedule, SalonExceptionDay, SalonWorkDay } from '@/types/database';
 
@@ -47,11 +34,15 @@ export const SalonScheduleProvider = ({ children }: { children: ReactNode }) => 
   const [error, setError] = useState<string | null>(null);
 
 const getSchedule = useCallback(async (salonId: string) => {
-    // Эта функция обычно вызывается один раз, поэтому можно оставить setLoading
     setLoading(true);
     setError(null);
     try {
-      return await getSalonScheduleAction(salonId);
+      const response = await fetch(`/api/salons/${salonId}/schedule`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get schedule');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -64,8 +55,15 @@ const getSchedule = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const schedule = await createSalonScheduleAction(salonId, data);
-      return schedule;
+      const response = await fetch(`/api/salons/${salonId}/schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create schedule');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -78,8 +76,15 @@ const getSchedule = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await updateSalonScheduleAction(salonId, data);
-      return updated;
+      const response = await fetch(`/api/salons/${salonId}/schedule`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update schedule');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -92,7 +97,12 @@ const getSchedule = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      await deleteSalonScheduleAction(salonId);
+      const response = await fetch(`/api/salons/${salonId}/schedule`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete schedule');
+      }
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -106,8 +116,15 @@ const getSchedule = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await addScheduleExceptionAction(salonId, exception);
-      return updated;
+      const response = await fetch(`/api/salons/${salonId}/schedule/exceptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exception),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add exception');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -120,8 +137,13 @@ const getSchedule = useCallback(async (salonId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const updated = await removeScheduleExceptionAction(salonId, date);
-      return updated;
+      const response = await fetch(`/api/salons/${salonId}/schedule/exceptions?date=${date}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to remove exception');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -133,8 +155,12 @@ const getSchedule = useCallback(async (salonId: string) => {
 const getEffectiveSchedule = useCallback(async (salonId: string, date: string) => {
     // НЕ устанавливаем глобальный loading, так как эта функция вызывается в цикле
     try {
-      const schedule = await getEffectiveScheduleAction(salonId, date);
-      return schedule;
+      const response = await fetch(`/api/salons/${salonId}/schedule/effective?date=${date}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get effective schedule');
+      }
+      return await response.json();
     } catch (e: any) {
       // Можно установить локальную ошибку, если нужно, но не глобальную
       console.error(`Failed to get effective schedule for ${date}:`, e.message);
@@ -145,8 +171,12 @@ const getEffectiveSchedule = useCallback(async (salonId: string, date: string) =
   const getExceptionsInRange = useCallback(async (salonId: string, startDate: string, endDate: string) => {
     // НЕ устанавливаем глобальный loading
     try {
-      const exceptions = await getExceptionsInRangeAction(salonId, startDate, endDate);
-      return exceptions;
+      const params = new URLSearchParams({ startDate, endDate });
+      const response = await fetch(`/api/salons/${salonId}/schedule/exceptions?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get exceptions in range');
+      }
+      return await response.json();
     } catch (e: any) {
       console.error(`Failed to get exceptions in range:`, e.message);
       return [];
@@ -156,8 +186,12 @@ const getEffectiveSchedule = useCallback(async (salonId: string, date: string) =
   const getScheduleForDateRange = useCallback(async (salonId: string, startDate: string, endDate: string) => {
     // НЕ устанавливаем глобальный loading
     try {
-      const schedule = await getScheduleForDateRangeAction(salonId, startDate, endDate);
-      return schedule;
+      const params = new URLSearchParams({ startDate, endDate });
+      const response = await fetch(`/api/salons/${salonId}/schedule/range?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to get schedule for date range');
+      }
+      return await response.json();
     } catch (e: any) {
       console.error(`Failed to get schedule for date range:`, e.message);
       return [];
@@ -168,8 +202,15 @@ const getEffectiveSchedule = useCallback(async (salonId: string, date: string) =
     setLoading(true);
     setError(null);
     try {
-      const updated = await addMultipleExceptionsAction(salonId, exceptions);
-      return updated;
+      const response = await fetch(`/api/salons/${salonId}/schedule/exceptions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(exceptions),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to add multiple exceptions');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;

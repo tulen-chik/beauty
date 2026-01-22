@@ -2,15 +2,6 @@
 
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
-// Импортируем отдельные функции
-import { 
-  createServiceCategoryAction,
-  readServiceCategoryAction,
-  updateServiceCategoryAction,
-  deleteServiceCategoryAction,
-  getServiceCategoriesBySalonIdAction,
-  getRandomServiceCategoriesAction
-} from '@/app/actions/serviceCategoryActions';
 
 import type { ServiceCategory } from '@/types/database';
 
@@ -41,9 +32,12 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      // Используем импортированную функцию напрямую
-      const category = await readServiceCategoryAction(categoryId);
-      return category;
+      const response = await fetch(`/api/categories/${categoryId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to get category');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -56,8 +50,15 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const category = await createServiceCategoryAction(categoryId, data);
-      return category;
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ categoryId, ...data }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create category');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -70,8 +71,15 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const updated = await updateServiceCategoryAction(categoryId, data);
-      return updated;
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update category');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -84,7 +92,12 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      await deleteServiceCategoryAction(categoryId);
+      const response = await fetch(`/api/categories/${categoryId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete category');
+      }
     } catch (e: any) {
       setError(e.message);
       throw e;
@@ -97,8 +110,11 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const categories = await getServiceCategoriesBySalonIdAction(salonId);
-      return categories;
+      const response = await fetch(`/api/salons/${salonId}/categories`);
+      if (!response.ok) {
+        throw new Error('Failed to get categories for salon');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];
@@ -111,8 +127,11 @@ export const ServiceCategoryProvider = ({ children }: { children: ReactNode }) =
     setLoading(true);
     setError(null);
     try {
-      const categories = await getRandomServiceCategoriesAction(limit);
-      return categories;
+      const response = await fetch(`/api/categories?limit=${limit}`);
+      if (!response.ok) {
+        throw new Error('Failed to get random categories');
+      }
+      return await response.json();
     } catch (e: any) {
       setError(e.message);
       return [];

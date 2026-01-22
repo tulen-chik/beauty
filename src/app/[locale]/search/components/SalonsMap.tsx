@@ -49,7 +49,7 @@ export const SalonsMap = React.memo(({
 
   // 2. Инициализация карты и обновление маркеров
   useEffect(() => {
-    if (!isApiLoaded || !mapRef.current || !window.google?.maps) return;
+    if (!isApiLoaded || !mapRef.current) return;
 
     const salonsWithCoords = salons.filter((s) => s.coordinates?.lat && s.coordinates?.lng);
 

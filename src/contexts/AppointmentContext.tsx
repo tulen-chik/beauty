@@ -3,16 +3,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 // Импортируем новые Server Actions
-import {
-  createAppointmentAction,
-  getAppointmentAction,
-  updateAppointmentAction,
-  deleteAppointmentAction,
-  getAppointmentsBySalonAction,
-  getAppointmentsByDayAction,
-  getAppointmentsByUserAction,
-  checkAppointmentAvailabilityAction
-} from '@/app/actions/appointmentActions';
 
 import type { Appointment, AppointmentStatus } from '@/types/database';
 
@@ -103,7 +93,18 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertString(appointmentId, 'Не указан ID записи');
       assertString(data?.serviceId, 'Не указана услуга');
 
-      const created = await createAppointmentAction(salonId, appointmentId, data);
+      const response = await fetch(`/api/salons/${salonId}/appointments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId, ...data }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to create appointment');
+      }
+
+      const created = await response.json();
       return created;
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось создать запись';
@@ -121,7 +122,13 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertString(salonId, 'Не указан ID салона');
       assertString(appointmentId, 'Не указан ID записи');
 
-      const appt = await getAppointmentAction(salonId, appointmentId);
+      const response = await fetch(`/api/salons/${salonId}/appointments/${appointmentId}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to get appointment');
+      }
+      const appt = await response.json();
       return appt;
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось получить запись';
@@ -144,7 +151,18 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertString(appointmentId, 'Не указан ID записи');
       assertCondition(Boolean(data && Object.keys(data).length > 0), 'Нет данных для обновления');
 
-      const updated = await updateAppointmentAction(salonId, appointmentId, data);
+      const response = await fetch(`/api/salons/${salonId}/appointments/${appointmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to update appointment');
+      }
+
+      const updated = await response.json();
       return updated;
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось обновить запись';
@@ -162,7 +180,14 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertString(salonId, 'Не указан ID салона');
       assertString(appointmentId, 'Не указан ID записи');
 
-      await deleteAppointmentAction(salonId, appointmentId);
+      const response = await fetch(`/api/salons/${salonId}/appointments/${appointmentId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to delete appointment');
+      }
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось удалить запись';
       setError(errorMessage);
@@ -178,7 +203,22 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     try {
       assertString(salonId, 'Не указан ID салона');
 
-      const list = await getAppointmentsBySalonAction(salonId, options);
+      const params = new URLSearchParams();
+      if (options) {
+        Object.entries(options).forEach(([key, value]) => {
+          if (value) {
+            params.append(key, String(value));
+          }
+        });
+      }
+
+      const response = await fetch(`/api/salons/${salonId}/appointments?${params.toString()}`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to get appointments');
+      }
+
+      const list = await response.json();
       return list;
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось получить список записей';
@@ -190,21 +230,19 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const listAppointmentsByDay = useCallback(async (salonId: string, date: Date) => {
-    setLoading(true);
-    setError(null);
-    try {
-      assertString(salonId, 'Не указан ID салона');
-      assertCondition(Boolean(date && !isNaN(date.getTime())), 'Неверная дата');
+    const getDayBounds = (date: Date | string): { startIso: string; endIso: string } => {
+      const dayStart = new Date(date);
+      if (isNaN(dayStart.getTime())) {
+        throw new Error('Неверная дата');
+      }
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      return { startIso: dayStart.toISOString(), endIso: dayEnd.toISOString() };
+    };
 
-      const list = await getAppointmentsByDayAction(salonId, date);
-      return list;
-    } catch (e: any) {
-      const errorMessage = e?.message || 'Не удалось получить записи за день';
-      setError(errorMessage);
-      return [];
-    } finally {
-      setLoading(false);
-    }
+    const { startIso, endIso } = getDayBounds(date);
+    return listAppointments(salonId, { startAt: startIso, endAt: endIso });
   }, []);
 
   const listAppointmentsByCustomer = useCallback(async (userId: string) => {
@@ -213,7 +251,12 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
     try {
       assertString(userId, 'Не указан ID пользователя');
 
-      const list = await getAppointmentsByUserAction(userId);
+      const response = await fetch(`/api/users/${userId}/appointments`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to get user appointments');
+      }
+      const list = await response.json();
       return list;
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось получить записи пользователя';
@@ -238,13 +281,20 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertString(startAtIso, 'Не указана дата начала');
       assertCondition(durationMinutes > 0 && durationMinutes <= 1440, 'Неверная длительность');
 
-      return await checkAppointmentAvailabilityAction(
-        salonId,
+      const params = new URLSearchParams({
         startAtIso,
-        durationMinutes,
-        employeeId,
-        excludeAppointmentId
-      );
+        durationMinutes: String(durationMinutes),
+      });
+      if (employeeId) params.append('employeeId', employeeId);
+      if (excludeAppointmentId) params.append('excludeAppointmentId', excludeAppointmentId);
+
+      const response = await fetch(`/api/salons/${salonId}/availability?${params.toString()}`);
+      if (!response.ok) {
+        console.error("Availability check failed:", await response.json());
+        return false;
+      }
+      const data = await response.json();
+      return data.isAvailable;
     } catch (e: any) {
       console.error("Availability check failed:", e);
       return false;
@@ -267,7 +317,7 @@ export const AppointmentProvider = ({ children }: { children: ReactNode }) => {
       assertCondition(Boolean(data?.durationMinutes), 'Не указана длительность');
 
       // 2. Создаем запись (внутри уже есть проверка доступности через транзакцию)
-      const created = await createAppointmentAction(salonId, appointmentId, data);
+      const created = await createAppointment(salonId, appointmentId, data);
       return { ok: true, appointment: created };
     } catch (e: any) {
       const errorMessage = e?.message || 'Не удалось создать запись';
