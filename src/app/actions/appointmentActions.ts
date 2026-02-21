@@ -431,7 +431,10 @@ export async function getAppointmentsByUserAction(userId: string): Promise<Appoi
   try {
     validateId(userId, 'ID пользователя');
     
-    // Используем collectionGroup для поиска по всем подколлекциям 'appointments'
+    // ВАЖНО: Для collectionGroup('appointments') требуется создать индекс в Firestore
+    // для поля customerUserId с областью видимости "Collection Group" (Группа коллекций).
+    // Без этого индекса запрос вернет ошибку.
+    // Ссылка на создание индекса появится в логах сервера при первом запуске.
     const snap = await getDb()
       .collectionGroup('appointments')
       .where('customerUserId', '==', userId)

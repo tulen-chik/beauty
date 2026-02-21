@@ -894,6 +894,9 @@
     "salonLabel": "Салон:"
   },
   "profilePage": {
+    "common": {
+      "cancel": "Отмена"
+    },
     "title": "Профиль",
     "loading": "Загрузка...",
     "quickActions": {

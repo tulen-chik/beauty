@@ -65,7 +65,7 @@ export default function SearchPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'map'>('list');
   
-  const currentCity = manualCity || userCity;
+  const currentCity = manualCity || userCity || "Minsk";
   
   const observer = useRef<IntersectionObserver>();
   const loaderRef = useCallback((node: HTMLDivElement | null) => {

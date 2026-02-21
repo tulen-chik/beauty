@@ -114,7 +114,7 @@ const AppointmentCard = ({
         {!isCompleted && (
           <button
             onClick={() => onDeleteClick(appointment.id, appointment.salonId)}
-            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-sm shadow-red-200 transition-all flex items-center justify-center gap-2"
+            className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-red text-white rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
             title={t('appointments.delete')}
           >
             <Trash2 className="w-4 h-4" />

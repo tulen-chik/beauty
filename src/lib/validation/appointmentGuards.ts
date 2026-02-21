@@ -111,6 +111,10 @@ export const handleError = (error: unknown, defaultMessage: string): Error => {
     if (error.message.includes('parse') || error.message.includes('validation')) {
       return error;
     }
+    if (error.message.includes('index') || error.message.includes('requires an index')) {
+      console.error('[appointmentGuards] Missing Index Error:', error.message);
+      return new Error('Требуется создание индекса в Firestore. См. логи сервера.');
+    }
     console.error('[appointmentGuards] Error:', error);
     return new Error(defaultMessage);
   }

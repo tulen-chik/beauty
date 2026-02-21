@@ -375,14 +375,14 @@ export default function Home() {
                 <h3 className="font-bold text-gray-900 mb-4">{t("footer.contact")}</h3>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3 text-sm text-gray-600">
-                    <Mail className="w-4 h-4 text-rose-600 shrink-0" />
-                    <a href={`mailto:Charming.belarus@gmail.com `} className="hover:text-rose-600 transition-colors">
+                    <Mail className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <a href={`mailto:Charming.belarus@gmail.com `} className="hover:text-rose-600 flex justify-center items-center transition-colors">
                       {"Charming.belarus@gmail.com "}
                     </a>
                   </li>
                   <li className="flex items-center gap-3 text-sm text-gray-600">
-                    <Phone className="w-4 h-4 text-rose-600 shrink-0" />
-                    <a href={`tel:+375447403616`} className="hover:text-rose-600 transition-colors">
+                    <Phone className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <a href={`tel:+375447403616`} className="hover:text-rose-600 flex justify-center items-center transition-colors">
                       {"+375447403616"}
                     </a>
                   </li>
