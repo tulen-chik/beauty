@@ -31,11 +31,14 @@ export const validateString = (
 
 export const validatePhone = (phone: string | undefined): string | undefined => {
   if (!phone) return undefined;
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length < 10 || cleaned.length > 15) {
-    throw new Error('Неверный формат телефона');
+  
+  const internationalPhoneRegex = /^\+?\d{1,3}?[\s\-]?\(?\d{2,4}\)?[\s\-]?\d{2,4}[\s\-]?\d{2,4}[\s\-]?\d{2,9}$/;
+  const cleaned = phone.replace(/[^\d+()\-\s]/g, ''); // Allow +, (), -, spaces
+
+  if (!internationalPhoneRegex.test(cleaned)) {
+    throw new Error('Неверный формат телефона. Используйте международный формат, например +X (XXX) XXX-XX-XX.');
   }
-  return phone.trim();
+  return cleaned.trim();
 };
 
 export const validateDate = (dateStr: string, fieldName: string, allowPast = false): Date => {

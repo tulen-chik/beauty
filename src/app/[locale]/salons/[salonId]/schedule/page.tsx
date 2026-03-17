@@ -163,6 +163,22 @@ const timeToMinutes = (timeString: string) => {
   return hours * 60 + minutes;
 };
 
+// Helper to check for overlapping time intervals
+const hasOverlap = (times: { start: string; end: string }[]): boolean => {
+  if (times.length <= 1) return false;
+
+  const sortedTimes = [...times].sort((a, b) => timeToMinutes(a.start) - timeToMinutes(b.start));
+
+  for (let i = 0; i < sortedTimes.length - 1; i++) {
+    const currentEnd = timeToMinutes(sortedTimes[i].end);
+    const nextStart = timeToMinutes(sortedTimes[i + 1].start);
+    if (currentEnd > nextStart) {
+      return true;
+    }
+  }
+  return false;
+};
+
 const DAY_START_MINUTES = timeToMinutes(TIME_SLOTS[0]);
 
 export default function SalonSchedulePage() {
@@ -367,10 +383,16 @@ export default function SalonSchedulePage() {
       const scheduleToSave = {
         salonId,
         updatedAt: new Date().toISOString(),
-        weeklySchedule: weeklySchedule.map(day => ({
-          ...day,
-          times: day.isOpen ? (day.times || []).filter(t => t.start && t.end) : [],
-        })),
+        weeklySchedule: weeklySchedule.map(day => {
+          const filteredTimes = day.isOpen ? (day.times || []).filter(t => t.start && t.end) : [];
+          if (day.isOpen && hasOverlap(filteredTimes)) {
+            throw new Error(t("overlapError"));
+          }
+          return {
+            ...day,
+            times: filteredTimes,
+          };
+        }),
       };
 
       await updateSchedule(salonId, scheduleToSave);
@@ -481,12 +503,18 @@ export default function SalonSchedulePage() {
 
   const handleSaveException = async () => {
     if (!newException.date) return;
-    
+    setModalError(null);
+
     try {
+      const filteredTimes = (newException.times || []).filter(t => t.start && t.end);
+      if (newException.isOpen && hasOverlap(filteredTimes)) {
+        throw new Error(t("overlapError"));
+      }
+
       const exceptionData: SalonExceptionDay = {
         date: newException.date!,
         isOpen: newException.isOpen ?? false,
-        times: newException.times || [],
+        times: filteredTimes,
       };
       
       await addException(salonId, exceptionData);
@@ -502,7 +530,8 @@ export default function SalonSchedulePage() {
       setSelectedDateForException('');
     } catch (error) {
       console.error('Error saving exception:', error);
-      setModalError('Не удалось сохранить исключение');
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось сохранить исключение';
+      setModalError(errorMessage);
     }
   };
 
@@ -1206,6 +1235,12 @@ export default function SalonSchedulePage() {
             </div>
             
             <div className="p-6 space-y-4">
+              {modalError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-sm flex items-start gap-2 mb-4">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <span>{modalError}</span>
+                </div>
+              )}
               <div>
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validatePhone } from "../validation/appointmentGuards";
 
 export const userSchema = z.object({
   email: z.string().email(),
@@ -47,8 +48,7 @@ export const salonSettingsSchema = z.object({
   business: z.object({
     name: z.string().min(2),
     email: z.string().email().optional().or(z.literal('')),
-    phone: z.string().optional().or(z.literal('')),
-    address: z.string().optional(),
+    phone: z.string().optional().or(z.literal('')).transform(val => val ? validatePhone(val) : undefined),
     timezone: z.string(),
     currency: z.string(),
     coordinates: z.object({
@@ -77,7 +77,7 @@ export const salonSettingsSchema = z.object({
 export const salonSchema = z.object({
   name: z.string().min(2),
   address: z.string().min(2),
-  phone: z.string().optional(),
+  phone: z.string().optional().or(z.literal('')).transform(val => val ? validatePhone(val) : undefined),
   description: z.string().optional(),
   createdAt: z.string(),
   city: z.string().optional(),
